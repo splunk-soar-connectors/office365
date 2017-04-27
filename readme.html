@@ -1,0 +1,180 @@
+<!-- 
+File: readme.html
+
+Copyright (c) Phantom Cyber Corporation, 2016-2017
+
+This unpublished material is proprietary to Phantom Cyber.
+All rights reserved. The methods and
+techniques described herein are considered trade secrets
+and/or confidential. Reproduction or distribution, in whole
+or in part, is forbidden except by express written permission
+of Phantom Cyber Corporation.
+-->
+
+    <p>
+    The app supports multiple type of authentication mechanism, these include Basic authentication (only User name and Password), Azure AD and Federated Authentication. If Azure AD authentication is required, a Phantom app will require to be configured as a native app on the AD Admin Portal. Please scroll down and read the section titled <b>Configure a native client application</b> of <a href="https://azure.microsoft.com/en-us/documentation/articles/app-service-mobile-how-to-configure-active-directory-authentication/">this article on the Azure site</a>. This configuration will result in a client ID being generated, that will need to be configured on the Asset (<b>client_id</b> asset config). Federated Authentication setup is quite complicated and its documentation is out of the scope of this section.<br>Select the required authentication setup in the <b>auth_type</b> asset config parameter. Valid values are:
+    <ul><li>Basic</li><li>Azure</li><li>Federated</li></ul>
+    NOTE: Federated Authentication has been tested in a limited fashion.
+    </p>
+    <p>
+        It is not uncommon for enterprises to have a single mailbox configured where users can forward suspicious emails for further investigation. The ingestion feature in the Office 365 app is primarily designed to pull emails from such a mailbox and create containers and artifacts in Phantom. 
+    </p>
+    <p>
+    The first thing to do is create the Office 365 asset in Phantom and fill up the required various parameters like <b>url, username, password</b> and <b>poll_user</b>. The other values can be left in the default state for now. The same user can be used to login/authenticate and for polling, just specify the same email address in <b>poll_user</b> and <b>username</b>.<br>
+    <br>
+    <a href="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/asset_settings.png">
+        <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/asset_settings.png"/>
+    </a>
+    </p>
+    <p>
+    <br>
+    However it's good practice to set the Label of the objects from this source to a 'NEW ENTRY' called <b>Email</b>.
+    <br>
+    <a href="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/ingest_settings.png">
+        <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/ingest_settings.png"/>
+      </a><br>
+    <p>
+    Once the asset is saved, run Test Connectivity and make sure it passes. The Test Connectivity action attempts to read some infomation about the configured user's mailbox to validate the Auth parameters. Exchange Web Services API is used for all the actions. Impersonation is also used if configured.<br>
+    <a href="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/testing_connectivity.png">
+        <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/testing_connectivity.png"/>
+    </a>
+    </p>
+    <p>
+    <br>
+    Now that the config is out of the way, let's delve into the two modes that ingestion can occur and the differences between them. One thing to note is that for every email that is ingested, a single container is created containing multiple artifacts.
+    </a>
+<h2 id="poll_now">POLL NOW</h2>
+    <p>
+    POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine oldest or latest is what EWS calls <b>item:LastModifiedTime</b>. This value is different than the mail creation time. For example if an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved.
+    </p>
+<h2 id="scheduled_polling">Scheduled Polling</h2>
+    <p>
+       This mode is used to schedule a polling action on the asset at regular intervals, which is configured via the INGEST SETTINGS tab of the asset. It makes use of the following asset configuration parameters (among others):
+
+    <ul>
+    <li>Maximum emails to poll first time</li>
+        The app detects the first time it is polling an asset and will ingest this number of emails (at the most).
+    <li>Maximum emails to poll</li>
+        For all scheduled polls after the first, the app will ingest this number of emails.
+    <li>How to ingest</li>
+        Should the app be ingesting the latest emails or the oldest.
+    </ul>
+    <p>In case of Scheduled Polling, on every poll, the app remembers the last email that it has ingested and will pickup from the next one in the next scheduled poll.</p>
+    <h3>How to ingest</h3>
+    <p>The app allows the user to configure how it should ingest emails on every scheduled poll, <i>oldest first</i> or <i>latest first</i>. Depending upon the scheduled interval and how busy the folder is, one of the following could potentially happen</p>
+    <ul>
+    <li>oldest first</li>
+        If the app is configured to poll too slowly and the folder is so busy that on every poll the maximum ingested emails is less than the number of new emails, the app will never catch up.
+    <li>latest first</li>
+        If the app is configured to poll too slowly and the folder is so busy that on every poll the maximum ingested emails is less than the number of new emails, the app will drop the older emails since it is ingesting the latest emails that came into the mailbox.
+    </ul>
+    For best results, keep the poll interval and <i>Maximum emails to poll</i> values close to the number of emails you would get within a time interval. This way, every poll will end up ingesting all the new emails.<br>
+    In case the asset is configured to poll <b>oldest first</b>, it becomes important that the <i>Maximum emails to poll</i> configured should be greater than maximum emails generated <b>per second</b>. If the app detects it got the maximum configured emails and all occurred in the same second, it will start polling from the next second in the next polling cycle.
+    </p>
+<h2>Containers created</h2>
+    <p>
+       As mentioned before, the app will create a single container for each email that it ingests with the following properties:
+      <ul>
+      <li>Name</li>
+      The email subject is used as the name of the container. If a subject is not present the generated name is set to the unique message ID that office 365 assigns to every mail in the mailboxes</br> 
+      <li>Source ID</li>
+          The source ID of the container will be a combination of the unique message id and the datetime it was received by the server.
+      </ul>
+<h2>Artifacts created</h2>
+    <p>
+       The app will create the following type of artifacts:
+      <ul>
+      <li>Email Artifact</li>
+      The email addresses that are found in the ingested email will be added as a separate artifact. Any attached email will also be scanned and the address present in the attached email will be added as a separate artifact. The emails are added as custom strings in the cef structure in the following manner.
+    <br>
+      <table style="width:100%">
+        <tr>
+          <td><b>Artifact Field</b></td>
+          <td><b>Value Details</b></td> 
+        </tr>
+        <tr>
+          <td>fromEmail</td>
+          <td>The email address of the sender</td> 
+        </tr>
+        <tr>
+          <td>fromName</td>
+          <td>The username of the sender of the email.</td> 
+        </tr>
+        <tr>
+          <td>toEmail</td>
+          <td>The email address of the receiver of the email</td> 
+        </tr>
+        <tr>
+          <td>toName</td>
+          <td>The user name of the receiver of the email</td> 
+        </tr>
+        <tr>
+          <td>headers</td>
+          <td>A dictionary containing each email header as a key and its value as the key-value</td> 
+        </tr>
+      </table>
+    <br>
+
+    <a href="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/email_artifact.png">
+        <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/email_artifact.png"/>
+    </a>
+    <li>IP Artifact
+        <ul>
+            <li>If <b>extract_ips</b> is enabled, any IPv4 or IPv6 found in the email body will be added, with one CEF per IP.</li>
+            <li>Any IP addresses found in the email are added to the CEF structure of an artifact.</li>
+            <li>The CEF for an IP is cef.sourceAddress.</li>
+        </ul>
+    </li>
+    <li>Hash Artifact - cef.fileHash</li>
+        <ul>
+            <li>If <b>extract_hashes</b> is enabled, any hash found in the email body will be added, with one CEF per hash.</li>
+            <li>Any Hashes found in the email are added to the CEF structure of an artifact.</li>
+            <li>The CEF for a hash is cef.fileHash.</li>
+        </ul>
+    </li>
+    <li>URL Artifact - cef.requestURL</li>
+        <ul>
+            <li>If <b>extract_urls</b> is enabled, any url found in the email body will be added, with one CEF per url.</li>
+            <li>Any URLs found are added to the CEF structure of an artifact.</li>
+            <li>The CEF for a URL is cef.requestURL.</li>
+        </ul>
+    </li>
+    <li>Domain Artifact - cef.destinationDnsDomain</li>
+        <ul>
+            <li>If <b>extract_domains</b> is enabled, any domain found in the email body will be added, with one CEF per domain.</li>
+            <li>Domains that are part of a URL or an email address are added to the CEF structure of an artifact.</li>
+            <li>The CEF for a URL is cef.destinationDnsDomain.</li>
+        </ul>
+    </li>
+      <li>Vault Artifact
+        <ul>
+          <li>If the email contains any attachments, these are extracted (if <b>extract_attachments</b> is enabled) and added to the vault of the Container.</li>
+          <li>At the same time the vault ID and file name of this item is represented by a Vault Artifact.</li>
+          <li>The same file can be added to the vault multiple times. In this scenario the file name of the item added the second time onwards will be slightly different, but the vault ID will still be the same. However there will be multiple artifacts created.</li>
+          <li>Do note that the system does <i>not</i> duplicate the file bytes, only the metadata in the database.
+          <table style="width:100%">
+            <tr>
+              <td><b>Artifact Field</b></td>
+              <td><b>Value Details</b></td>
+            </tr>
+            <tr>
+              <td>Source ID</td>
+              <td>Email ID set on the server</td>
+            </tr>
+            <tr>
+              <td>cef.vaultId</tdLavel>
+              <td>Vault ID of the attachement</td>
+            </tr>
+            <tr>
+              <td>cef.fileName</td>
+              <td>Attached filename used in the email</td>
+            </tr>
+          </table></li>
+            <li>You will notice additional CEF fields <b>cs6</b> (value is the Vault ID) and <b>cs6Label</b>. These are added for backward compatibility only and will be deprecated in future releases. Please don't use these keys in playbooks.</li>
+        </ul>
+      </li>
+    <a href="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/vault_artifact.png">
+        <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/vault_artifact.png"/>
+      </ul>
+    </a>
+    </p>
