@@ -47,7 +47,6 @@ from requests.auth import AuthBase
 from requests.auth import HTTPBasicAuth
 from urlparse import urlparse
 import base64
-import inspect
 from datetime import datetime, timedelta
 import re
 import process_email
@@ -116,43 +115,6 @@ class EWSOnPremConnector(BaseConnector):
         self._state = {}
 
         self._impersonate = False
-
-    def _load_state(self):
-
-        # get the directory of the class
-        dirpath = os.path.dirname(inspect.getfile(self.__class__))
-        asset_id = self.get_asset_id()
-        self._state_file_path = "{0}/{1}_serialized_data.json".format(dirpath, asset_id)
-
-        self._state = {}
-
-        try:
-            with open(self._state_file_path, 'r') as f:
-                in_json = f.read()
-                self._state = json.loads(in_json)
-        except Exception as e:
-            self.debug_print("In _load_state: Exception: {0}".format(str(e)))
-            pass
-
-        self.debug_print("Loaded state: ", self._state)
-
-        return phantom.APP_SUCCESS
-
-    def _save_state(self):
-
-        self.debug_print("Saving state: ", self._state)
-
-        if (not self._state_file_path):
-            self.debug_print("_state_file_path is None in _save_state")
-            return phantom.APP_SUCCESS
-
-        try:
-            with open(self._state_file_path, 'w+') as f:
-                f.write(json.dumps(self._state))
-        except:
-            pass
-
-        return phantom.APP_SUCCESS
 
     def _get_ping_fed_request_xml(self, config):
 
@@ -365,13 +327,13 @@ class EWSOnPremConnector(BaseConnector):
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
     def finalize(self):
-        self._save_state()
+        self.save_state(self._state)
         return phantom.APP_SUCCESS
 
     def initialize(self):
         """ Called once for every action, all member initializations occur here"""
 
-        self._load_state()
+        self._state = self.load_state()
 
         config = self.get_config()
 
