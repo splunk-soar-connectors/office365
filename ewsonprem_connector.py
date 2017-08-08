@@ -58,9 +58,6 @@ os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
 from requests_ntlm import HttpNtlmAuth  # noqa
 
 
-requests.packages.urllib3.disable_warnings()
-
-
 class RetVal3(tuple):
     def __new__(cls, val1, val2, val3):
         return tuple.__new__(RetVal3, (val1, val2, val3))
