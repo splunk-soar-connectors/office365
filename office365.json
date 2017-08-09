@@ -11,7 +11,7 @@
   "product_vendor": "Microsoft",
   "product_name": "Office 365",
   "product_version_regex": ".*",
-  "min_phantom_version": "2.1.452",
+  "min_phantom_version": "3.0.190",
   "logo": "microsoft_logo.png",
   "license": "Copyright (c) Phantom Cyber Corporation 2016-2017",
   "configuration": {
