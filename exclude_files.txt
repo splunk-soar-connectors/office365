@@ -3,3 +3,4 @@ ewsonprem_connector.py
 ewsonprem_consts.py
 ews_soap.py
 process_email.py
+.git*
