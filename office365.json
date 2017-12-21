@@ -1,670 +1,608 @@
 {
-    "appid": "a73f6d32-c9d5-4fec-b024-43876700daa6",
-    "name": "EWS for Office 365",
-    "description": "This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service",
-    "publisher": "Phantom",
-    "type": "email",
-    "main_module": "ewsonprem_connector.pyc",
-    "app_version": "1.0.73",
-    "utctime_updated": "2017-12-21T03:22:44.000000Z",
-    "package_name": "phantom_office365",
-    "product_vendor": "Microsoft",
-    "product_name": "Office 365",
-    "product_version_regex": ".*",
-    "min_phantom_version": "3.0.190",
-    "logo": "logo_microsoftoffice365.svg",
-    "logo_dark": "logo_microsoftoffice365_dark.svg",
-    "license": "Copyright (c) Phantom Cyber Corporation 2016-2017",
-    "configuration": {
-        "url": {
+  "appid": "a73f6d32-c9d5-4fec-b024-43876700daa6",
+  "name": "EWS for Office 365",
+  "description": "This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service",
+  "publisher": "Phantom",
+  "type": "email",
+  "main_module": "ewsonprem_connector.pyc",
+    "app_version": "1.0.69",
+    "utctime_updated": "2017-08-10T00:27:12.000000Z",
+  "package_name": "phantom_office365",
+  "product_vendor": "Microsoft",
+  "product_name": "Office 365",
+  "product_version_regex": ".*",
+  "min_phantom_version": "3.0.190",
+  "logo": "microsoft_logo.png",
+  "license": "Copyright (c) Phantom Cyber Corporation 2016-2017",
+  "configuration": {
+    "url": {
+      "data_type": "string",
+      "order": 0,
+      "description": "EWS URL",
+      "required": true,
+      "default": "https://outlook.office365.com/EWS/Exchange.asmx"
+    },
+    "verify_server_cert": {
+      "data_type": "boolean",
+      "description": "Verify server certificate",
+      "required": true,
+      "order": 1,
+      "default": true
+    },
+    "username": {
+      "data_type": "string",
+      "order": 2,
+      "description": "Username",
+      "required": true
+    },
+    "password": {
+      "data_type": "password",
+      "order": 3,
+      "description": "Password",
+      "required": true
+    },
+    "poll_user": {
+      "data_type": "string",
+      "order": 4,
+      "description": "User Email Mailbox (Test Connectivity and Poll)",
+      "required": false
+    },
+    "use_impersonation": {
+      "data_type": "boolean",
+      "order": 5,
+      "description": "Use Impersonation",
+      "required": true,
+      "default": false
+    },
+    "auth_type": {
+      "data_type": "string",
+      "order": 6,
+      "description": "Authentication mechanism to use",
+      "required": false,
+      "value_list": ["Basic", "Azure", "Federated"],
+      "default": "Basic"
+    },
+    "client_id": {
+      "data_type": "string",
+      "order": 7,
+      "description": "Client App ID for Azure/Fed AD Authentication",
+      "required": false
+    },
+    "fed_ping_url": {
+      "data_type": "string",
+      "order": 8,
+      "description": "Federated Auth Ping URL",
+      "required": false,
+      "default": "https://corp.contoso.com/fss/idp/sts.wst?TokenProcessorId=SentryPOC"
+    },
+    "fed_verify_server_cert": {
+      "data_type": "boolean",
+      "description": "Verify Federated server certificate",
+      "required": true,
+      "order": 9,
+      "default": true
+    },
+    "authority_url": {
+      "data_type": "string",
+      "order": 10,
+      "description": "Office 365 Authority URL (For Federated Auth)",
+      "required": false,
+      "default": "https://login.windows.net/contoso.onmicrosoft.com"
+    },
+    "poll_folder": {
+      "data_type": "string",
+      "description": "Mailbox folder to be polled",
+      "order": 11,
+      "required": true,
+      "default": "Inbox"
+    },
+    "ingest_manner": {
+      "data_type": "string",
+      "description": "How to ingest",
+      "verbose": "DEFAULT latest",
+      "required": true,
+      "order": 12,
+      "value_list": ["oldest first", "latest first"],
+      "default": "oldest first",
+      "verbose": "During ingestion, should the app get the latest emails or the oldest"
+    },
+    "first_run_max_emails": {
+      "data_type": "numeric",
+      "order": 13,
+      "description": "Maximum emails to poll first time",
+      "default": "2000",
+      "required": true
+    },
+    "max_containers": {
+      "data_type": "numeric",
+      "description": "Maximum Containers for scheduled polling",
+      "order": 14,
+      "default": 100,
+      "required": true
+    },
+    "extract_attachments": {
+      "data_type": "boolean",
+      "description": "Extract Attachments",
+      "required": true,
+      "order": 15,
+      "default": true
+    },
+    "extract_urls": {
+      "data_type": "boolean",
+      "description": "Extract URLs",
+      "required": true,
+      "order": 16,
+      "default": true
+    },
+    "extract_ips": {
+      "data_type": "boolean",
+      "description": "Extract IPs",
+      "required": true,
+      "order": 17,
+      "default": true
+    },
+    "extract_domains": {
+      "data_type": "boolean",
+      "description": "Extract Domain Names",
+      "required": true,
+      "order": 18,
+      "default": true
+    },
+    "extract_hashes": {
+      "data_type": "boolean",
+      "description": "Extract Hashes",
+      "required": true,
+      "order": 19,
+      "default": true
+    }
+  },
+  "actions": [
+    {
+      "action": "test connectivity",
+      "description": "Validate the asset configuration for connectivity",
+      "verbose": "To check the connection and credentials, this action tries to list the email ids of the configured <b>poll_user</b>.",
+      "type": "test",
+      "identifier": "test_asset_connectivity",
+      "read_only": true,
+      "parameters": {
+      },
+      "output": [
+      ],
+      "versions":"EQ(*)"
+    },
+    {
+        "action": "run query",
+        "description": "Search emails",
+        "type": "investigate",
+        "identifier": "run_query",
+        "read_only": true,
+        "verbose": "The <b>run query</b> action provides more than one method to search a user's mailbox:<br><ul><li>Simple Search<br>Use the <b>subject</b> and <b>body</b> parameters to search for substring matches. The <b>sender</b> parameter can be used to search for emails from a specific address. However it has been noticed that a match with the <b>sender</b> email address fails for emails that have been never sent or received, but instead have been created manually as a draft and copied to the searched mailbox. In such cases an AQS is a better option. If more than one parameter is specified, the search is an <b>And</b> of the given values including the <b>internet_message_id</b>.<br> <b>Simple Search</b> implements search filters. More details regarding search filters can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579422(v=exchg.150).aspx\">MSDN Link</a>.<br></li><li>Query Search<br>For a more fine-grained email search, the use of the <b>query</b> parameter is recommended. If this parameter is specified, the <b>subject</b>, <b>internet_message_id</b> and <b>body</b> parmeters are ignored.<br>This parameter supports AQS queries to search in a Mailbox. More details regarding AQS keywords supported by Exchange can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579420(v=exchg.150).aspx\">MSDN Link.</a><br>Searching with AQS strings does have one notable restriction, however. The AQS search string will only match substrings from the start of a word. If a substring needs to be found in the middle of a word, use a <b>Simple Search</b>.<br>Some examples:<br><ul><li>All emails from user1@contoso.com or user2@contoso.com<br>from:user1@contoso.com OR from:user2@contoso.com</li><li>All emails containing the string <i>free vacations</i><br>body: free vacations</li><li>This will match an email with subject containing the word <i>Details</i> but not <i>Cadet</i><br>subject:det</li></li></ul></ul>If the <b>folder</b> parameter is not specified, each email based folder such as Inbox, Sent etc. will be searched, including the children (nested) folders.<br>The action supports searching a folder that is nested within another.<br>To search in such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to search in a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>NOTE: In some cases search results may return more emails than are visible in an email client. This is due to emails that have been just deleted, but not yet completely cleaned by the server.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. The results are always sorted in <i>descending</i> order to place the latest emails at the top. For example to get the latest 10 emails that matched the filter, specify the range as 0-9. If multiple folders are searched for, then the range will be applied for each folder.<br>So if the folder being searched for example <i>Inbox</i> has a child (nested) folder called <i>phishing</i> and the range specified is 2-10, then the action will return 9 max emails for each folder. If the range parameter is not specified by default the action will use <b>0-10</b>.<br><br>NOTE: The <b>email</b> parameter is required.<br><br>Many actions such as <b>delete email</b> and <b>copy email</b> require the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this as the value (including the &lt; and &gt; chars if present) of <b>internet_message_id</b> parameter and execute the action. The results will contain the <b>Office 365 email ID</b> of an email, which can be used as input for other actions.",
+        "parameters": {
+          "email": {
+            "description": "User's Email (Mailbox to search in)", 
             "data_type": "string",
             "order": 0,
-            "description": "EWS URL",
-            "required": true,
-            "default": "https://outlook.office365.com/EWS/Exchange.asmx"
-        },
-        "verify_server_cert": {
-            "data_type": "boolean",
-            "description": "Verify server certificate",
-            "required": true,
+            "contains": ["email"],
+            "primary": true,
+            "required": true
+          },
+          "folder": {
+            "description": "Folder Name/Path (to search in)", 
+            "data_type": "string",
             "order": 1,
-            "default": true
-        },
-        "username": {
+            "required": false,
+            "default": "Inbox",
+            "contains": ["mail folder", "mail folder path"]
+          },
+          "subject": {
+            "description": "Substring to search in Subject", 
             "data_type": "string",
             "order": 2,
-            "description": "Username",
-            "required": true
-        },
-        "password": {
-            "data_type": "password",
+            "required": false
+          },
+          "sender": {
+            "description": "Sender Email address to match", 
+            "data_type": "string",
+            "contains": [ "email" ],
             "order": 3,
-            "description": "Password",
-            "required": true
-        },
-        "poll_user": {
+            "primary": true,
+            "required": false
+          },
+          "body": {
+            "description": "Substring to search in Body", 
             "data_type": "string",
             "order": 4,
-            "description": "User Email Mailbox (Test Connectivity and Poll)",
+            "primary": false,
             "required": false
-        },
-        "use_impersonation": {
-            "data_type": "boolean",
+          },
+          "internet_message_id": {
+            "description": "Internet Message ID", 
+            "data_type": "string",
             "order": 5,
-            "description": "Use Impersonation",
-            "required": true,
-            "default": false
-        },
-        "auth_type": {
+            "primary": false,
+            "required": false,
+            "contains": [ "internet message id" ]
+          },
+          "query": {
+            "description": "AQS string", 
+            "data_type": "string",
+            "order": 5,
+            "primary": true,
+            "required": false
+          },
+          "range": {
+            "description": "Email range to return (min_offset-max_offset)", 
             "data_type": "string",
             "order": 6,
-            "description": "Authentication mechanism to use",
-            "required": false,
-            "value_list": [
-                "Basic",
-                "Azure",
-                "Federated"
-            ],
-            "default": "Basic"
+            "default": "0-10"
+          }
         },
-        "client_id": {
+        "render": {
+          "width": 12,
+          "title": "Run Query",
+          "type": "table",
+          "height": 5
+        },
+        "output": [
+          {
+            "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
             "data_type": "string",
-            "order": 7,
-            "description": "Client App ID for Azure/Fed AD Authentication",
+            "contains": ["email"]
+          },
+          {
+            "data_path": "action_result.data.*.t_ItemId.@Id",
+            "data_type": "string",
+            "contains": ["office 365 email id"],
+            "column_name": "Message ID",
+            "column_order": 6
+          },
+          {
+            "data_path": "action_result.data.*.t_ItemId.@ChangeKey",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
+            "data_type": "string",
+            "column_name": "Sender",
+            "column_order": 1
+          },
+          {
+            "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_RoutingType",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
+            "data_type": "string",
+            "contains": ["email"]
+          },
+          {
+            "data_path": "action_result.data.*.t_Subject",
+            "data_type": "string",
+            "column_name": "Subject",
+            "column_order": 0
+          },
+          {
+            "data_path": "action_result.data.*.t_InternetMessageId",
+            "data_type": "string",
+            "column_name": "Internet Message ID",
+            "column_order": 5,
+            "contains": [ "internet message id" ]
+          },
+          {
+            "data_path": "action_result.data.*.t_DateTimeReceived",
+            "data_type": "string",
+            "column_name": "Received Time",
+            "column_order": 2
+          },
+          {
+            "data_path": "action_result.data.*.folder",
+            "data_type": "string",
+            "column_name": "Folder",
+            "contains": ["mail folder"],
+            "column_order": 3
+          },
+          {
+            "data_path": "action_result.data.*.folder_path",
+            "data_type": "string",
+            "column_name": "Folder Path",
+            "contains": ["mail folder path"],
+            "column_order": 4
+          },
+          {
+            "data_path": "action_result.status",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.message",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.summary.emails_matched",
+            "data_type": "numeric"
+          },
+          {
+            "data_path": "action_result.parameter.body",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.parameter.internet_message_id",
+            "data_type": "string",
+            "contains": [ "internet message id" ]
+          },
+          {
+            "data_path": "action_result.parameter.sender",
+            "data_type": "string",
+            "contains": ["email"]
+          },
+          {
+            "data_path": "action_result.parameter.range",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.parameter.query",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.parameter.folder",
+            "data_type": "string",
+            "contains": ["mail folder", "mail folder path"]
+          },
+          {
+            "data_path": "action_result.parameter.email",
+            "data_type": "string",
+            "contains": ["email"]
+          },
+          {
+            "data_path": "action_result.parameter.subject",
+            "data_type": "string"
+          },
+          {
+            "data_path": "summary.total_objects",
+            "data_type": "numeric"
+          },
+          {
+            "data_path": "summary.total_objects_successful",
+            "data_type": "numeric"
+          }
+        ],
+        "versions": "EQ(*)"
+      },
+      {
+        "action": "delete email",
+        "description": "Delete emails",
+        "verbose": "This action supports a comma separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server",
+        "type": "contain",
+        "identifier": "delete_email",
+        "read_only": false,
+        "parameters": {
+          "id": {
+            "description": "Message IDs to delete (comma separated values supported)", 
+            "data_type": "string",
+            "order": 0,
+            "contains": ["office 365 email id"],
+            "primary": true,
+            "required": true,
+            "allow_list": true
+          },
+          "email": {
+            "description": "Email of the mailbox owner (used during impersonation)", 
+            "data_type": "string",
+            "order": 1,
+            "contains": ["email"],
+            "primary": false,
             "required": false
+          }
         },
-        "fed_ping_url": {
+        "render": {
+          "width": 12,
+          "title": "Delete Email",
+          "type": "table",
+          "height": 5
+        },
+        "output": [
+        {
+          "data_path": "action_result.status",
+          "data_type": "string"
+        },
+        {
+          "data_path": "action_result.message",
+          "data_type": "string",
+          "column_name": "Status Message",
+          "column_order": 1
+        },
+          {
+            "data_path": "action_result.parameter.id",
             "data_type": "string",
-            "order": 8,
-            "description": "Federated Auth Ping URL",
-            "required": false,
-            "default": "https://corp.contoso.com/fss/idp/sts.wst?TokenProcessorId=SentryPOC"
-        },
-        "fed_verify_server_cert": {
-            "data_type": "boolean",
-            "description": "Verify Federated server certificate",
-            "required": true,
-            "order": 9,
-            "default": true
-        },
-        "authority_url": {
+            "contains": ["office 365 email id"],
+            "column_name": "Message ID",
+            "column_order": 0
+          },
+          {
+            "data_path": "action_result.parameter.email",
             "data_type": "string",
-            "order": 10,
-            "description": "Office 365 Authority URL (For Federated Auth)",
-            "required": false,
-            "default": "https://login.windows.net/contoso.onmicrosoft.com"
-        },
-        "poll_folder": {
+            "contains": ["email"]
+          },
+          {
+            "data_path": "summary.total_objects",
+            "data_type": "numeric"
+          },
+            {
+              "data_path": "summary.total_objects_successful",
+              "data_type": "numeric"
+            }
+        ],
+        "versions":"EQ(*)"
+      },
+      {
+        "action": "copy email",
+        "description": "Copy an email to a folder",
+        "verbose": "The action supports copying to a folder that is nested within another.<br>To copy to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to copy email to a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>The action requires the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>Office 365 email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.*.new_email_id</b>, however this value is not available for cross-mailbox or mailbox to public folder <b>copy email</b> actions (please see the documentation of the <a href=\"https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx\">CopyItem operation on MSDN</a>). However in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Office 365 email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>copy email</b> action, for reasons explained in this section, <b>copy email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>",
+        "type": "generic",
+        "identifier": "copy_email",
+        "read_only": false,
+        "parameters": {
+          "id": {
+            "description": "Message ID to copy", 
             "data_type": "string",
-            "description": "Mailbox folder to be polled",
-            "order": 11,
-            "required": true,
-            "default": "Inbox"
-        },
-        "ingest_manner": {
-            "data_type": "string",
-            "description": "How to ingest",
-            "verbose": "During ingestion, should the app get the latest emails or the oldest",
-            "required": true,
-            "order": 12,
-            "value_list": [
-                "oldest first",
-                "latest first"
-            ],
-            "default": "oldest first"
-        },
-        "first_run_max_emails": {
-            "data_type": "numeric",
-            "order": 13,
-            "description": "Maximum emails to poll first time",
-            "default": "2000",
+            "order": 0,
+            "contains": ["office 365 email id"],
+            "primary": true,
             "required": true
-        },
-        "max_containers": {
-            "data_type": "numeric",
-            "description": "Maximum Containers for scheduled polling",
-            "order": 14,
-            "default": 100,
+          },
+          "ph": {
+            "data_type": "ph",
+            "order": 1
+          },
+          "email": {
+            "description": "Destination Mailbox (Email)", 
+            "data_type": "string",
+            "order": 2,
+            "contains": ["email"],
+            "primary": true,
             "required": true
-        },
-        "extract_attachments": {
+          },
+          "folder": {
+            "description": "Destination Mail Folder Name/Path", 
+            "data_type": "string",
+            "order": 3,
+            "primary": false,
+            "contains": ["mail folder", "mail folder path"],
+            "required": true
+          },
+          "impersonate_email": {
+            "description": "Impersonation Email", 
+            "data_type": "string",
+            "order": 4,
+            "primary": false,
+            "required": false,
+            "contains": ["email"]
+          },
+          "dont_impersonate": {
+            "description": "Don't use impersonation", 
             "data_type": "boolean",
-            "description": "Extract Attachments",
+            "order": 5,
+            "primary": false,
+            "required": false,
+            "default": false
+          }
+        },
+        "render": {
+          "width": 12,
+          "title": "Copy Email",
+          "type": "table",
+          "height": 5
+        },
+        "output": [
+          {
+            "data_path": "action_result.status",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.message",
+            "data_type": "string",
+            "column_name": "Status Message",
+            "column_order": 4
+          },
+          {
+            "data_path": "action_result.parameter.id",
+            "data_type": "string",
+            "contains": ["office 365 email id"],
+            "column_name": "Source Message ID",
+            "column_order": 2
+          },
+          {
+            "data_path": "action_result.parameter.email",
+            "data_type": "string",
+            "contains": ["email"],
+            "column_name": "Destination Mailbox",
+            "column_order": 0
+          },
+          {
+            "data_path": "action_result.parameter.folder",
+            "data_type": "string",
+            "column_name": "Destination Folder",
+            "column_order": 1,
+            "contains": ["mail folder", "mail folder path"]
+          },
+          {
+            "data_path": "action_result.data.*.new_email_id",
+            "data_type": "string",
+            "contains": ["office 365 email id"],
+            "column_name": "Destination Message ID",
+            "column_order": 3
+          },
+          {
+            "data_path": "action_result.parameter.dont_impersonate",
+            "data_type": "boolean"
+          },
+          {
+            "data_path": "action_result.parameter.impersonate_email",
+            "data_type": "string",
+            "contains": ["email"]
+          },
+          {
+            "data_path": "summary.total_objects",
+            "data_type": "numeric"
+          },
+          {
+            "data_path": "summary.total_objects_successful",
+            "data_type": "numeric"
+          }
+        ],
+        "versions":"EQ(*)"
+      },
+      {
+        "action": "on poll",
+        "description": "Action handler for the ingest functionality",
+        "verbose": "Please see sections <a href=\"#poll_now\">POLL NOW</a> and <a href=\"#scheduled_polling\">Scheduled Polling</a> for more info on how this action is implemented by the app.",
+        "type": "ingest",
+        "identifier": "on_poll",
+        "read_only": true,
+        "parameters": {
+          "start_time": {
+            "data_type": "numeric",
+            "description": "Parameter Ignored in this app"
+          },
+          "end_time": {
+            "data_type": "numeric",
+            "description": "Parameter Ignored in this app"
+          },
+          "container_id": {
+            "data_type": "string",
+            "description": "Parameter Ignored in this app"
+          },
+          "container_count": {
+            "data_type": "numeric",
+            "description": "Maximum number of emails to ingest",
             "required": true,
-            "order": 15,
-            "default": true
+            "default": 100
+          },
+          "artifact_count": {
+            "data_type": "numeric",
+            "description": "Parameter Ignored in this app",
+            "required": false,
+            "default": 1000
+          }
         },
-        "extract_urls": {
-            "data_type": "boolean",
-            "description": "Extract URLs",
-            "required": true,
-            "order": 16,
-            "default": true
-        },
-        "extract_ips": {
-            "data_type": "boolean",
-            "description": "Extract IPs",
-            "required": true,
-            "order": 17,
-            "default": true
-        },
-        "extract_domains": {
-            "data_type": "boolean",
-            "description": "Extract Domain Names",
-            "required": true,
-            "order": 18,
-            "default": true
-        },
-        "extract_hashes": {
-            "data_type": "boolean",
-            "description": "Extract Hashes",
-            "required": true,
-            "order": 19,
-            "default": true
-        }
-    },
-    "actions": [
-        {
-            "action": "test connectivity",
-            "description": "Validate the asset configuration for connectivity",
-            "verbose": "To check the connection and credentials, this action tries to list the email ids of the configured <b>poll_user</b>.",
-            "type": "test",
-            "identifier": "test_asset_connectivity",
-            "read_only": true,
-            "parameters": {},
-            "output": [],
-            "versions": "EQ(*)"
-        },
-        {
-            "action": "run query",
-            "description": "Search emails",
-            "type": "investigate",
-            "identifier": "run_query",
-            "read_only": true,
-            "verbose": "The <b>run query</b> action provides more than one method to search a user's mailbox:<br><ul><li>Simple Search<br>Use the <b>subject</b> and <b>body</b> parameters to search for substring matches. The <b>sender</b> parameter can be used to search for emails from a specific address. However it has been noticed that a match with the <b>sender</b> email address fails for emails that have been never sent or received, but instead have been created manually as a draft and copied to the searched mailbox. In such cases an AQS is a better option. If more than one parameter is specified, the search is an <b>And</b> of the given values including the <b>internet_message_id</b>.<br> <b>Simple Search</b> implements search filters. More details regarding search filters can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579422(v=exchg.150).aspx\">MSDN Link</a>.<br></li><li>Query Search<br>For a more fine-grained email search, the use of the <b>query</b> parameter is recommended. If this parameter is specified, the <b>subject</b>, <b>internet_message_id</b> and <b>body</b> parmeters are ignored.<br>This parameter supports AQS queries to search in a Mailbox. More details regarding AQS keywords supported by Exchange can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579420(v=exchg.150).aspx\">MSDN Link.</a><br>Searching with AQS strings does have one notable restriction, however. The AQS search string will only match substrings from the start of a word. If a substring needs to be found in the middle of a word, use a <b>Simple Search</b>.<br>Some examples:<br><ul><li>All emails from user1@contoso.com or user2@contoso.com<br>from:user1@contoso.com OR from:user2@contoso.com</li><li>All emails containing the string <i>free vacations</i><br>body: free vacations</li><li>This will match an email with subject containing the word <i>Details</i> but not <i>Cadet</i><br>subject:det</li></li></ul></ul>If the <b>folder</b> parameter is not specified, each email based folder such as Inbox, Sent etc. will be searched, including the children (nested) folders.<br>The action supports searching a folder that is nested within another.<br>To search in such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to search in a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>NOTE: In some cases search results may return more emails than are visible in an email client. This is due to emails that have been just deleted, but not yet completely cleaned by the server.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. The results are always sorted in <i>descending</i> order to place the latest emails at the top. For example to get the latest 10 emails that matched the filter, specify the range as 0-9. If multiple folders are searched for, then the range will be applied for each folder.<br>So if the folder being searched for example <i>Inbox</i> has a child (nested) folder called <i>phishing</i> and the range specified is 2-10, then the action will return 9 max emails for each folder. If the range parameter is not specified by default the action will use <b>0-10</b>.<br><br>NOTE: The <b>email</b> parameter is required.<br><br>Many actions such as <b>delete email</b> and <b>copy email</b> require the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this as the value (including the &lt; and &gt; chars if present) of <b>internet_message_id</b> parameter and execute the action. The results will contain the <b>Office 365 email ID</b> of an email, which can be used as input for other actions.",
-            "parameters": {
-                "email": {
-                    "description": "User's Email (Mailbox to search in)",
-                    "data_type": "string",
-                    "order": 0,
-                    "contains": [
-                        "email"
-                    ],
-                    "primary": true,
-                    "required": true
-                },
-                "folder": {
-                    "description": "Folder Name/Path (to search in)",
-                    "data_type": "string",
-                    "order": 1,
-                    "required": false,
-                    "default": "Inbox",
-                    "contains": [
-                        "mail folder",
-                        "mail folder path"
-                    ]
-                },
-                "subject": {
-                    "description": "Substring to search in Subject",
-                    "data_type": "string",
-                    "order": 2,
-                    "required": false
-                },
-                "sender": {
-                    "description": "Sender Email address to match",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ],
-                    "order": 3,
-                    "primary": true,
-                    "required": false
-                },
-                "body": {
-                    "description": "Substring to search in Body",
-                    "data_type": "string",
-                    "order": 4,
-                    "primary": false,
-                    "required": false
-                },
-                "internet_message_id": {
-                    "description": "Internet Message ID",
-                    "data_type": "string",
-                    "order": 5,
-                    "primary": false,
-                    "required": false,
-                    "contains": [
-                        "internet message id"
-                    ]
-                },
-                "query": {
-                    "description": "AQS string",
-                    "data_type": "string",
-                    "order": 5,
-                    "primary": true,
-                    "required": false
-                },
-                "range": {
-                    "description": "Email range to return (min_offset-max_offset)",
-                    "data_type": "string",
-                    "order": 6,
-                    "default": "0-10"
-                }
-            },
-            "render": {
-                "width": 12,
-                "title": "Run Query",
-                "type": "table",
-                "height": 5
-            },
-            "output": [
-                {
-                    "data_path": "action_result.status",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.parameter.body",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.parameter.email",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.folder",
-                    "data_type": "string",
-                    "contains": [
-                        "mail folder",
-                        "mail folder path"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.internet_message_id",
-                    "data_type": "string",
-                    "contains": [
-                        "internet message id"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.query",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.parameter.range",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.parameter.sender",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.subject",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.folder",
-                    "data_type": "string",
-                    "column_name": "Folder",
-                    "contains": [
-                        "mail folder"
-                    ],
-                    "column_order": 3
-                },
-                {
-                    "data_path": "action_result.data.*.folder_path",
-                    "data_type": "string",
-                    "column_name": "Folder Path",
-                    "contains": [
-                        "mail folder path"
-                    ],
-                    "column_order": 4
-                },
-                {
-                    "data_path": "action_result.data.*.t_DateTimeReceived",
-                    "data_type": "string",
-                    "column_name": "Received Time",
-                    "column_order": 2
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_InternetMessageId",
-                    "data_type": "string",
-                    "column_name": "Internet Message ID",
-                    "column_order": 5,
-                    "contains": [
-                        "internet message id"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ItemId.@ChangeKey",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ItemId.@Id",
-                    "data_type": "string",
-                    "contains": [
-                        "office 365 email id"
-                    ],
-                    "column_name": "Message ID",
-                    "column_order": 6
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
-                    "data_type": "string",
-                    "column_name": "Sender",
-                    "column_order": 1
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_RoutingType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Subject",
-                    "data_type": "string",
-                    "column_name": "Subject",
-                    "column_order": 0
-                },
-                {
-                    "data_path": "action_result.summary.emails_matched",
-                    "data_type": "numeric"
-                },
-                {
-                    "data_path": "action_result.message",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "summary.total_objects",
-                    "data_type": "numeric"
-                },
-                {
-                    "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
-                }
-            ],
-            "versions": "EQ(*)"
-        },
-        {
-            "action": "delete email",
-            "description": "Delete emails",
-            "verbose": "This action supports a comma separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server",
-            "type": "contain",
-            "identifier": "delete_email",
-            "read_only": false,
-            "parameters": {
-                "id": {
-                    "description": "Message IDs to delete (comma separated values supported)",
-                    "data_type": "string",
-                    "order": 0,
-                    "contains": [
-                        "office 365 email id"
-                    ],
-                    "primary": true,
-                    "required": true,
-                    "allow_list": true
-                },
-                "email": {
-                    "description": "Email of the mailbox owner (used during impersonation)",
-                    "data_type": "string",
-                    "order": 1,
-                    "contains": [
-                        "email"
-                    ],
-                    "primary": false,
-                    "required": false
-                }
-            },
-            "render": {
-                "width": 12,
-                "title": "Delete Email",
-                "type": "table",
-                "height": 5
-            },
-            "output": [
-                {
-                    "data_path": "action_result.status",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.parameter.email",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.id",
-                    "data_type": "string",
-                    "contains": [
-                        "office 365 email id"
-                    ],
-                    "column_name": "Message ID",
-                    "column_order": 0
-                },
-                {
-                    "data_path": "action_result.message",
-                    "data_type": "string",
-                    "column_name": "Status Message",
-                    "column_order": 1
-                },
-                {
-                    "data_path": "summary.total_objects",
-                    "data_type": "numeric"
-                },
-                {
-                    "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
-                }
-            ],
-            "versions": "EQ(*)"
-        },
-        {
-            "action": "copy email",
-            "description": "Copy an email to a folder",
-            "verbose": "The action supports copying to a folder that is nested within another.<br>To copy to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to copy email to a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>The action requires the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>Office 365 email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.*.new_email_id</b>, however this value is not available for cross-mailbox or mailbox to public folder <b>copy email</b> actions (please see the documentation of the <a href=\"https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx\">CopyItem operation on MSDN</a>). However in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Office 365 email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>copy email</b> action, for reasons explained in this section, <b>copy email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>",
-            "type": "generic",
-            "identifier": "copy_email",
-            "read_only": false,
-            "parameters": {
-                "id": {
-                    "description": "Message ID to copy",
-                    "data_type": "string",
-                    "order": 0,
-                    "contains": [
-                        "office 365 email id"
-                    ],
-                    "primary": true,
-                    "required": true
-                },
-                "ph": {
-                    "data_type": "ph",
-                    "order": 1
-                },
-                "email": {
-                    "description": "Destination Mailbox (Email)",
-                    "data_type": "string",
-                    "order": 2,
-                    "contains": [
-                        "email"
-                    ],
-                    "primary": true,
-                    "required": true
-                },
-                "folder": {
-                    "description": "Destination Mail Folder Name/Path",
-                    "data_type": "string",
-                    "order": 3,
-                    "primary": false,
-                    "contains": [
-                        "mail folder",
-                        "mail folder path"
-                    ],
-                    "required": true
-                },
-                "impersonate_email": {
-                    "description": "Impersonation Email",
-                    "data_type": "string",
-                    "order": 4,
-                    "primary": false,
-                    "required": false,
-                    "contains": [
-                        "email"
-                    ]
-                },
-                "dont_impersonate": {
-                    "description": "Don't use impersonation",
-                    "data_type": "boolean",
-                    "order": 5,
-                    "primary": false,
-                    "required": false,
-                    "default": false
-                }
-            },
-            "render": {
-                "width": 12,
-                "title": "Copy Email",
-                "type": "table",
-                "height": 5
-            },
-            "output": [
-                {
-                    "data_path": "action_result.status",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.parameter.dont_impersonate",
-                    "data_type": "boolean"
-                },
-                {
-                    "data_path": "action_result.parameter.email",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ],
-                    "column_name": "Destination Mailbox",
-                    "column_order": 0
-                },
-                {
-                    "data_path": "action_result.parameter.folder",
-                    "data_type": "string",
-                    "column_name": "Destination Folder",
-                    "column_order": 1,
-                    "contains": [
-                        "mail folder",
-                        "mail folder path"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.id",
-                    "data_type": "string",
-                    "contains": [
-                        "office 365 email id"
-                    ],
-                    "column_name": "Source Message ID",
-                    "column_order": 2
-                },
-                {
-                    "data_path": "action_result.parameter.impersonate_email",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.new_email_id",
-                    "data_type": "string",
-                    "contains": [
-                        "office 365 email id"
-                    ],
-                    "column_name": "Destination Message ID",
-                    "column_order": 3
-                },
-                {
-                    "data_path": "action_result.message",
-                    "data_type": "string",
-                    "column_name": "Status Message",
-                    "column_order": 4
-                },
-                {
-                    "data_path": "summary.total_objects",
-                    "data_type": "numeric"
-                },
-                {
-                    "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
-                }
-            ],
-            "versions": "EQ(*)"
-        },
-        {
-            "action": "on poll",
-            "description": "Action handler for the ingest functionality",
-            "verbose": "Please see sections <a href=\"#poll_now\">POLL NOW</a> and <a href=\"#scheduled_polling\">Scheduled Polling</a> for more info on how this action is implemented by the app.",
-            "type": "ingest",
-            "identifier": "on_poll",
-            "read_only": true,
-            "parameters": {
-                "start_time": {
-                    "data_type": "numeric",
-                    "description": "Parameter Ignored in this app"
-                },
-                "end_time": {
-                    "data_type": "numeric",
-                    "description": "Parameter Ignored in this app"
-                },
-                "container_id": {
-                    "data_type": "string",
-                    "description": "Parameter Ignored in this app"
-                },
-                "container_count": {
-                    "data_type": "numeric",
-                    "description": "Maximum number of emails to ingest",
-                    "required": true,
-                    "default": 100
-                },
-                "artifact_count": {
-                    "data_type": "numeric",
-                    "description": "Parameter Ignored in this app",
-                    "required": false,
-                    "default": 1000
-                }
-            },
-            "output": [],
-            "versions": "EQ(*)"
-        }
-    ]
+        "output": [],
+        "versions":"EQ(*)"
+      }
+  ]
 }
+
