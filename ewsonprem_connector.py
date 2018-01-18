@@ -45,12 +45,16 @@ import os
 import uuid
 from requests.auth import AuthBase
 from requests.auth import HTTPBasicAuth
+from requests.structures import CaseInsensitiveDict
 from urlparse import urlparse
 import base64
 from datetime import datetime, timedelta
 import re
-import process_email
+from process_email import ProcessEmail
+from email.parser import HeaderParser
 import email
+import urllib
+import imp
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -59,12 +63,12 @@ from requests_ntlm import HttpNtlmAuth  # noqa
 
 
 class RetVal3(tuple):
-    def __new__(cls, val1, val2, val3):
+    def __new__(cls, val1, val2=None, val3=None):
         return tuple.__new__(RetVal3, (val1, val2, val3))
 
 
 class RetVal2(tuple):
-    def __new__(cls, val1, val2):
+    def __new__(cls, val1, val2=None):
         return tuple.__new__(RetVal2, (val1, val2))
 
 
@@ -89,6 +93,7 @@ class EWSOnPremConnector(BaseConnector):
     # actions supported by this script
     ACTION_ID_RUN_QUERY = "run_query"
     ACTION_ID_DELETE_EMAIL = "delete_email"
+    ACTION_ID_UPDATE_EMAIL = "update_email"
     ACTION_ID_COPY_EMAIL = "copy_email"
     ACTION_ID_EXPAND_DL = "expand_dl"
     ACTION_ID_RESOLVE_NAME = "resolve_name"
@@ -112,6 +117,29 @@ class EWSOnPremConnector(BaseConnector):
         self._state = {}
 
         self._impersonate = False
+
+    def _handle_preprocess_scipts(self):
+
+        config = self.get_config()
+        script = config.get('preprocess_script')
+
+        self._preprocess_container = lambda x: x
+
+        if script:
+            try:  # Try to laod in script to preprocess artifacts
+                self._script_module = imp.new_module('preprocess_methods')
+                exec script in self._script_module.__dict__
+            except Exception as e:
+                self.save_progress("Error loading custom script. Error: {}".format(str(e)))
+                return phantom.APP_ERROR
+
+            try:
+                self._preprocess_container = self._script_module.preprocess_container
+            except:
+                self.save_progress("Error loading custom script. Does not contain preprocess_container function")
+                return phantom.APP_ERROR
+
+        return phantom.APP_SUCCESS
 
     def _get_ping_fed_request_xml(self, config):
 
@@ -359,7 +387,7 @@ class EWSOnPremConnector(BaseConnector):
             self._session.auth, message = self._set_federated_auth(config)
         else:
             # depending on the app, it's either basic or NTML
-            if (self.get_app_id() == EXCHANGE_ONPREM_APP_ID):
+            if (self.get_app_id() != OFFICE365_APP_ID):
                 self.save_progress("Using NTLM authentication")
                 # use NTLM (Exchange on Prem)
                 self._session.auth = HttpNtlmAuth(username, password)
@@ -376,6 +404,10 @@ class EWSOnPremConnector(BaseConnector):
         self._host = self._base_url[self._base_url.find('//') + 2:]
 
         self._impersonate = config[EWS_JSON_USE_IMPERSONATE]
+
+        ret = self._handle_preprocess_scipts()
+        if phantom.is_fail(ret):
+            return ret
 
         return phantom.APP_SUCCESS
 
@@ -404,6 +436,9 @@ class EWSOnPremConnector(BaseConnector):
         return aqs_str.strip()
 
     # TODO: Should change these function to be parameterized, instead of one per type of request
+    def _check_get_attachment_response(self, resp_json):
+            return resp_json['s:Envelope']['s:Body']['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
+
     def _check_getitem_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
 
@@ -412,6 +447,9 @@ class EWSOnPremConnector(BaseConnector):
 
     def _check_delete_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
+
+    def _check_update_response(self, resp_json):
+            return resp_json['s:Envelope']['s:Body']['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
 
     def _check_copy_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
@@ -496,7 +534,9 @@ class EWSOnPremConnector(BaseConnector):
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, e), resp_json)
 
         if (hasattr(result, 'add_debug_data')):
+            result.add_debug_data({'r_status_code': r.status_code})
             result.add_debug_data({'r_text': r.text if r else 'r is None'})
+            result.add_debug_data({'r_headers': r.headers})
 
         if (not (200 <= r.status_code <= 399)):
             # error
@@ -612,6 +652,9 @@ class EWSOnPremConnector(BaseConnector):
     def _cleanse_key_names(self, input_dict):
 
         if (not input_dict):
+            return input_dict
+
+        if (type(input_dict) != dict):
             return input_dict
 
         for k, v in input_dict.items():
@@ -768,6 +811,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_container_id(self, email_id):
 
+        email_id = urllib.quote_plus(email_id)
         url = 'https://127.0.0.1/rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
         try:
@@ -853,7 +897,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return RetVal2(phantom.APP_SUCCESS, ret_val)
 
-    def _handle_email_with_container_id(self, action_result, container_id, ingest_email):
+    def _handle_email_with_container_id(self, action_result, container_id, ingest_email, target_container_id=None):
 
         ret_val, email_data, email_id = self._get_email_data_from_container(container_id, action_result)
         if (phantom.is_fail(ret_val)):
@@ -877,7 +921,8 @@ class EWSOnPremConnector(BaseConnector):
                 "extract_ips": True,
                 "extract_urls": True }
 
-        ret_val, message = process_email.process_email(self, email_data, email_id, config, None)
+        process_email = ProcessEmail()
+        ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
         if (phantom.is_fail(ret_val)):
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -889,7 +934,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
-    def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email):
+    def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email, target_container_id=None):
 
         ret_val, email_data, email_id = self._get_email_data_from_vault(vault_id, action_result)
 
@@ -912,7 +957,8 @@ class EWSOnPremConnector(BaseConnector):
                 "extract_ips": True,
                 "extract_urls": True }
 
-        ret_val, message = process_email.process_email(self, email_data, email_id, config, None)
+        process_email = ProcessEmail()
+        ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
         if (phantom.is_fail(ret_val)):
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -935,6 +981,11 @@ class EWSOnPremConnector(BaseConnector):
         container_id = param.get(EWS_JSON_CONTAINER_ID)
         vault_id = param.get(EWS_JSON_VAULT_ID)
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
+        use_current_container = param.get('use_current_container')
+        target_container_id = None
+
+        if (use_current_container):
+            target_container_id = self.get_container_id()
 
         if (not email_id and not container_id and not vault_id):
             return action_result.set_status(phantom.APP_ERROR, "Please specify id, container_id or vault_id to get the email")
@@ -942,9 +993,9 @@ class EWSOnPremConnector(BaseConnector):
         ingest_email = param.get(EWSONPREM_JSON_INGEST_EMAIL, False)
 
         if (container_id is not None):
-            return self._handle_email_with_container_id(action_result, container_id, ingest_email)
+            return self._handle_email_with_container_id(action_result, container_id, ingest_email, target_container_id)
         if (vault_id is not None):
-            return self._handle_email_with_vault_id(action_result, vault_id, ingest_email)
+            return self._handle_email_with_vault_id(action_result, vault_id, ingest_email, target_container_id)
         else:
             data = ews_soap.xml_get_emails_data([email_id])
 
@@ -986,16 +1037,99 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_SUCCESS)
 
             try:
-                self._process_email_id(email_id)
+                self._process_email_id(email_id, target_container_id)
             except Exception as e:
                 self.debug_print("ErrorExp in _process_email_id with Message ID: {1}".format(email_id), e)
                 action_result.update_summary({"container_id": None})
                 return action_result.set_status(phantom.APP_SUCCESS)
 
-        # get the container id that of the email that was ingested
-        container_id = self._get_container_id(email_id)
+        if (target_container_id is None):
+            # get the container id that of the email that was ingested
+            container_id = self._get_container_id(email_id)
+            action_result.update_summary({"container_id": container_id})
+        else:
+            action_result.update_summary({"container_id": target_container_id})
 
-        action_result.update_summary({"container_id": container_id})
+        return action_result.set_status(phantom.APP_SUCCESS)
+
+    def _update_email(self, param):
+
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        # Connectivity
+        self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
+
+        email_id = param[EWSONPREM_JSON_ID]
+        self._target_user = param.get(EWSONPREM_JSON_EMAIL)
+        category = param.get('category')
+        subject = param.get('subject')
+
+        if ((subject is None) and (category is None)):
+            return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
+
+        # do a get on the message to get the change id
+        data = ews_soap.xml_get_emails_data([email_id])
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
+
+        # Process errors
+        if (phantom.is_fail(ret_val)):
+            message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
+            self.debug_print(message)
+            self.send_progress(message)
+            return phantom.APP_ERROR
+
+        try:
+            change_key = resp_json['m:Items']['t:Message']['t:ItemId']['@ChangeKey']
+        except:
+            return action_result.set_status(phantom.APP_ERROR, "Unable to get the change key of the email to update")
+
+        if (category is not None):
+            category = [x.strip() for x in category.split(',')]
+
+        data = ews_soap.get_update_email(email_id, change_key, category, subject)
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
+
+        # Process errors
+        if (phantom.is_fail(ret_val)):
+            return action_result.get_status()
+
+        if (not resp_json):
+            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
+
+        data = ews_soap.xml_get_emails_data([email_id])
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
+
+        # Process errors
+        if (phantom.is_fail(ret_val)):
+            return action_result.get_status()
+
+        self._cleanse_key_names(resp_json)
+
+        message = resp_json.get('m_Items', {}).get('t_Message', {})
+
+        categories = message.get('t_Categories', {}).get('t_String')
+        if (categories):
+            if (type(categories) != list):
+                categories = [categories]
+            message['t_Categories'] = categories
+
+        action_result.add_data(message)
+
+        recipients_mailbox = message.get('t_ToRecipients', {}).get('t_Mailbox')
+
+        if ((recipients_mailbox) and (type(recipients_mailbox) != list)):
+            message['t_ToRecipients']['t_Mailbox'] = [recipients_mailbox]
+
+        summary = {'subject': message.get('t_Subject'),
+                'create_time': message.get('t_DateTimeCreated'),
+                'sent_time': message.get('t_DateTimeSent')}
+
+        action_result.update_summary(summary)
+
+        # Set the Status
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _delete_email(self, param):
@@ -1304,6 +1438,7 @@ class EWSOnPremConnector(BaseConnector):
             message = action_result.get_message()
             if ( 'ErrorNameResolutionNoResults' in message):
                 message += ' The input parameter might not be a distribution list.'
+                action_result.add_data({"t_EmailAddress": group})
             return action_result.set_status(phantom.APP_ERROR, message)
 
         if (not resp_json):
@@ -1321,6 +1456,9 @@ class EWSOnPremConnector(BaseConnector):
         action_result.update_summary({'total_entries': len(mailboxes)})
 
         for mailbox in mailboxes:
+            if param.get('recursive', False) and "DL" in mailbox['t:MailboxType']:
+                param[EWSONPREM_JSON_GROUP] = mailbox['t:EmailAddress']
+                self._expand_dl(param)
             self._cleanse_key_names(mailbox)
             action_result.add_data(mailbox)
 
@@ -1345,7 +1483,212 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, rfc822_email)
 
-    def _parse_email(self, resp_json, email_id):
+    def _get_attachment_meta_info(self, attachment, curr_key, parent_internet_message_id, parent_guid):
+
+        attach_meta_info = dict()
+
+        try:
+            attach_meta_info['attachmentId'] = attachment['t:AttachmentId']['@Id']
+        except:
+            pass
+
+        try:
+            attach_meta_info['attachmentType'] = curr_key[2:].replace('Attachment', '').lower()
+        except:
+            pass
+
+        attach_meta_info['parentInternetMessageId'] = parent_internet_message_id
+        attach_meta_info['parentGuid'] = parent_guid
+
+        # attachmentID, attachmentType
+        for k, v in attachment.iteritems():
+
+            if (not isinstance(v, basestring)):
+                continue
+
+            # convert the key to the convention used by cef
+            cef_key_name = k[2:]
+            cef_key_name = cef_key_name[0].lower() + cef_key_name[1:]
+            attach_meta_info[cef_key_name] = v
+
+        return attach_meta_info
+
+    def _extract_ext_properties_from_attachments(self, resp_json):
+
+        email_headers_ret = list()
+        attach_meta_info_ret = list()
+
+        if ('m:Items' not in resp_json):
+            k = resp_json.keys()[0]
+            resp_json['m:Items'] = resp_json.pop(k)
+
+        # Get the attachments
+        try:
+            attachments = resp_json['m:Items']['t:Message']['t:Attachments']
+        except:
+            return RetVal3(phantom.APP_SUCCESS)
+
+        attachment_ids = list()
+
+        internet_message_id = None
+        try:
+            internet_message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
+        except:
+            internet_message_id = None
+
+        email_guid = resp_json['emailGuid']
+
+        for curr_key in attachments.iterkeys():
+
+            attachment_data = attachments[curr_key]
+
+            if (type(attachment_data) != list):
+                attachment_data = [attachment_data]
+
+            for curr_attachment in attachment_data:
+
+                attachment_ids.append(curr_attachment['t:AttachmentId']['@Id'])
+                # Add the info that we have right now
+                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment, curr_key, internet_message_id, email_guid)
+                if (curr_attach_meta_info):
+                    attach_meta_info_ret.append(curr_attach_meta_info)
+
+        if (not attachment_ids):
+            return RetVal3(phantom.APP_SUCCESS)
+
+        data = ews_soap.xml_get_attachments_data(attachment_ids)
+
+        action_result = ActionResult()
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_get_attachment_response)
+
+        # Process errors
+        if (phantom.is_fail(ret_val)):
+            return RetVal3(action_result.get_status())
+
+        if (type(resp_json) != list):
+            resp_json = [resp_json]
+
+        for curr_attachment_data in resp_json:
+
+            try:
+                curr_attachment_data = curr_attachment_data['m:Attachments']
+            except Exception as e:
+                self.debug_print("Could not parse the attachments response", e)
+                continue
+
+            curr_attachment_data['emailGuid'] = str(uuid.uuid4())
+            ret_val, data = self._extract_ext_properties(curr_attachment_data, internet_message_id, email_guid)
+
+            if (data):
+                email_headers_ret.append(data)
+                ret_val, email_headers_info, attach_meta_info = self._extract_ext_properties_from_attachments(curr_attachment_data)
+                if (email_headers_info):
+                    email_headers_ret.extend(email_headers_info)
+                if (attach_meta_info):
+                    attach_meta_info_ret.extend(attach_meta_info)
+            else:
+                # This is a file attachment, we most probably already have the info from the resp_json
+                # But update it with the call to the xml_get_attachments_data(..) There might be more info
+                # that has to be updated
+                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment', internet_message_id, email_guid)
+                if (curr_attach_meta_info):
+                    # find the attachmetn in the list and update it
+                    matched_meta_info = list(filter(lambda x: x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2'), attach_meta_info_ret))
+                    matched_meta_info[0].update(curr_attach_meta_info)
+
+        return (phantom.APP_SUCCESS, email_headers_ret, attach_meta_info_ret)
+
+    def _extract_email_headers(self, email_headers):
+
+        header_parser = HeaderParser()
+        email_part = header_parser.parsestr(email_headers)
+        email_headers = email_part.items()
+
+        headers = {}
+        charset = 'utf-8'
+        [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
+
+        # Handle received seperately
+        received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+
+        if (received_headers):
+            headers['Received'] = received_headers
+
+        return headers
+
+    def _extract_ext_properties(self, resp_json, parent_internet_message_id=None, parent_guid=None):
+
+        if ('m:Items' not in resp_json):
+            k = resp_json.keys()[0]
+            resp_json['m:Items'] = resp_json.pop(k)
+
+        headers = dict()
+        extended_properties = list()
+
+        # Get the Extended Properties
+        try:
+            extended_properties = resp_json['m:Items']['t:Message']['t:ExtendedProperty']
+        except:
+            return RetVal2(phantom.APP_SUCCESS)
+
+        if (type(extended_properties) != list):
+            extended_properties = [extended_properties]
+
+        for curr_ext_property in extended_properties:
+
+            property_tag = curr_ext_property.get('t:ExtendedFieldURI', {}).get('@PropertyTag')
+            value = curr_ext_property.get('t:Value')
+
+            if (not property_tag):
+                continue
+
+            if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
+                email_headers = self._extract_email_headers(value)
+                if (email_headers is not None):
+                    headers.update(email_headers)
+                    continue
+            if (property_tag == ews_soap.EXTENDED_PROPERTY_BODY_TEXT):
+                headers.update({'bodyText': value})
+
+        # now parse the body in the main resp_json
+        try:
+            body_text = resp_json['m:Items']['t:Message']['t:Body']['#text']
+        except:
+            body_text = None
+
+        try:
+            body_type = resp_json['m:Items']['t:Message']['t:Body']['@BodyType']
+        except:
+            body_type = None
+
+        if (body_text is not None):
+            if (body_type is not None):
+                body_key = "body{0}".format(body_type.title().replace(' ', ''))
+                headers.update({body_key: body_text})
+
+        # In some cases the message id is not part of the headers, in this case
+        # copy the message id from the envelope to the header
+        headers_ci = CaseInsensitiveDict(headers)
+        message_id = headers_ci.get('message-id')
+        if (message_id is None):
+            try:
+                message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
+                headers['Message-ID'] = message_id
+            except:
+                pass
+
+        if (parent_internet_message_id is not None):
+            headers['parentInternetMessageId'] = parent_internet_message_id
+
+        if (parent_guid is not None):
+            headers['parentGuid'] = parent_guid
+
+        headers['emailGuid'] = resp_json['emailGuid']
+
+        return (phantom.APP_SUCCESS, headers)
+
+    def _parse_email(self, resp_json, email_id, target_container_id):
 
         try:
             mime_content = resp_json['m:Items']['t:Message']['t:MimeContent']['#text']
@@ -1360,9 +1703,28 @@ class EWSOnPremConnector(BaseConnector):
 
         epoch = self._get_email_epoch(resp_json)
 
-        return process_email.process_email(self, rfc822_email, email_id, self.get_config(), epoch)
+        email_header_list = list()
+        attach_meta_info_list = list()
+        resp_json['emailGuid'] = str(uuid.uuid4())
 
-    def _process_email_id(self, email_id):
+        ret_val, data = self._extract_ext_properties(resp_json)
+
+        if (data):
+            email_header_list.append(data)
+
+        ret_val, attach_email_headers, attach_meta_info = self._extract_ext_properties_from_attachments(resp_json)
+
+        if (attach_email_headers):
+            email_header_list.extend(attach_email_headers)
+
+        if (attach_meta_info):
+            attach_meta_info_list.extend(attach_meta_info)
+
+        process_email = ProcessEmail()
+        return process_email.process_email(self, rfc822_email, email_id, self.get_config(), epoch, target_container_id, email_headers=email_header_list,
+                attachments_data=attach_meta_info_list)
+
+    def _process_email_id(self, email_id, target_container_id=None):
 
         data = ews_soap.xml_get_emails_data([email_id])
 
@@ -1377,7 +1739,7 @@ class EWSOnPremConnector(BaseConnector):
             self.send_progress(message)
             return phantom.APP_ERROR
 
-        ret_val, message = self._parse_email(resp_json, email_id)
+        ret_val, message = self._parse_email(resp_json, email_id, target_container_id)
 
         if (phantom.is_fail(ret_val)):
             return phantom.APP_ERROR
@@ -1598,6 +1960,8 @@ class EWSOnPremConnector(BaseConnector):
             ret_val = self._run_query_aqs(param)
         elif (action == self.ACTION_ID_DELETE_EMAIL):
             ret_val = self._delete_email(param)
+        elif (action == self.ACTION_ID_UPDATE_EMAIL):
+            ret_val = self._update_email(param)
         elif (action == self.ACTION_ID_GET_EMAIL):
             ret_val = self._get_email(param)
         elif (action == self.ACTION_ID_COPY_EMAIL):
@@ -1616,14 +1980,54 @@ class EWSOnPremConnector(BaseConnector):
 
 if __name__ == '__main__':
 
-    import sys
     import pudb
+    import argparse
 
     pudb.set_trace()
     in_json = None
     in_email = None
 
-    with open(sys.argv[1]) as f:
+    argparser = argparse.ArgumentParser()
+
+    argparser.add_argument('input_test_json', help='Input Test JSON file')
+    argparser.add_argument('-u', '--username', help='username', required=False)
+    argparser.add_argument('-p', '--password', help='password', required=False)
+
+    args = argparser.parse_args()
+    session_id = None
+
+    username = args.username
+    password = args.password
+
+    if (username is not None and password is None):
+
+        # User specified a username but not a password, so ask
+        import getpass
+        password = getpass.getpass("Password: ")
+
+    if (username and password):
+        try:
+            print ("Accessing the Login page")
+            r = requests.get("https://127.0.0.1/login", verify=False)
+            csrftoken = r.cookies['csrftoken']
+
+            data = dict()
+            data['username'] = username
+            data['password'] = password
+            data['csrfmiddlewaretoken'] = csrftoken
+
+            headers = dict()
+            headers['Cookie'] = 'csrftoken=' + csrftoken
+            headers['Referer'] = 'https://127.0.0.1/login'
+
+            print ("Logging into Platform to get the session id")
+            r2 = requests.post("https://127.0.0.1/login", verify=False, data=data, headers=headers)
+            session_id = r2.cookies['sessionid']
+        except Exception as e:
+            print ("Unable to get session id from the platfrom. Error: " + str(e))
+            exit(1)
+
+    with open(args.input_test_json) as f:
 
         in_json = f.read()
         in_json = json.loads(in_json)
@@ -1637,6 +2041,9 @@ if __name__ == '__main__':
         # if neither present then treat it as a normal action test json
         if (not data and not raw_email):
             print(json.dumps(in_json, indent=4))
+
+            if (session_id is not None):
+                in_json['user_session_token'] = session_id
             result = connector._handle_action(json.dumps(in_json), None)
             print result
             exit(0)
@@ -1652,6 +2059,7 @@ if __name__ == '__main__':
                     "extract_ips": True,
                     "extract_urls": True }
 
+            process_email = ProcessEmail()
             ret_val, message = process_email.process_email(connector, raw_email, "manual_parsing", config, None)
 
     exit(0)
