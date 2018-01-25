@@ -14,7 +14,7 @@
     "min_phantom_version": "3.0.190",
     "logo": "logo_microsoftoffice365.svg",
     "logo_dark": "logo_microsoftoffice365_dark.svg",
-    "license": "Copyright (c) Phantom Cyber Corporation 2016-2017",
+    "license": "Copyright (c) Phantom Cyber Corporation, 2016-2018",
     "configuration": {
         "url": {
             "data_type": "string",
