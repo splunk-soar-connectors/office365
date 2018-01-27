@@ -1,7 +1,7 @@
 # --
 # File: ewsonprem_consts.py
 #
-# Copyright (c) Phantom Cyber Corporation, 2016-2017
+# Copyright (c) Phantom Cyber Corporation, 2016-2018
 #
 # This unpublished material is proprietary to Phantom Cyber.
 # All rights reserved. The methods and
@@ -63,5 +63,6 @@ EWS_INGEST_OLDEST_EMAILS = "oldest first"
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 AUTH_TYPE_AZURE = "Azure"
+AUTH_TYPE_AZURE_INTERACTIVE = "Azure (interactive)"
 AUTH_TYPE_FEDERATED = "Federated"
 AUTH_TYPE_BASIC = "Basic"

@@ -1,7 +1,7 @@
 # --
 # File: ewsonprem_connector.py
 #
-# Copyright (c) Phantom Cyber Corporation, 2016-2017
+# Copyright (c) Phantom Cyber Corporation, 2016-2018
 #
 # This unpublished material is proprietary to Phantom Cyber.
 # All rights reserved. The methods and
@@ -55,6 +55,9 @@ from email.parser import HeaderParser
 import email
 import urllib
 import imp
+
+import time
+from request_handler import RequestStateHandler, _get_dir_name_from_app_name
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -281,6 +284,143 @@ class EWSOnPremConnector(BaseConnector):
 
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
+    def _get_phantom_base_url(self, action_result):
+        r = requests.get('https://127.0.0.1/rest/system_info', verify=False)
+        if not r:
+            return (phantom.APP_ERROR, None)
+        try:
+            resp_json = r.json()
+        except:
+            return (phantom.APP_ERROR, None)
+        phantom_base_url = resp_json.get('base_url')
+        if (not phantom_base_url):
+            return (phantom.APP_ERROR, None)
+        return (phantom.APP_SUCCESS, phantom_base_url)
+
+    def _get_asset_name(self, action_result):
+        r = requests.get('https://127.0.0.1/rest/asset/{0}'.format(self.get_asset_id()), verify=False)
+        if not r:
+            return (phantom.APP_ERROR, None)
+        try:
+            resp_json = r.json()
+        except:
+            return (phantom.APP_ERROR, None)
+        asset_name = resp_json.get('name')
+        if (not asset_name):
+            return (phantom.APP_ERROR, None)
+        return (phantom.APP_SUCCESS, asset_name)
+
+    def _get_url_to_app_rest(self, action_result=None):
+        if (not action_result):
+            action_result = ActionResult()
+        # get the phantom ip to redirect to
+        ret_val, phantom_base_url = self._get_phantom_base_url(action_result)
+        if (phantom.is_fail(ret_val)):
+            return (action_result.get_status(), None)
+        # get the asset name
+        ret_val, asset_name = self._get_asset_name(action_result)
+        if (phantom.is_fail(ret_val)):
+            return (action_result.get_status(), None)
+        self.save_progress('Using Phantom base URL as: {0}'.format(phantom_base_url))
+        app_json = self.get_app_json()
+        app_name = app_json['name']
+        app_dir_name = _get_dir_name_from_app_name(app_name)
+        url_to_app_rest = "{0}/rest/handler/{1}_{2}/{3}".format(phantom_base_url, app_dir_name, app_json['appid'], asset_name)
+        return (phantom.APP_SUCCESS, url_to_app_rest)
+
+    def _azure_int_auth_initial(self, config, rsh):
+        state = rsh.load_state()
+
+        client_id = config.get(EWS_JSON_CLIENT_ID)
+        if (not client_id):
+            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
+
+        ret_val, app_rest_url = self._get_url_to_app_rest()
+        if phantom.is_fail(ret_val):
+            return (None, "Error getting redirect URL")
+
+        request_url = 'https://login.microsoftonline.com/common/oauth2'
+
+        state['client_id'] = client_id
+        state['redirect_url'] = app_rest_url
+        state['request_url'] = request_url
+
+        rsh.save_state(state)
+
+        params = {
+            'response_type': 'code',
+            'response_mode': 'query',
+            'client_id': client_id,
+            'state': asset_id,
+            'redirect_url': app_rest_url
+        }
+        url = requests.Request('GET', request_url + '/authorize', params=params).prepare().url
+        url += '&'
+
+        self.save_progress("To continue, open this link in a new tab in your browser")
+        self.save_progress(url)
+        for _ in range(0, 60):
+            state = rsh.load_state()
+            oauth_token = state.get('oauth_token')
+            if oauth_token:
+                break
+            elif state.get('error'):
+                return (None, "Error retrieving OAuth token")
+
+            time.sleep(5)
+        else:
+            return (None, "Timed out waiting for login")
+
+        self._state['oauth_token'] = oauth_token
+        return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
+
+    def _azure_int_auth_refresh(self, config):
+        oauth_token = self._state.get('oauth_token')
+        if not oauth_token:
+            return (None, "Unable to get refresh token. Has Test Connectivity been run?")
+        refresh_token = oauth_token['refresh_token']
+
+        client_id = config.get(EWS_JSON_CLIENT_ID)
+        if (not client_id):
+            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
+
+        request_url = 'https://login.microsoftonline.com/common/oauth2/token'
+        body = {
+            'grant_type': 'refresh_token',
+            'resource': 'https://outlook.office365.com/',
+            'client_id': client_id,
+            'refresh_token': refresh_token
+        }
+        try:
+            r = requests.post(request_url, data=body)
+        except Exception as e:
+            return (None, "Error refreshing token: {}".format(str(e)))
+
+        try:
+            oauth_token = r.json()
+        except Exception as e:
+            return (None, "Error retrieving OAuth Token")
+
+        self._state['oauth_token'] = oauth_token
+        return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
+
+    def _set_azure_int_auth(self, config):
+
+        asset_id = self.get_asset_id()
+        rsh = RequestStateHandler(asset_id)  # Use the states from the OAuth login
+
+        self._state = rsh._decrypt_state(self._state)
+
+        if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
+            ret = self._azure_int_auth_refresh(config)
+        else:
+            ret = self._azure_int_auth_initial(config, rsh)
+
+        self._state = rsh._encrypt_state(self._state)
+        rsh.delete_state()
+
+        return ret
+
     def _set_azure_auth(self, config):
 
         client_id = config.get(EWS_JSON_CLIENT_ID)
@@ -382,6 +522,9 @@ class EWSOnPremConnector(BaseConnector):
         if (auth_type == AUTH_TYPE_AZURE):
             self.save_progress("Using Azure AD authentication")
             self._session.auth, message = self._set_azure_auth(config)
+        elif (auth_type == AUTH_TYPE_AZURE_INTERACTIVE):
+            self.save_progress("Using Azure AD authentication (interactive)")
+            self._session.auth, message = self._set_azure_int_auth(config)
         elif (auth_type == AUTH_TYPE_FEDERATED):
             self.save_progress("Using Federated authentication")
             self._session.auth, message = self._set_federated_auth(config)

@@ -13,7 +13,8 @@
     "product_version_regex": ".*",
     "min_phantom_version": "3.0.251",
     "logo": "microsoft_logo.png",
-    "license": "Copyright (c) Phantom Cyber Corporation 2016-2017",
+    "license": "Copyright (c) Phantom Cyber Corporation, 2016-2018",
+    "rest_handler": "request_handler.handle_request",
     "configuration": {
         "url": {
             "data_type": "string",
@@ -62,6 +63,7 @@
             "value_list": [
                 "Basic",
                 "Azure",
+                "Azure (interactive)",
                 "Federated"
             ],
             "default": "Basic"
