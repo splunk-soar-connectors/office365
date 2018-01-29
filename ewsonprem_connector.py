@@ -330,6 +330,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _azure_int_auth_initial(self, config, rsh):
         state = rsh.load_state()
+        asset_id = self.get_asset_id()
 
         client_id = config.get(EWS_JSON_CLIENT_ID)
         if (not client_id):
