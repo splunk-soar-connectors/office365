@@ -95,7 +95,7 @@ class RequestStateHandler():
     def _encrypt_state(self, state):
         if 'oauth_token' in state:
             oauth_token = state['oauth_token']
-            state['oauth_token'] = encryption_helper.encrypt(
+            state['oauth_token'] = encryption_helper.encrypt(  # pylint: disable=E1101
                 json.dumps(oauth_token),
                 self._asset_id
             )
@@ -103,7 +103,7 @@ class RequestStateHandler():
 
     def _decrypt_state(self, state):
         if 'oauth_token' in state:
-            oauth_token = encryption_helper.decrypt(
+            oauth_token = encryption_helper.decrypt(  # pylint: disable=E1101
                 state['oauth_token'],
                 self._asset_id
             )
