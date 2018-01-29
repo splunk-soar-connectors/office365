@@ -1,7 +1,7 @@
 # --
 # File: process_email.py
 #
-# Copyright (c) Phantom Cyber Corporation, 2016-2017
+# Copyright (c) Phantom Cyber Corporation, 2016-2018
 #
 # This unpublished material is proprietary to Phantom Cyber.
 # All rights reserved. The methods and
@@ -40,21 +40,21 @@ _artifact_common = {
 }
 
 FILE_EXTENSIONS = {
-  '.vmsn': ['os memory dump', 'vm snapshot file'],
-  '.vmss': ['os memory dump', 'vm suspend file'],
-  '.js': ['javascript'],
-  '.doc': ['doc'],
-  '.docx': ['doc'],
-  '.xls': ['xls'],
-  '.xlsx': ['xls'],
+    '.vmsn': ['os memory dump', 'vm snapshot file'],
+    '.vmss': ['os memory dump', 'vm suspend file'],
+    '.js': ['javascript'],
+    '.doc': ['doc'],
+    '.docx': ['doc'],
+    '.xls': ['xls'],
+    '.xlsx': ['xls'],
 }
 
 MAGIC_FORMATS = [
-  (re.compile('^PE.* Windows'), ['pe file', 'hash']),
-  (re.compile('^MS-DOS executable'), ['pe file', 'hash']),
-  (re.compile('^PDF '), ['pdf']),
-  (re.compile('^MDMP crash'), ['process dump']),
-  (re.compile('^Macromedia Flash'), ['flash']),
+    (re.compile('^PE.* Windows'), ['pe file', 'hash']),
+    (re.compile('^MS-DOS executable'), ['pe file', 'hash']),
+    (re.compile('^PDF '), ['pdf']),
+    (re.compile('^MDMP crash'), ['process dump']),
+    (re.compile('^Macromedia Flash'), ['flash']),
 ]
 
 EWS_DEFAULT_ARTIFACT_COUNT = 100
@@ -425,7 +425,7 @@ class ProcessEmail(object):
 
         # if no subject then return the default
         if (not subject):
-           return def_cont_name
+            return def_cont_name
 
         return self._decode_uni_string(subject, def_cont_name)
 
@@ -796,6 +796,10 @@ class ProcessEmail(object):
     def process_email(self, base_connector, rfc822_email, email_id, config, epoch, container_id=None, email_headers=None, attachments_data=None):
 
         self._base_connector = base_connector
+        if not hasattr(self._base_connector, '_preprocess_container'):
+            # Set a default if this doesn't exist
+            self._base_connector._preprocess_container = lambda x: x
+
         self._config = config
 
         if (email_headers):
@@ -818,6 +822,87 @@ class ProcessEmail(object):
         self._parse_results(results, container_id)
 
         return (phantom.APP_SUCCESS, "Email Processed")
+
+    def _save_ingested(self, container, using_dummy):
+        if using_dummy:
+            cid = container['id']
+            artifacts = container['artifacts']
+            for artifact in artifacts:
+                artifact['container_id'] = cid
+            ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
+            self._base_connector.debug_print(
+                "save_artifacts returns, value: {0}, reason: {1}".format(
+                    ret_val,
+                    message
+                )
+            )
+
+        else:
+            ret_val, message, cid = self._base_connector.save_container(container)
+            self._base_connector.debug_print(
+                "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
+                    ret_val,
+                    message,
+                    cid
+                )
+            )
+
+        return ret_val, message, cid
+
+    def _handle_save_ingested(self, artifacts, container, container_id, files):
+        # One of either container or container_id will be set to None
+        using_dummy = False
+
+        if container_id:
+            # We are adding artifacts to an existing container
+            using_dummy = True
+            container = {
+                'name': 'Dummy Container',
+                'dummy': True,
+                'id': container_id,
+                'artifacts': artifacts,
+            }
+        else:
+            # Create a new container
+            container['artifacts'] = artifacts
+
+        container = self._base_connector._preprocess_container(container)
+
+        for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
+            self._set_sdi(artifact)
+
+        if files and container.get('artifacts'):
+            # Make sure the playbook only runs once
+            # We will instead set run_automation on the last vault artifact which is added
+            container['artifacts'][-1]['run_automation'] = False
+
+        ret_val, message, container_id = self._save_ingested(container, using_dummy)
+
+        if (phantom.is_fail(ret_val)):
+            message = "Failed to save ingested artifacts, error msg: {0}".format(message)
+            self._base_connector.debug_print(message)
+            return
+
+        if (not container_id):
+            message = "save_container did not return a container_id"
+            self._base_connector.debug_print(message)
+            return
+
+        vault_ids = list()
+
+        vault_artifacts_added = 0
+
+        last_file = len(files) - 1
+        for i, curr_file in enumerate(files):
+            run_automation = True if i == last_file else False
+            ret_val, added_to_vault = self._handle_file(
+                curr_file, vault_ids, container_id, vault_artifacts_added, run_automation
+            )
+
+            if (added_to_vault):
+                vault_artifacts_added += 1
+
+        return
 
     def _parse_results(self, results, container_id=None):
 
@@ -842,6 +927,9 @@ class ProcessEmail(object):
                     continue
 
                 container.update(_container_common)
+
+            else:
+                container = None
 
             # run a loop to first set the sdi which will create the hash
             artifacts = result.get('artifacts', [])
@@ -870,49 +958,13 @@ class ProcessEmail(object):
                 cef_artifact = artifact.get('cef')
                 if ('parentGuid' in cef_artifact):
                     parent_guid = cef_artifact.pop('parentGuid')
-                    cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
+                    if (parent_guid in self._guid_to_hash):
+                        cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
                 if ('emailGuid' in cef_artifact):
                     # cef_artifact['emailGuid'] = self._guid_to_hash[cef_artifact['emailGuid']]
                     del cef_artifact['emailGuid']
 
-            container['artifacts'] = artifacts
-            container = self._base_connector._preprocess_container(container)
-
-            for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
-                self._set_sdi(artifact)
-
-            files = result.get('files')
-            if files and container.get('artifacts'):
-                # Make sure the playbook only runs once
-                # We will instead set run_automation on the last vault artifact which is added
-                container['artifacts'][-1]['run_automation'] = False
-
-            ret_val, message, container_id = self._base_connector.save_container(container)
-            self._base_connector.debug_print("save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
-
-            if (phantom.is_fail(ret_val)):
-                message = "Failed to add Container for id: {0}, error msg: {1}".format(container['source_data_identifier'], message)
-                self._base_connector.debug_print(message)
-                continue
-
-            if (not container_id):
-                message = "save_container did not return a container_id"
-                self._base_connector.debug_print(message)
-                continue
-
-            vault_ids = list()
-
-            vault_artifacts_added = 0
-
-            last_file = len(files) - 1
-            for i, curr_file in enumerate(files):
-                run_automation = True if i == last_file else False
-                ret_val, added_to_vault = self._handle_file(
-                    curr_file, vault_ids, container_id, vault_artifacts_added, run_automation
-                )
-
-                if (added_to_vault):
-                    vault_artifacts_added += 1
+            self._handle_save_ingested(artifacts, container, container_id, result.get('files'))
 
         # delete any temp directories that were created by the email parsing function
         [shutil.rmtree(x['temp_directory'], ignore_errors=True) for x in results if x.get('temp_directory')]
