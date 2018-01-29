@@ -200,6 +200,11 @@ class EWSOnPremConnector(BaseConnector):
 
     def _set_federated_auth(self, config):
 
+        ret_val, message = self._check_password(config)
+        if phantom.is_fail(ret_val):
+            self.save_progress(message)
+            return (None, message)
+
         required_params = [EWS_JSON_CLIENT_ID, EWS_JSON_FED_PING_URL, EWS_JSON_AUTH_URL, EWS_JSON_FED_VERIFY_CERT]
 
         for required_param in required_params:
@@ -328,13 +333,9 @@ class EWSOnPremConnector(BaseConnector):
         url_to_app_rest = "{0}/rest/handler/{1}_{2}/{3}".format(phantom_base_url, app_dir_name, app_json['appid'], asset_name)
         return (phantom.APP_SUCCESS, url_to_app_rest)
 
-    def _azure_int_auth_initial(self, config, rsh):
+    def _azure_int_auth_initial(self, client_id, rsh):
         state = rsh.load_state()
         asset_id = self.get_asset_id()
-
-        client_id = config.get(EWS_JSON_CLIENT_ID)
-        if (not client_id):
-            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
 
         ret_val, app_rest_url = self._get_url_to_app_rest()
         if phantom.is_fail(ret_val):
@@ -375,15 +376,16 @@ class EWSOnPremConnector(BaseConnector):
         self._state['oauth_token'] = oauth_token
         return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
 
-    def _azure_int_auth_refresh(self, config):
+    def _azure_int_auth_refresh(self, client_id):
+
         oauth_token = self._state.get('oauth_token')
         if not oauth_token:
             return (None, "Unable to get refresh token. Has Test Connectivity been run?")
-        refresh_token = oauth_token['refresh_token']
 
-        client_id = config.get(EWS_JSON_CLIENT_ID)
-        if (not client_id):
-            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
+        if client_id != self._state.get('client_id', ''):
+            return (None, "Client ID has been changed. Please run Test Connectivity again")
+
+        refresh_token = oauth_token['refresh_token']
 
         request_url = 'https://login.microsoftonline.com/common/oauth2/token'
         body = {
@@ -407,22 +409,35 @@ class EWSOnPremConnector(BaseConnector):
 
     def _set_azure_int_auth(self, config):
 
+        client_id = config.get(EWS_JSON_CLIENT_ID)
+        if (not client_id):
+            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
+
         asset_id = self.get_asset_id()
         rsh = RequestStateHandler(asset_id)  # Use the states from the OAuth login
 
         self._state = rsh._decrypt_state(self._state)
 
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
-            ret = self._azure_int_auth_refresh(config)
+            ret = self._azure_int_auth_refresh(client_id)
         else:
-            ret = self._azure_int_auth_initial(config, rsh)
+            ret = self._azure_int_auth_initial(client_id, rsh)
 
         self._state = rsh._encrypt_state(self._state)
+        self._state['client_id'] = client_id
+
+        # NOTE: This state is in the app directory, it is
+        #  different than the app state (i.e. self._state)
         rsh.delete_state()
 
         return ret
 
     def _set_azure_auth(self, config):
+
+        ret_val, message = self._check_password(config)
+        if phantom.is_fail(ret_val):
+            self.save_progress(message)
+            return (None, message)
 
         client_id = config.get(EWS_JSON_CLIENT_ID)
 
@@ -492,6 +507,11 @@ class EWSOnPremConnector(BaseConnector):
 
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
+    def _check_password(self, config):
+        if phantom.APP_JSON_PASSWORD not in config.keys():
+            return phantom.APP_ERROR, "Password not present in asset configuration"
+        return phantom.APP_SUCCESS, ''
+
     def finalize(self):
         self.save_state(self._state)
         return phantom.APP_SUCCESS
@@ -506,18 +526,12 @@ class EWSOnPremConnector(BaseConnector):
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
 
-        password = config[phantom.APP_JSON_PASSWORD]
-        username = config[phantom.APP_JSON_USERNAME]
-        username = username.replace('/', '\\')
-
         self._session = requests.Session()
 
         auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
 
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
 
-        # Assume it's going to be Basic Auth (office 365)
-        self._session.auth = HTTPBasicAuth(username, password)
         message = ''
 
         if (auth_type == AUTH_TYPE_AZURE):
@@ -530,6 +544,18 @@ class EWSOnPremConnector(BaseConnector):
             self.save_progress("Using Federated authentication")
             self._session.auth, message = self._set_federated_auth(config)
         else:
+            # Make sure username and password are set
+            ret_val, message = self._check_password(config)
+            if phantom.is_fail(ret_val):
+                self.save_progress(message)
+                return ret_val
+
+            password = config[phantom.APP_JSON_PASSWORD]
+            username = config[phantom.APP_JSON_USERNAME]
+            username = username.replace('/', '\\')
+
+            self._session.auth = HTTPBasicAuth(username, password)
+
             # depending on the app, it's either basic or NTML
             if (self.get_app_id() != OFFICE365_APP_ID):
                 self.save_progress("Using NTLM authentication")

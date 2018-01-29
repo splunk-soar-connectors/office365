@@ -40,7 +40,7 @@
             "data_type": "password",
             "order": 3,
             "description": "Password",
-            "required": true
+            "required": false
         },
         "poll_user": {
             "data_type": "string",
