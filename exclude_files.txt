@@ -1,11 +1,2 @@
-<<<<<<< HEAD
 *.py
 .git*
-=======
-email_connector.py
-ewsonprem_connector.py
-ewsonprem_consts.py
-ews_soap.py
-process_email.py
-.git*
->>>>>>> 3_5_compat
