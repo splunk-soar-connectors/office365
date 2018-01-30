@@ -2,7 +2,3 @@
 	path = dependencies/ews_dep
 	url = ssh://git@prod-bb-1.phantom.local:7999/PER/ews_deps.git
     ignore = dirty
-[submodule "process_email"]
-	path = process_email
-	url = ssh://git@prod-bb-1.phantom.local:7999/ps/processemail.git
-    ignore = dirty
