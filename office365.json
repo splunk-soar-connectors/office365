@@ -12,8 +12,9 @@
     "product_name": "Office 365",
     "product_version_regex": ".*",
     "min_phantom_version": "3.0.251",
-    "logo": "microsoft_logo.png",
-    "license": "Copyright (c) Phantom Cyber Corporation 2016-2017",
+    "logo": "logo_microsoftoffice365.svg",
+    "logo_dark": "logo_microsoftoffice365_dark.svg",
+    "license": "Copyright (c) Phantom Cyber Corporation, 2016-2018",
     "configuration": {
         "url": {
             "data_type": "string",
@@ -173,6 +174,7 @@
             "parameters": {},
             "output": [],
             "versions": "EQ(*)"
+<<<<<<< HEAD
         },
         {
             "action": "run query",
