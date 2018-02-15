@@ -403,7 +403,9 @@ def xml_get_root_folder_id(user):
     return M.GetFolder(folder_shape, folder_ids)
 
 
-def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root'):
+def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root', query_range=None):
+
+    elements = []
 
     folder_shape = M.FolderShape(
             T.BaseShape('IdOnly'),
@@ -414,6 +416,17 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root')
                 T.FieldURI({'FieldURI': 'folder:ParentFolderId'}),
                 T.ExtendedFieldURI({'PropertyTag': '26293', 'PropertyType': 'String'}),
                 T.FieldURI({'FieldURI': 'folder:DisplayName'})))
+
+    elements.append(folder_shape)
+
+    if (query_range):
+        mini, maxi = (int(x) for x in query_range.split('-'))
+        page = M.IndexedPageFolderView(
+                {'MaxEntriesReturned': str(maxi - mini + 1)},
+                {'Offset': str(mini)},
+                {'BasePoint': 'Beginning'})
+
+        elements.append(page)
 
     filters = []
     restriction = None
@@ -451,16 +464,22 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root')
         par_folder_id = M.ParentFolderIds(T.DistinguishedFolderId({'Id': parent_folder_id}))
 
     if (restriction is not None):
+        elements.append(restriction)
+
+    elements.append(par_folder_id)
+
+    """
+    if (restriction is not None):
         return M.FindFolder(
                 {'Traversal': 'Deep'},
                 folder_shape,
                 restriction,
                 par_folder_id)
+                """
 
     return M.FindFolder(
             {'Traversal': 'Deep'},
-            folder_shape,
-            par_folder_id)
+            *elements)
 
 
 def add_to_envelope(lxml_obj, target_user=None):

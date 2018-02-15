@@ -796,10 +796,6 @@ class ProcessEmail(object):
     def process_email(self, base_connector, rfc822_email, email_id, config, epoch, container_id=None, email_headers=None, attachments_data=None):
 
         self._base_connector = base_connector
-        if not hasattr(self._base_connector, '_preprocess_container'):
-            # Set a default if this doesn't exist
-            self._base_connector._preprocess_container = lambda x: x
-
         self._config = config
 
         if (email_headers):

@@ -611,41 +611,55 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_child_folder_infos(self, user, action_result, parent_folder_info):
 
-        input_xml = ews_soap.xml_get_children_info(user, parent_folder_id=parent_folder_info['id'])
+        step_size = 500
+        folder_infos = list()
 
-        ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
+        for curr_step_value in xrange(0, 10000, step_size):
 
-        if (phantom.is_fail(ret_val)):
-            return (action_result.get_status(), None)
+            curr_range = "{0}-{1}".format(curr_step_value, curr_step_value + step_size - 1)
 
-        total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
+            input_xml = ews_soap.xml_get_children_info(user, parent_folder_id=parent_folder_info['id'], query_range=curr_range)
 
-        if (total_items == '0'):
-            return (action_result.set_status(phantom.APP_ERROR, "Children not found, possibly not present."), None)
+            ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
 
-        folders = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
+            if (phantom.is_fail(ret_val)):
+                return (action_result.get_status(), None)
 
-        if (not folders):
-            return (action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None)
+            total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
 
-        if (type(folders) != list):
-            folders = [folders]
+            if (total_items == '0'):
+                # total_items gives the total items in the view, not just items returned in the current call
+                return (action_result.set_status(phantom.APP_ERROR, "Children not found, possibly not present."), None)
 
-        folder_infos = [{
-            'id': x['t:FolderId']['@Id'],
-            'display_name': x['t:DisplayName'],
-            'children_count': x['t:ChildFolderCount'],
-            'folder_path': self._extract_folder_path(x.get('t:ExtendedProperty'))} for x in folders]
+            folders = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
 
-        '''
-        for folder_info in folder_infos:
-            if (int(folder_info['children_count']) <= 0):
-                continue
-            curr_ar = ActionResult()
-            ret_val, child_folder_infos = self._get_child_folder_infos(user, curr_ar, folder_info)
-            if (ret_val):
-                folder_infos.extend(child_folder_infos)
-        '''
+            if (not folders):
+                return (action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None)
+
+            if (type(folders) != list):
+                folders = [folders]
+
+            folder_infos.extend([{
+                'id': x['t:FolderId']['@Id'],
+                'display_name': x['t:DisplayName'],
+                'children_count': x['t:ChildFolderCount'],
+                'folder_path': self._extract_folder_path(x.get('t:ExtendedProperty'))} for x in folders])
+
+            curr_folder_len = len(folders)
+            if (curr_folder_len < step_size):
+
+                # got less than what we asked for, so looks like we got all that we wanted
+                break
+
+            '''
+            for folder_info in folder_infos:
+                if (int(folder_info['children_count']) <= 0):
+                    continue
+                curr_ar = ActionResult()
+                ret_val, child_folder_infos = self._get_child_folder_infos(user, curr_ar, folder_info)
+                if (ret_val):
+                    folder_infos.extend(child_folder_infos)
+            '''
 
         return (phantom.APP_SUCCESS, folder_infos)
 
@@ -721,8 +735,12 @@ class EWSOnPremConnector(BaseConnector):
         user = param[EWSONPREM_JSON_EMAIL]
         folder_path = param.get(EWSONPREM_JSON_FOLDER)
         self._target_user = user
+        ignore_subfolders = param.get('ignore_subfolders', False)
 
-        self.save_progress("Searching in {0}\{1} (and the children)".format(self._clean_str(user), folder_path if folder_path else 'All Folders'))
+        self.save_progress("Searching in {0}\{1}{2}".format(
+            self._clean_str(user),
+            folder_path if folder_path else 'All Folders',
+            ' (and the children)' if (not ignore_subfolders) else ''))
 
         email_range = param.get(EWSONPREM_JSON_RANGE, "0-10")
 
@@ -746,17 +764,18 @@ class EWSOnPremConnector(BaseConnector):
         parent_folder_info = folder_info
         folder_infos.append(folder_info)
 
-        if (int(parent_folder_info['children_count']) != 0):
-            ret_val, child_folder_infos = self._get_child_folder_infos(user, action_result, parent_folder_info=parent_folder_info)
-            if (phantom.is_fail(ret_val)):
-                return action_result.get_status()
-            folder_infos.extend(child_folder_infos)
+        if (not ignore_subfolders):
+            if (int(parent_folder_info['children_count']) != 0):
+                ret_val, child_folder_infos = self._get_child_folder_infos(user, action_result, parent_folder_info=parent_folder_info)
+                if (phantom.is_fail(ret_val)):
+                    return action_result.get_status()
+                folder_infos.extend(child_folder_infos)
 
         items_matched = 0
 
         num_folder_ids = len(folder_infos)
 
-        self.save_progress('Will be searching in {0} folder{1}', num_folder_ids, 's' if (num_folder_ids > 0) else '')
+        self.save_progress('Will be searching in {0} folder{1}', num_folder_ids, 's' if (num_folder_ids > 1) else '')
 
         for i, folder_info in enumerate(folder_infos):
 
@@ -1039,9 +1058,9 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 self._process_email_id(email_id, target_container_id)
             except Exception as e:
-                self.debug_print("ErrorExp in _process_email_id with Message ID: {1}".format(email_id), e)
+                self.debug_print("ErrorExp in _process_email_id with Message ID: {0}".format(email_id), e)
                 action_result.update_summary({"container_id": None})
-                return action_result.set_status(phantom.APP_SUCCESS)
+                return action_result.set_status(phantom.APP_ERROR, "Error processing email", e)
 
         if (target_container_id is None):
             # get the container id that of the email that was ingested
@@ -1912,11 +1931,6 @@ class EWSOnPremConnector(BaseConnector):
 
         restriction = self._get_restriction()
 
-        utc_now = datetime.utcnow()
-
-        self._state['last_ingested_epoch'] = utc_now.strftime("%s")
-        self._state['last_ingested_format'] = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-
         ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction)
 
         if (phantom.is_fail(ret_val)):
@@ -1929,6 +1943,8 @@ class EWSOnPremConnector(BaseConnector):
         # The last email is the latest in the list returned
         email_index = 0 if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else -1
 
+        utc_now = datetime.utcnow()
+        self._state['last_ingested_epoch'] = utc_now.strftime("%s")
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
 
         email_ids = [x['id'] for x in email_infos]
