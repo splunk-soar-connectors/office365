@@ -12,8 +12,9 @@
     "product_name": "Office 365",
     "product_version_regex": ".*",
     "min_phantom_version": "3.0.251",
-    "logo": "microsoft_logo.png",
-    "license": "Copyright (c) Phantom Cyber Corporation 2016-2017",
+    "logo": "logo_microsoftoffice365.svg",
+    "logo_dark": "logo_microsoftoffice365_dark.svg",
+    "license": "Copyright (c) Phantom Cyber Corporation, 2016-2018",
     "configuration": {
         "url": {
             "data_type": "string",
@@ -160,6 +161,19 @@
             "required": true,
             "order": 19,
             "default": true
+        },
+        "add_body_to_header_artifacts": {
+            "data_type": "boolean",
+            "description": "Add email body to the Email Artifact",
+            "required": false,
+            "order": 20,
+            "default": false
+        },
+        "preprocess_script": {
+            "data_type": "file",
+            "description": "Script with functions to preprocess containers and artifacts",
+            "required": false,
+            "order": 21
         }
     },
     "actions": [
@@ -252,6 +266,11 @@
                     "data_type": "string",
                     "order": 6,
                     "default": "0-10"
+                },
+                "ignore_subfolders": {
+                    "description": "Ignore subfolders",
+                    "data_type": "boolean",
+                    "order": 7
                 }
             },
             "render": {
@@ -424,7 +443,7 @@
         {
             "action": "delete email",
             "description": "Delete emails",
-            "verbose": "This action supports a comma separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server",
+            "verbose": "This action supports a comma separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server.",
             "type": "contain",
             "identifier": "delete_email",
             "read_only": false,
@@ -1073,6 +1092,13 @@
                     ],
                     "primary": true,
                     "required": true
+                },
+                "recursive": {
+                    "description": "Expand all sub distribution lists",
+                    "data_type": "boolean",
+                    "order": 1,
+                    "primary": false,
+                    "required": false
                 }
             },
             "render": {
@@ -1297,7 +1323,7 @@
         {
             "action": "update email",
             "description": "Update an email on the server",
-            "verbose": "Currently this action only updates the category and subject of an email. To set multiple categories, please pass a comma separated list to the <b>category</b> parameter",
+            "verbose": "Currently this action only updates the category and subject of an email. To set multiple categories, please pass a comma separated list to the <b>category</b> parameter.",
             "type": "generic",
             "identifier": "update_email",
             "read_only": false,
@@ -1359,7 +1385,7 @@
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@deshaw.com"
+                        "phantom@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1395,7 +1421,7 @@
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentId",
                     "data_type": "string",
                     "example_values": [
-                        "7518226202D21C4397EE1CB1E2E540C7@deshaw.com"
+                        "7518226202D21C4397EE1CB1E2E540C7@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1489,7 +1515,7 @@
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@deshaw.com"
+                        "phantom@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1527,7 +1553,7 @@
                     "data_path": "action_result.data.*.t_InternetMessageId",
                     "data_type": "string",
                     "example_values": [
-                        "<81c761fe-caa8-f924-f65d-079382c1ad0b@deshaw.com>"
+                        "<81c761fe-caa8-f924-f65d-079382c1ad0b@sample.com>"
                     ]
                 },
                 {
@@ -1597,7 +1623,7 @@
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@deshaw.com"
+                        "phantom@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1651,7 +1677,7 @@
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@deshaw.com"
+                        "phantom@sample.com"
                     ],
                     "contains": [
                         "email"
