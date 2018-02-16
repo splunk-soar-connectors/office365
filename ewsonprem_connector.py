@@ -292,27 +292,27 @@ class EWSOnPremConnector(BaseConnector):
     def _get_phantom_base_url(self, action_result):
         r = requests.get('https://127.0.0.1/rest/system_info', verify=False)
         if not r:
-            return (phantom.APP_ERROR, None)
+            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving system info"), None)
         try:
             resp_json = r.json()
-        except:
-            return (phantom.APP_ERROR, None)
+        except Exception as e:
+            return (action_result.set_status(phantom.APP_ERROR, "Error processing response JSON", e), None)
         phantom_base_url = resp_json.get('base_url')
         if (not phantom_base_url):
-            return (phantom.APP_ERROR, None)
+            return (action_result.set_status(phantom.APP_ERROR, "Base URL is not configured"), None)
         return (phantom.APP_SUCCESS, phantom_base_url)
 
     def _get_asset_name(self, action_result):
         r = requests.get('https://127.0.0.1/rest/asset/{0}'.format(self.get_asset_id()), verify=False)
         if not r:
-            return (phantom.APP_ERROR, None)
+            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving asset with id {}".format(self.get_asset_id())), None)
         try:
             resp_json = r.json()
-        except:
-            return (phantom.APP_ERROR, None)
+        except Exception as e:
+            return (action_result.set_status(phantom.APP_ERROR, "Error processing response JSON", e), None)
         asset_name = resp_json.get('name')
         if (not asset_name):
-            return (phantom.APP_ERROR, None)
+            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving asset name"), None)
         return (phantom.APP_SUCCESS, asset_name)
 
     def _get_url_to_app_rest(self, action_result=None):
@@ -321,11 +321,11 @@ class EWSOnPremConnector(BaseConnector):
         # get the phantom ip to redirect to
         ret_val, phantom_base_url = self._get_phantom_base_url(action_result)
         if (phantom.is_fail(ret_val)):
-            return (action_result.get_status(), None)
+            return (action_result.get_status(), action_result.get_message())
         # get the asset name
         ret_val, asset_name = self._get_asset_name(action_result)
         if (phantom.is_fail(ret_val)):
-            return (action_result.get_status(), None)
+            return (action_result.get_status(), action_result.get_message())
         self.save_progress('Using Phantom base URL as: {0}'.format(phantom_base_url))
         app_json = self.get_app_json()
         app_name = app_json['name']
@@ -337,9 +337,11 @@ class EWSOnPremConnector(BaseConnector):
         state = rsh.load_state()
         asset_id = self.get_asset_id()
 
-        ret_val, app_rest_url = self._get_url_to_app_rest()
+        ret_val, message = self._get_url_to_app_rest()
         if phantom.is_fail(ret_val):
-            return (None, "Error getting redirect URL")
+            return (None, message)
+
+        app_rest_url = message
 
         request_url = 'https://login.microsoftonline.com/common/oauth2'
 
