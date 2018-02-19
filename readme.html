@@ -28,7 +28,7 @@ of Phantom Cyber Corporation.
         <li>Read user and shared mail</li>
         <li>Access mailboxes as the signed-in user via Exchange Web Services</li>
         <li>Read user mail</li>
-        <li>Read all users' basic profiles</li>
+        <li>Read all users' basic profiles (Only required if the asset is configured to use impersonation)</li>
     </ul>
     After this you can copy the new app's Application ID to the Client ID field in the asset configuration.<br><br>
     Azure Interactive is different because it will will prompt the user to login through Microsoft's portal during Test Connectivity, meaning you do not need to enter your password in the asset configuration. You must run Test Connectivity at least once for this app to work with this authentication mechanism. When you are creating a native client application, you will need set the Callback URI to the link that appears at the bottom of the asset configuration (under "POST incoming for EWS for Office 365 to this location").
