@@ -289,30 +289,46 @@ class EWSOnPremConnector(BaseConnector):
 
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
-    def _get_phantom_base_url(self, action_result):
-        r = requests.get('https://127.0.0.1/rest/system_info', verify=False)
+    def _make_rest_calls_to_phantom(self, action_result, url):
+
+        r = requests.get(url, verify=False)
         if not r:
-            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving system info"), None)
+            message = 'Status Code: {0}'.format(r.status_code)
+            if (r.text):
+                message += " Error from Server: {0}".format(r.text.replace('{', '{{').replace('}', '}}'))
+            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving system info, {0}".format(message)), None)
+
         try:
             resp_json = r.json()
         except Exception as e:
             return (action_result.set_status(phantom.APP_ERROR, "Error processing response JSON", e), None)
+
+        return (phantom.APP_SUCCESS, resp_json)
+
+    def _get_phantom_base_url(self, action_result):
+
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, 'https://127.0.0.1/rest/system_info')
+
+        if (phantom.is_fail(ret_val)):
+            return (action_result.get_status(), None)
+
         phantom_base_url = resp_json.get('base_url')
         if (not phantom_base_url):
-            return (action_result.set_status(phantom.APP_ERROR, "Base URL is not configured"), None)
+            return (action_result.set_status(phantom.APP_ERROR, "Phantom Base URL is not configured, please configure it in System Settings"), None)
+
         return (phantom.APP_SUCCESS, phantom_base_url)
 
     def _get_asset_name(self, action_result):
-        r = requests.get('https://127.0.0.1/rest/asset/{0}'.format(self.get_asset_id()), verify=False)
-        if not r:
-            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving asset with id {}".format(self.get_asset_id())), None)
-        try:
-            resp_json = r.json()
-        except Exception as e:
-            return (action_result.set_status(phantom.APP_ERROR, "Error processing response JSON", e), None)
+
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, 'https://127.0.0.1/rest/asset/{0}'.format(self.get_asset_id()))
+
+        if (phantom.is_fail(ret_val)):
+            return (action_result.get_status(), None)
+
         asset_name = resp_json.get('name')
         if (not asset_name):
             return (action_result.set_status(phantom.APP_ERROR, "Error retrieving asset name"), None)
+
         return (phantom.APP_SUCCESS, asset_name)
 
     def _get_url_to_app_rest(self, action_result=None):
