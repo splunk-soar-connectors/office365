@@ -1,4 +1,4 @@
-<!-- 
+<!--
 File: readme.html
 
 Copyright (c) Phantom Cyber Corporation, 2016-2018
@@ -11,13 +11,36 @@ or in part, is forbidden except by express written permission
 of Phantom Cyber Corporation.
 -->
 
+    <h2 id="authentication">Authentication</h2>
     <p>
-    The app supports multiple type of authentication mechanism, these include Basic authentication (only User name and Password), Azure AD and Federated Authentication. If Azure AD authentication is required, a Phantom app will require to be configured as a native app on the AD Admin Portal. Please scroll down and read the section titled <b>Configure a native client application</b> of <a href="https://azure.microsoft.com/en-us/documentation/articles/app-service-mobile-how-to-configure-active-directory-authentication/">this article on the Azure site</a>. This configuration will result in a client ID being generated, that will need to be configured on the Asset (<b>client_id</b> asset config). Federated Authentication setup is quite complicated and its documentation is out of the scope of this section.<br>Select the required authentication setup in the <b>auth_type</b> asset config parameter. Valid values are:
-    <ul><li>Basic</li><li>Azure</li><li>Federated</li></ul>
+    This apps supports multiple types of authentication mechanisms. Currently, there are four ways to authenticate.
+    <ul><li>Basic</li><li>Azure</li><li>Azure (interactive)</li><li>Federated</li></ul>
+    </p>
+    <h3 id="basic">Basic</h3>
+    <p>
+    Basic is the most simple way to authenticate. All you need to provide to this is a Username and Password
+    </p>
+    <h3 id="azure">Azure</h3>
+    <p>
+    Azure authentication comes in two flavors. In order to use either, you will first need to create an application on the Azure AD Admin Portal. Read the section titled <b>Configure a native client application</b> in <a href="https://azure.microsoft.com/en-us/documentation/articles/app-service-mobile-how-to-configure-active-directory-authentication/">this article on the Azure site</a>. When configuring this, be sure to add the <b>Office 365 Exchange Online</b> API.
+    You should add the following permissions for this API as well.
+    <ul>
+        <li>Read user and shared mail</li>
+        <li>Access mailboxes as the signed-in user via Exchange Web Services</li>
+        <li>Read user mail</li>
+        <li>Read all users' basic profiles (Only required if the asset is configured to use impersonation)</li>
+    </ul>
+    After this you can copy the new app's Application ID to the Client ID field in the asset configuration.<br><br>
+    Azure Interactive is different because it will will prompt the user to login through Microsoft's portal during Test Connectivity, meaning you do not need to enter your password in the asset configuration. You must run Test Connectivity at least once for this app to work with this authentication mechanism. When you are creating a native client application, you will need set the Callback URI to the link that appears at the bottom of the asset configuration (under "POST incoming for EWS for Office 365 to this location").
+    </p>
+    <h3 id="federated">Federated</h3>
+    <p>
+    Federated Authentication setup is quite complicated and its documentation is out of the scope of this section.<br>
     NOTE: Federated Authentication has been tested in a limited fashion.
     </p>
+    <br><br>
     <p>
-        It is not uncommon for enterprises to have a single mailbox configured where users can forward suspicious emails for further investigation. The ingestion feature in the Office 365 app is primarily designed to pull emails from such a mailbox and create containers and artifacts in Phantom. 
+        It is not uncommon for enterprises to have a single mailbox configured where users can forward suspicious emails for further investigation. The ingestion feature in the Office 365 app is primarily designed to pull emails from such a mailbox and create containers and artifacts in Phantom.
     </p>
     <p>
     The first thing to do is create the Office 365 asset in Phantom and fill up the required various parameters like <b>url, username, password</b> and <b>poll_user</b>. The other values can be left in the default state for now. The same user can be used to login/authenticate and for polling, just specify the same email address in <b>poll_user</b> and <b>username</b>.<br>
@@ -76,7 +99,7 @@ of Phantom Cyber Corporation.
        As mentioned before, the app will create a single container for each email that it ingests with the following properties:
       <ul>
       <li>Name</li>
-      The email subject is used as the name of the container. If a subject is not present the generated name is set to the unique message ID that office 365 assigns to every mail in the mailboxes</br> 
+      The email subject is used as the name of the container. If a subject is not present the generated name is set to the unique message ID that office 365 assigns to every mail in the mailboxes</br>
       <li>Source ID</li>
           The source ID of the container will be a combination of the unique message id and the datetime it was received by the server.
       </ul>
@@ -90,27 +113,27 @@ of Phantom Cyber Corporation.
       <table style="width:100%">
         <tr>
           <td><b>Artifact Field</b></td>
-          <td><b>Value Details</b></td> 
+          <td><b>Value Details</b></td>
         </tr>
         <tr>
           <td>fromEmail</td>
-          <td>The email address of the sender</td> 
+          <td>The email address of the sender</td>
         </tr>
         <tr>
           <td>fromName</td>
-          <td>The username of the sender of the email.</td> 
+          <td>The username of the sender of the email.</td>
         </tr>
         <tr>
           <td>toEmail</td>
-          <td>The email address of the receiver of the email</td> 
+          <td>The email address of the receiver of the email</td>
         </tr>
         <tr>
           <td>toName</td>
-          <td>The user name of the receiver of the email</td> 
+          <td>The user name of the receiver of the email</td>
         </tr>
         <tr>
           <td>headers</td>
-          <td>A dictionary containing each email header as a key and its value as the key-value</td> 
+          <td>A dictionary containing each email header as a key and its value as the key-value</td>
         </tr>
       </table>
     <br>

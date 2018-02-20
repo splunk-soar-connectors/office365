@@ -63,5 +63,6 @@ EWS_INGEST_OLDEST_EMAILS = "oldest first"
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 AUTH_TYPE_AZURE = "Azure"
+AUTH_TYPE_AZURE_INTERACTIVE = "Azure (interactive)"
 AUTH_TYPE_FEDERATED = "Federated"
 AUTH_TYPE_BASIC = "Basic"
