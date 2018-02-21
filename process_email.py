@@ -30,6 +30,7 @@ import json
 import magic
 from requests.structures import CaseInsensitiveDict
 from copy import deepcopy
+import base64
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added
@@ -248,6 +249,24 @@ class ProcessEmail(object):
             if (ips_in_mail):
                 ips |= set(ips_in_mail)
 
+    def _decode_if_base64(self, file_data):
+
+        if ('mail text' in magic.from_buffer(file_data)):
+            return file_data
+
+        if ('ASCII text' not in magic.from_buffer(file_data)):
+            return file_data
+
+        try:
+            file_data_decoded = base64.b64decode(file_data)
+            if ('mail text' not in magic.from_buffer(file_data_decoded)):
+                return file_data
+            file_data = file_data_decoded
+        except:
+            return file_data
+
+        return file_data
+
     def _handle_body(self, body, parsed_mail, body_index, email_id):
 
         local_file_path = body['file_path']
@@ -264,6 +283,9 @@ class ProcessEmail(object):
 
         if ((file_data is None) or (len(file_data) == 0)):
             return phantom.APP_ERROR
+
+        # base64 decode it if possible
+        file_data = self._decode_if_base64(file_data)
 
         self._parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
 
@@ -862,7 +884,8 @@ class ProcessEmail(object):
             # Create a new container
             container['artifacts'] = artifacts
 
-        container = self._base_connector._preprocess_container(container)
+        if (hasattr(self._base_connector, '_preprocess_container')):
+            container = self._base_connector._preprocess_container(container)
 
         for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
             self._set_sdi(artifact)
