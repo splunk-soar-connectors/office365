@@ -176,7 +176,50 @@ class ProcessEmail(object):
         if ('>' in url):
             url = url[:url.find('>')]
 
-        return url
+        if (']' in url):
+            url = url[:url.find(']')]
+
+        return url.strip()
+
+    def _find_uris_in_text(self, file_data):
+        """ Because of the possibility of a soft break, we need to find the uris _and_ the position
+        Also the function has to take into account the fact that the 1st soft broken line can be the
+        same for more than one uri
+        Example of a soft break:
+        >> https://foo.bar.outlook.com/?url=3Dhttps%3A%2F%2Fgood=
+        natured-someserver.de%2FPaid-Invoice%2F&data=3D02%7C01%7Cjohn.s.doe%4=
+        0contoso.com%7Cb25454f7bf8a4690031208d57a382510%7Ca1f1e2147ded45b681a19e8ae3459=
+        641%7C0%7C0%7C636549303916155540&sdata=3Dkf7w%2BH%2FANCuwsPdSo22uNpa2MZ8hYU=
+        YCppYUwKgBLjY%3D&notreserved=3D0
+        """
+
+        # The list of uris that will be returned
+        ret_uris = list()
+
+        # need to loop through each match, instead
+        for curr_match in re.finditer(uri_regexc, file_data):
+
+            start_pos = curr_match.start()
+            curr_uri = self._clean_url(curr_match.group(0))
+            if (not curr_uri.endswith('=')):
+                ret_uris.append(curr_uri)
+                continue
+
+            # first split the file_data since the current match into lines
+            multi_line_matches = file_data[start_pos:].splitlines()
+            curr_mod_uri = ''
+            for curr_line in multi_line_matches:
+                curr_line = curr_line.strip()
+                if (curr_line.endswith('=')):
+                    curr_mod_uri += curr_line[:-1]
+                else:
+                    curr_mod_uri += curr_line
+                    break
+
+            if (curr_mod_uri):
+                ret_uris.append(curr_mod_uri)
+
+        return ret_uris
 
     def _extract_urls_domains(self, file_data, urls, domains):
 
@@ -206,9 +249,7 @@ class ProcessEmail(object):
                     uris.extend(uri_text)
         else:
             # Parse it as a text file
-            uris = re.findall(uri_regexc, file_data)
-            if (uris):
-                uris = [self._clean_url(x) for x in uris]
+            uris = self._find_uris_in_text(file_data)
 
         if (self._config[PROC_EMAIL_JSON_EXTRACT_URLS]):
             # add the uris to the urls
