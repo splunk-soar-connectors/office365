@@ -306,6 +306,10 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.ignore_subfolders",
+                    "data_type": "boolean"
+                },
+                {
                     "data_path": "action_result.parameter.internet_message_id",
                     "data_type": "string",
                     "contains": [
@@ -1121,6 +1125,10 @@
                         "email",
                         "exchange distribution list"
                     ]
+                },
+                {
+                    "data_path": "action_result.parameter.recursive",
+                    "data_type": "boolean"
                 },
                 {
                     "data_path": "action_result.data.*.t_EmailAddress",
