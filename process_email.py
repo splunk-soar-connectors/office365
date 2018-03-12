@@ -176,8 +176,7 @@ class ProcessEmail(object):
         if ('>' in url):
             url = url[:url.find('>')]
 
-        if (']' in url):
-            url = url[:url.find(']')]
+        url = url.rstrip(']')
 
         return url.strip()
 
@@ -266,6 +265,8 @@ class ProcessEmail(object):
                 for curr_email in mailtos:
                     domain = curr_email[curr_email.find('@') + 1:]
                     if (domain) and (not self._is_ip(domain)):
+                        if ('?' in domain):
+                            domain = domain[:domain.find('?')]
                         domains.add(domain)
 
         return
@@ -473,8 +474,11 @@ class ProcessEmail(object):
             if (encoding != 'utf-8'):
                 value = unicode(value, encoding).encode('utf-8')
 
-            # substitute the encoded string with the decoded one
-            input_str = input_str.replace(encoded_string, value)
+            try:
+                # substitute the encoded string with the decoded one
+                input_str = input_str.replace(encoded_string, value)
+            except:
+                pass
 
         return input_str
 
@@ -647,6 +651,12 @@ class ProcessEmail(object):
 
         if (received_headers):
             headers['Received'] = received_headers
+
+        # handle the subject string, if required add a new key
+        subject = headers.get('Subject')
+        if (subject):
+            if (type(subject) == unicode):
+                headers['decodedSubject'] = self._decode_uni_string(subject.encode('utf8'), subject)
 
         return headers
 

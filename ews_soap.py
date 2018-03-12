@@ -395,12 +395,23 @@ def get_copy_email(message_id, folder_id):
                 T.ItemId({'Id': message_id})))
 
 
-def xml_get_root_folder_id(user):
-
+def xml_get_root_folder_id(user, root_folder_id='root'):
     folder_shape = M.FolderShape(T.BaseShape('IdOnly'))
-    folder_ids = M.FolderIds(T.DistinguishedFolderId({'Id': 'root'}, T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
+    if (root_folder_id == 'publicfoldersroot'):
+        par_folder_id = M.ParentFolderIds(
+            T.DistinguishedFolderId({
+                'Id': root_folder_id
+            })
+        )
+        traversal = {'Traversal': 'Shallow'}
+    else:
+        par_folder_id = M.ParentFolderIds(
+                T.DistinguishedFolderId(
+                    {'Id': root_folder_id},
+                    T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
+        traversal = {'Traversal': 'Deep'}
 
-    return M.GetFolder(folder_shape, folder_ids)
+    return M.FindFolder(traversal, folder_shape, par_folder_id)
 
 
 def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root', query_range=None):
@@ -438,6 +449,8 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
     filters.append(note_equal_to)
     """
 
+    traversal = {'Traversal': 'Deep'}
+
     if (child_folder_name):
         display_name_equal_to = T.IsEqualTo(
                 T.FieldURI({'FieldURI': 'folder:DisplayName'}),
@@ -457,6 +470,13 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
                     T.DistinguishedFolderId(
                         {'Id': parent_folder_id},
                         T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
+        elif (parent_folder_id == 'publicfoldersroot'):
+            par_folder_id = M.ParentFolderIds(
+                T.DistinguishedFolderId({
+                    'Id': parent_folder_id
+                })
+            )
+            traversal['Traversal'] = 'Shallow'
         else:
             par_folder_id = M.ParentFolderIds(
                     T.FolderId({'Id': parent_folder_id}))
@@ -478,7 +498,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
                 """
 
     return M.FindFolder(
-            {'Traversal': 'Deep'},
+            traversal,
             *elements)
 
 
