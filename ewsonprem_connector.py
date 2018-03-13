@@ -57,7 +57,8 @@ import urllib
 import imp
 
 import time
-from request_handler import RequestStateHandler, _get_dir_name_from_app_name
+
+from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -905,6 +906,7 @@ class EWSOnPremConnector(BaseConnector):
         body = param.get(EWSONPREM_JSON_BODY, "")
         int_msg_id = param.get(EWSONPREM_JSON_INT_MSG_ID, "")
         aqs = param.get(EWSONPREM_JSON_QUERY, "")
+        is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
         if (not subject and not sender and not aqs and not body and not int_msg_id):
             return action_result.set_status(phantom.APP_ERROR, "Please specify at-least one search criteria")
@@ -939,16 +941,15 @@ class EWSOnPremConnector(BaseConnector):
 
         folder_infos = []
 
-        parent_folder_info = {'id': 'root', 'display_name': 'root', 'children_count': -1, 'folder_path': ''}
-
         if (folder_path):
             # get the id of the folder specified
-            ret_val, folder_info = self._get_folder_info(user, folder_path, action_result)
+            ret_val, folder_info = self._get_folder_info(user, folder_path, action_result, is_public_folder)
         else:
-            ret_val, folder_info = self._get_root_folder_id(user, action_result)
+            ret_val, folder_info = self._get_root_folder_id(user, action_result, is_public_folder)
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
+
         parent_folder_info = folder_info
         folder_infos.append(folder_info)
 
@@ -1418,28 +1419,14 @@ class EWSOnPremConnector(BaseConnector):
 
         return value
 
-    def _get_root_folder_id(self, user, action_result):
+    def _get_root_folder_id(self, user, action_result, is_public_folder=False):
 
-        self.save_progress('Getting info about {0}\{1}'.format(self._clean_str(user), "root"))
+        if is_public_folder:
+            root_folder_id = 'publicfoldersroot'
+        else:
+            root_folder_id = 'root'
 
-        input_xml = ews_soap.xml_get_root_folder_id(user)
-
-        ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_getfolder_response)
-
-        if (phantom.is_fail(ret_val)):
-            return (action_result.get_status(), None)
-
-        folder = resp_json.get('m:Folders', {}).get('t:Folder')
-
-        if (not folder):
-            return (action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None)
-
-        folder_id = folder.get('t:FolderId', {}).get('@Id')
-
-        if (not folder_id):
-            return (action_result.set_status(phantom.APP_ERROR, "Folder ID information not found in response, possibly not present"), None)
-
-        folder_info = {'id': folder_id, 'display_name': 'root', 'children_count': -1, 'folder_path': self._extract_folder_path(folder.get('t:ExtendedProperty'))}
+        folder_info = {'id': root_folder_id, 'display_name': root_folder_id, 'children_count': -1, 'folder_path': ''}
 
         return (phantom.APP_SUCCESS, folder_info)
 
@@ -1458,8 +1445,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return (action_result.set_status(phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'".format(folder_name)), None)
 
-    def _get_folder_info(self, user, folder_path, action_result):
-
+    def _get_folder_info(self, user, folder_path, action_result, is_public_folder=False):
         # hindsight is always 20-20, set the folder path separator to be '/', thinking folder names allow '\' as a char.
         # turns out even '/' is supported by office365, so let the action escape the '/' char if it's part of the folder name
         folder_path = folder_path.replace('\\/', self.REPLACE_CONST)
@@ -1467,7 +1453,10 @@ class EWSOnPremConnector(BaseConnector):
         for i, folder_name in enumerate(folder_names):
             folder_names[i] = folder_name.replace(self.REPLACE_CONST, '/')
 
-        parent_folder_id = 'root'
+        if is_public_folder:
+            parent_folder_id = 'publicfoldersroot'
+        else:
+            parent_folder_id = 'root'
 
         for i, folder_name in enumerate(folder_names):
 
@@ -1529,6 +1518,7 @@ class EWSOnPremConnector(BaseConnector):
 
         folder_path = param[EWSONPREM_JSON_FOLDER]
         user = param[EWSONPREM_JSON_EMAIL]
+        is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
         # Set the user to impersonate (i.e. target_user), by default it is the destination user
         self._target_user = user
@@ -1544,7 +1534,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._impersonate = impersonate
 
-        ret_val, folder_info = self._get_folder_info(user, folder_path, action_result)
+        ret_val, folder_info = self._get_folder_info(user, folder_path, action_result, is_public_folder)
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
@@ -1967,7 +1957,8 @@ class EWSOnPremConnector(BaseConnector):
 
         folder_path = config.get(EWS_JSON_POLL_FOLDER, 'Inbox')
 
-        ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result)
+        is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
+        ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
 
         if (phantom.is_fail(ret_val)):
             return (action_result.get_status(), None)
@@ -2261,7 +2252,8 @@ if __name__ == '__main__':
                     "extract_domains": True,
                     "extract_hashes": True,
                     "extract_ips": True,
-                    "extract_urls": True }
+                    "extract_urls": True,
+                    "add_body_to_header_artifacts": True }
 
             process_email = ProcessEmail()
             ret_val, message = process_email.process_email(connector, raw_email, "manual_parsing", config, None)

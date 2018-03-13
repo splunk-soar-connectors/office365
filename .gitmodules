@@ -1,4 +1,4 @@
 [submodule "dependencies/ews_dep"]
-	path = dependencies/ews_dep
-	url = ssh://git@prod-bb-1.phantom.local:7999/PER/ews_deps.git
-    ignore = dirty
+  path = dependencies/ews_dep
+  url = ssh://git@prod-bb-1.phantom.local:7999/PER/ews_deps.git
+  ignore = dirty

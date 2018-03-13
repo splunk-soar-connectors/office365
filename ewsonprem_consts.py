@@ -43,6 +43,7 @@ EWS_JSON_IMPERSONATE_EMAIL = "impersonate_email"
 EWS_JSON_AUTH_URL = "authority_url"
 EWS_JSON_FED_PING_URL = "fed_ping_url"
 EWS_JSON_FED_VERIFY_CERT = "fed_verify_server_cert"
+EWS_JSON_IS_PUBLIC_FOLDER = "is_public_folder"
 
 EWSONPREM_ERR_CONNECTIVITY_TEST = "Connectivity test failed"
 EWSONPREM_SUCC_CONNECTIVITY_TEST = "Connectivity test passed"
