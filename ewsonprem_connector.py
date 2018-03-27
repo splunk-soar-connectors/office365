@@ -381,6 +381,7 @@ class EWSOnPremConnector(BaseConnector):
         self.save_progress("To continue, open this link in a new tab in your browser")
         self.save_progress(url)
         for _ in range(0, 60):
+            time.sleep(5)
             state = rsh.load_state()
             oauth_token = state.get('oauth_token')
             if oauth_token:
@@ -388,7 +389,6 @@ class EWSOnPremConnector(BaseConnector):
             elif state.get('error'):
                 return (None, "Error retrieving OAuth token")
 
-            time.sleep(5)
         else:
             return (None, "Timed out waiting for login")
 

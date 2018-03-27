@@ -65,12 +65,14 @@ class Office365RequestHandler():
             r.raise_for_status()
             resp_json = r.json()
         except Exception as e:
-            return self._return_error(
+            return False, self._return_error(
                 "Error retrieving OAuth Token: {}".format(str(e)),
                 401
             )
         state['oauth_token'] = resp_json
         self._rsh.save_state(state)
+
+        return (True, None)
 
     def handle_request(self):
         GET = self._request.GET
@@ -83,7 +85,11 @@ class Office365RequestHandler():
 
         code = GET.get('code')
 
-        self._get_oauth_token(code)
+        ret_val, http_object = self._get_oauth_token(code)
+
+        if (ret_val is False):
+            return http_object
+
         return HttpResponse("You can now close this page")
 
 
