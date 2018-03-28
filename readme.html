@@ -67,7 +67,7 @@ https://&lt;phantom_host&gt;/rest/handler/ewsforoffice365_a73f6d32-c9d5-4fec-b02
   <li>If all goes well the browser should instruct you to close the tab</li>
   <li>Now go back and check the message on the Test Connectivity dialog box, it should say Connectivity test passed</li>
 </ul>
-Do note that if you wish to use a single login user to read and modify multiple mailboxes (of multiple users), proper permissions to allow impersonation are required to be enabled on the login user 
+Do note that if you wish to use a single login user to read and modify multiple mailboxes (of multiple users), proper permissions to allow impersonation are required to be enabled on the login user
     </p>
     <h3 id="federated">Federated</h3>
     <p>
@@ -102,8 +102,22 @@ Do note that if you wish to use a single login user to read and modify multiple 
     <br>
     Now that the config is out of the way, let's delve into the two modes that ingestion can occur and the differences between them. One thing to note is that for every email that is ingested, a single container is created containing multiple artifacts.
     </a>
-<h2 id="poll_now">POLL NOW</h2>
+<h2 id="impersonation">Impersonation</h2>
     <p>
+    If impersonation is not working, you may need to enable it by configuring the roles for the user.
+    <ul>
+        <li>First, login to <a href="https://outlook.office365.com/ecp/">https://outlook.office365.com/ecp/</a> as an admin user</li>
+        <li>Click on <b>admin roles</b> under the <b>permissions</b> section</li>
+        <li>Press the '+' button on the top left to create a new role group</li>
+            <ul>
+                <li>Give the group a friendly name and description</li>
+                <li>Add the role <b>ApplicationImpersonation</b></li>
+                <li>Assign the user to the members of this group</li>
+            </ul>
+        <li>Click save, and wait. These changes will take a while to have an effect. You may need to wait up to an hour for impersonation to start working in the App</li>
+    </ul>
+    <p>
+<h2 id="poll_now">POLL NOW</h2>
     POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine oldest or latest is what EWS calls <b>item:LastModifiedTime</b>. This value is different than the mail creation time. For example if an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved.
     </p>
 <h2 id="scheduled_polling">Scheduled Polling</h2>
