@@ -22,16 +22,52 @@ of Phantom Cyber Corporation.
     </p>
     <h3 id="azure">Azure</h3>
     <p>
-    Azure authentication comes in two flavors. In order to use either, you will first need to create an application on the Azure AD Admin Portal. Read the section titled <b>Configure a native client application</b> in <a href="https://azure.microsoft.com/en-us/documentation/articles/app-service-mobile-how-to-configure-active-directory-authentication/">this article on the Azure site</a>. When configuring this, be sure to add the <b>Office 365 Exchange Online</b> API.
-    You should add the following permissions for this API as well.
+    Azure authentication comes in two flavors. In order to use either, you will first need to create an application on the Azure AD Admin Portal. Follow the steps outlined below to do this:
     <ul>
-        <li>Read user and shared mail</li>
-        <li>Access mailboxes as the signed-in user via Exchange Web Services</li>
-        <li>Read user mail</li>
-        <li>Read all users' basic profiles (Only required if the asset is configured to use impersonation)</li>
+      <li>Navigate to https://portal.azure.com in a browser and log in with a Microsoft account</li>
+      <li>Select <b>Azure Active Directory</b> from the left side menu</li>
+      <li>On the next level menu just to the right of the first one, select <b>App Registrations</b></li>
+      <li>At the top of the middle section, select <b>New application registration</b></li>
+      <li>Enter a name, select <b>Native</b> under application type</li>
+      <li>Type <b>https://phantom.local</b> as a placeholder in the Redirect URI field. You will update this later</li>
+      <li>Click somewhere else in the main screen to remove focus from the input fields and then click <b>Create</b> at the bottom of the window</li>
+      <li>Once the app is created, click on the name of the app you just created in the middle section. From this screen, we will update two sections:
+        <ul>
+          <li>Under <b>Redirect URIs</b> we will be updating the entry of https://phantom.local to reflect the actual redirect URI. We will get this from the Phantom asset we create below in the section titled "Phantom asset for Azure"</li>
+          <li>Under <b>API Access</b> select <b>Required Permissions</b> and then click where it says <b>Windows Azure Active Directory</b> with the permissions listed to the right. You will need to check the boxes next to the following permissions:
+            <ul>
+              <li>Sign in and read user profile</li>
+            </ul>
+          <li>The next API to add is <b>Office 365 Exchange Online</b>. You will need to check the boxes next to the following permissions:
+            <ul>
+              <li>Read user and shared mail</li>
+              <li>Access mailboxes as the signed-in user via Exchange Web Services</li>
+              <li>Read user mail</li>
+              <li>Read all users' basic profiles (Only required if the asset is configured to use impersonation)</li>
+            </ul>
+          </li>
+        </ul>
+        <li>After adding these permissions, click <b>Save</b> at the top of the window</li>
     </ul>
-    After this you can copy the new app's Application ID to the Client ID field in the asset configuration.<br><br>
-    Azure Interactive is different because it will will prompt the user to login through Microsoft's portal during Test Connectivity, meaning you do not need to enter your password in the asset configuration. You must run Test Connectivity at least once for this app to work with this authentication mechanism. When you are creating a native client application, you will need set the Callback URI to the link that appears at the bottom of the asset configuration (under "POST incoming for EWS for Office 365 to this location").
+    <h3>Phantom Asset for Azure</h3>
+        When creating an asset for the <b>EWS for Office 365</b> app, place the <b>Application ID</b> of the app created during the previous step in the <b>Client App ID for Azure/Fed AD Authentication</b> field.  Then, after filling other values, click <b>SAVE</b>.
+<br><br>
+After saving, a new field will appear in the <b>Asset Settings</b> tab. Take the URL found in the <b>POST incoming for EWS Office 365 to this location</b> field and place it in the <b>Redirect URIs</b> field mentioned above. After doing so the URL should look something like:
+<br><br>
+<pre>
+https://&lt;phantom_host&gt;/rest/handler/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/&lt;asset_name&gt;
+</pre>
+<br>
+<b>Azure Interactive</b> is different because it will prompt the user to login through Microsoft's portal during Test Connectivity, meaning you do not need to enter your password in the asset configuration. Instead:
+<ul>
+  <li>Run <b>TEST CONNECTIVITY</b></li>
+  <li>This will ask you to open a link in a new tab in the browser, do that</li>
+  <li>Proceed to login to the Microsoft site</li>
+  <li>You will be prompted to agree to the permissions requested by the App</li>
+  <li>If all goes well the browser should instruct you to close the tab</li>
+  <li>Now go back and check the message on the Test Connectivity dialog box, it should say Connectivity test passed</li>
+</ul>
+Do note that if you wish to use a single login user to read and modify multiple mailboxes (of multiple users), proper permissions to allow impersonation are required to be enabled on the login user 
     </p>
     <h3 id="federated">Federated</h3>
     <p>
