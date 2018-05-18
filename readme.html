@@ -31,7 +31,7 @@ of Phantom Cyber Corporation.
       <li>Enter a name, select <b>Native</b> under application type</li>
       <li>Type <b>https://phantom.local</b> as a placeholder in the Redirect URI field. You will update this later</li>
       <li>Click somewhere else in the main screen to remove focus from the input fields and then click <b>Create</b> at the bottom of the window</li>
-      <li>Once the app is created, click on the name of the app you just created in the middle section. From this screen, we will update two sections:
+      <li>Once the app is created, click on the name of the app you just created in the middle section. Select <b>Settings</b> from this screen, we will update two sections:
         <ul>
           <li>Under <b>Redirect URIs</b> we will be updating the entry of https://phantom.local to reflect the actual redirect URI. We will get this from the Phantom asset we create below in the section titled "Phantom asset for Azure"</li>
           <li>Under <b>API Access</b> select <b>Required Permissions</b> and then click where it says <b>Windows Azure Active Directory</b> with the permissions listed to the right. You will need to check the boxes next to the following permissions:
@@ -47,7 +47,7 @@ of Phantom Cyber Corporation.
             </ul>
           </li>
         </ul>
-        <li>After adding these permissions, click <b>Save</b> at the top of the window</li>
+        <li>After adding these permissions, click <b>Done</b> at the bottom of the window. If you are editing the API settings, you will have to select <b>Save</b> at the top of the window</li>
     </ul>
     <h3>Phantom Asset for Azure</h3>
         When creating an asset for the <b>EWS for Office 365</b> app, place the <b>Application ID</b> of the app created during the previous step in the <b>Client App ID for Azure/Fed AD Authentication</b> field.  Then, after filling other values, click <b>SAVE</b>.
@@ -93,7 +93,7 @@ Do note that if you wish to use a single login user to read and modify multiple 
         <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/ingest_settings.png"/>
       </a><br>
     <p>
-    Once the asset is saved, run Test Connectivity and make sure it passes. The Test Connectivity action attempts to read some infomation about the configured user's mailbox to validate the Auth parameters. Exchange Web Services API is used for all the actions. Impersonation is also used if configured.<br>
+    Once the asset is saved, run Test Connectivity and make sure it passes. The Test Connectivity action attempts to read some information about the configured user's mailbox to validate the Auth parameters. Exchange Web Services API is used for all the actions. Impersonation is also used if configured.<br>
     <a href="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/testing_connectivity.png">
         <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/testing_connectivity.png"/>
     </a>
