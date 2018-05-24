@@ -29,6 +29,11 @@ S = ElementMaker(namespace=SOAP_ENVELOPE_NAMESPACE, nsmap=NSMAP)
 M = ElementMaker(namespace=MESSAGES_NAMESPACE, nsmap=NSMAP)
 T = ElementMaker(namespace=TYPES_NAMESPACE, nsmap=NSMAP)
 
+EXTENDED_PROPERTY_HEADERS = '0x007D'
+EXTENDED_PROPERTY_HEADERS_RESPONSE = '0x7D'
+EXTENDED_PROPERTY_BODY_TEXT = '0x1000'
+EXTENDED_PROPERTY_BODY_HTML = '0x1013'
+
 
 def xml_get_restriction(greater_than_time=None, message_id=None):
 
@@ -123,9 +128,43 @@ def get_expand_dl(email):
     return M.ExpandDL(M.Mailbox(T.EmailAddress(email.decode('utf-8'))))
 
 
+def xml_get_attachments_data(attachment_ids_to_query):
+    """
+    https://msdn.microsoft.com/en-us/library/office/aa494316(v=exchg.150).aspx
+    FieldURI: InternetMessageHeaders does _not_ return all the headers
+    PropertyTag 0x007D is required, which points to PR_TRANSPORT_MESSAGE_HEADERS
+    """
+
+    additional_properties = T.AdditionalProperties(
+            T.FieldURI({'FieldURI': 'message:Sender'}),
+            T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
+            T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
+            T.FieldURI({'FieldURI': 'item:Attachments'}),
+            T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_HEADERS, 'PropertyType': 'String'}),
+            T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_BODY_TEXT, 'PropertyType': 'String'}),
+            T.FieldURI({'FieldURI': 'item:LastModifiedTime'}))
+
+    attachment_shape = M.AttachmentShape(
+            T.IncludeMimeContent('true'),
+            T.BodyType('Best'),
+            T.FilterHtmlContent('true'),
+            additional_properties)
+
+    attachment_ids = M.AttachmentIds()
+    [attachment_ids.append(T.AttachmentId({'Id': x})) for x in attachment_ids_to_query]
+
+    get_attachments = M.GetAttachment(
+            attachment_shape,
+            attachment_ids)
+
+    return get_attachments
+
+
 def xml_get_emails_data(email_ids):
     """
     https://msdn.microsoft.com/en-us/library/office/aa566013(v=exchg.150).aspx
+    FieldURI: InternetMessageHeaders does _not_ return all the headers
+    PropertyTag 0x007D is required, which points to PR_TRANSPORT_MESSAGE_HEADERS
     """
 
     additional_properties = T.AdditionalProperties(
@@ -133,6 +172,9 @@ def xml_get_emails_data(email_ids):
             T.FieldURI({'FieldURI': 'message:From'}),
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
+            T.FieldURI({'FieldURI': 'item:Categories'}),
+            T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_HEADERS, 'PropertyType': 'String'}),
+            T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_BODY_TEXT, 'PropertyType': 'String'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
             T.FieldURI({'FieldURI': 'item:LastModifiedTime'}),
             T.FieldURI({'FieldURI': 'item:Body'}))
@@ -303,6 +345,32 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
     return find_item
 
 
+def get_update_email(email_id, change_key, categories=None, subject=None):
+
+    item_id = T.ItemId({'Id': email_id, 'ChangeKey': change_key})
+
+    update_node = []
+
+    if (categories is not None):
+        category_string_list = []
+
+        for curr_category in categories:
+            category_string_list.append(T.String(curr_category))
+
+        cat_node = T.SetItemField(T.FieldURI({'FieldURI': 'item:Categories'}), T.Message(T.Categories(*category_string_list)))
+        update_node.append(cat_node)
+
+    if (subject is not None):
+        sub_node = T.SetItemField(T.FieldURI({'FieldURI': 'item:Subject'}), T.Message(T.Subject(subject)))
+        update_node.append(sub_node)
+
+    update_item = M.UpdateItem(
+            {'MessageDisposition': 'SaveOnly', 'ConflictResolution': 'AlwaysOverwrite'},
+            M.ItemChanges(T.ItemChange(item_id, T.Updates(*update_node))))
+
+    return update_item
+
+
 def get_delete_email(message_ids):
 
     if (type(message_ids) != list):
@@ -327,15 +395,28 @@ def get_copy_email(message_id, folder_id):
                 T.ItemId({'Id': message_id})))
 
 
-def xml_get_root_folder_id(user):
-
+def xml_get_root_folder_id(user, root_folder_id='root'):
     folder_shape = M.FolderShape(T.BaseShape('IdOnly'))
-    folder_ids = M.FolderIds(T.DistinguishedFolderId({'Id': 'root'}, T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
+    if (root_folder_id == 'publicfoldersroot'):
+        par_folder_id = M.ParentFolderIds(
+            T.DistinguishedFolderId({
+                'Id': root_folder_id
+            })
+        )
+        traversal = {'Traversal': 'Shallow'}
+    else:
+        par_folder_id = M.ParentFolderIds(
+                T.DistinguishedFolderId(
+                    {'Id': root_folder_id},
+                    T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
+        traversal = {'Traversal': 'Deep'}
 
-    return M.GetFolder(folder_shape, folder_ids)
+    return M.FindFolder(traversal, folder_shape, par_folder_id)
 
 
-def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root'):
+def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root', query_range=None):
+
+    elements = []
 
     folder_shape = M.FolderShape(
             T.BaseShape('IdOnly'),
@@ -347,6 +428,17 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root')
                 T.ExtendedFieldURI({'PropertyTag': '26293', 'PropertyType': 'String'}),
                 T.FieldURI({'FieldURI': 'folder:DisplayName'})))
 
+    elements.append(folder_shape)
+
+    if (query_range):
+        mini, maxi = (int(x) for x in query_range.split('-'))
+        page = M.IndexedPageFolderView(
+                {'MaxEntriesReturned': str(maxi - mini + 1)},
+                {'Offset': str(mini)},
+                {'BasePoint': 'Beginning'})
+
+        elements.append(page)
+
     filters = []
     restriction = None
     """
@@ -356,6 +448,8 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root')
                 T.Constant({'Value': 'IPF.Note'})))
     filters.append(note_equal_to)
     """
+
+    traversal = {'Traversal': 'Deep'}
 
     if (child_folder_name):
         display_name_equal_to = T.IsEqualTo(
@@ -376,6 +470,13 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root')
                     T.DistinguishedFolderId(
                         {'Id': parent_folder_id},
                         T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
+        elif (parent_folder_id == 'publicfoldersroot'):
+            par_folder_id = M.ParentFolderIds(
+                T.DistinguishedFolderId({
+                    'Id': parent_folder_id
+                })
+            )
+            traversal['Traversal'] = 'Shallow'
         else:
             par_folder_id = M.ParentFolderIds(
                     T.FolderId({'Id': parent_folder_id}))
@@ -383,16 +484,22 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root')
         par_folder_id = M.ParentFolderIds(T.DistinguishedFolderId({'Id': parent_folder_id}))
 
     if (restriction is not None):
+        elements.append(restriction)
+
+    elements.append(par_folder_id)
+
+    """
+    if (restriction is not None):
         return M.FindFolder(
                 {'Traversal': 'Deep'},
                 folder_shape,
                 restriction,
                 par_folder_id)
+                """
 
     return M.FindFolder(
-            {'Traversal': 'Deep'},
-            folder_shape,
-            par_folder_id)
+            traversal,
+            *elements)
 
 
 def add_to_envelope(lxml_obj, target_user=None):

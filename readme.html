@@ -1,4 +1,4 @@
-<!-- 
+<!--
 File: readme.html
 
 Copyright (c) Phantom Cyber Corporation, 2016-2018
@@ -11,13 +11,72 @@ or in part, is forbidden except by express written permission
 of Phantom Cyber Corporation.
 -->
 
+    <h2 id="authentication">Authentication</h2>
     <p>
-    The app supports multiple type of authentication mechanism, these include Basic authentication (only User name and Password), Azure AD and Federated Authentication. If Azure AD authentication is required, a Phantom app will require to be configured as a native app on the AD Admin Portal. Please scroll down and read the section titled <b>Configure a native client application</b> of <a href="https://azure.microsoft.com/en-us/documentation/articles/app-service-mobile-how-to-configure-active-directory-authentication/">this article on the Azure site</a>. This configuration will result in a client ID being generated, that will need to be configured on the Asset (<b>client_id</b> asset config). Federated Authentication setup is quite complicated and its documentation is out of the scope of this section.<br>Select the required authentication setup in the <b>auth_type</b> asset config parameter. Valid values are:
-    <ul><li>Basic</li><li>Azure</li><li>Federated</li></ul>
+    This apps supports multiple types of authentication mechanisms. Currently, there are four ways to authenticate.
+    <ul><li>Basic</li><li>Azure</li><li>Azure (interactive)</li><li>Federated</li></ul>
+    </p>
+    <h3 id="basic">Basic</h3>
+    <p>
+    Basic is the most simple way to authenticate. All you need to provide to this is a Username and Password
+    </p>
+    <h3 id="azure">Azure</h3>
+    <p>
+    Azure authentication comes in two flavors. In order to use either, you will first need to create an application on the Azure AD Admin Portal. Follow the steps outlined below to do this:
+    <ul>
+      <li>Navigate to https://portal.azure.com in a browser and log in with a Microsoft account</li>
+      <li>Select <b>Azure Active Directory</b> from the left side menu</li>
+      <li>On the next level menu just to the right of the first one, select <b>App Registrations</b></li>
+      <li>At the top of the middle section, select <b>New application registration</b></li>
+      <li>Enter a name, select <b>Native</b> under application type</li>
+      <li>Type <b>https://phantom.local</b> as a placeholder in the Redirect URI field. You will update this later</li>
+      <li>Click somewhere else in the main screen to remove focus from the input fields and then click <b>Create</b> at the bottom of the window</li>
+      <li>Once the app is created, click on the name of the app you just created in the middle section. Select <b>Settings</b> from this screen, we will update two sections:
+        <ul>
+          <li>Under <b>Redirect URIs</b> we will be updating the entry of https://phantom.local to reflect the actual redirect URI. We will get this from the Phantom asset we create below in the section titled "Phantom asset for Azure"</li>
+          <li>Under <b>API Access</b> select <b>Required Permissions</b> and then click where it says <b>Windows Azure Active Directory</b> with the permissions listed to the right. You will need to check the boxes next to the following permissions:
+            <ul>
+              <li>Sign in and read user profile</li>
+            </ul>
+          <li>The next API to add is <b>Office 365 Exchange Online</b>. You will need to check the boxes next to the following permissions:
+            <ul>
+              <li>Read user and shared mail</li>
+              <li>Access mailboxes as the signed-in user via Exchange Web Services</li>
+              <li>Read user mail</li>
+              <li>Read all users' basic profiles (Only required if the asset is configured to use impersonation)</li>
+            </ul>
+          </li>
+        </ul>
+        <li>After adding these permissions, click <b>Done</b> at the bottom of the window. If you are editing the API settings, you will have to select <b>Save</b> at the top of the window</li>
+    </ul>
+    <h3>Phantom Asset for Azure</h3>
+        When creating an asset for the <b>EWS for Office 365</b> app, place the <b>Application ID</b> of the app created during the previous step in the <b>Client App ID for Azure/Fed AD Authentication</b> field.  Then, after filling other values, click <b>SAVE</b>.
+<br><br>
+After saving, a new field will appear in the <b>Asset Settings</b> tab. Take the URL found in the <b>POST incoming for EWS Office 365 to this location</b> field and place it in the <b>Redirect URIs</b> field mentioned above. After doing so the URL should look something like:
+<br><br>
+<pre>
+https://&lt;phantom_host&gt;/rest/handler/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/&lt;asset_name&gt;
+</pre>
+<br>
+<b>Azure Interactive</b> is different because it will prompt the user to login through Microsoft's portal during Test Connectivity, meaning you do not need to enter your password in the asset configuration. Instead:
+<ul>
+  <li>Run <b>TEST CONNECTIVITY</b></li>
+  <li>This will ask you to open a link in a new tab in the browser, do that</li>
+  <li>Proceed to login to the Microsoft site</li>
+  <li>You will be prompted to agree to the permissions requested by the App</li>
+  <li>If all goes well the browser should instruct you to close the tab</li>
+  <li>Now go back and check the message on the Test Connectivity dialog box, it should say Connectivity test passed</li>
+</ul>
+Do note that if you wish to use a single login user to read and modify multiple mailboxes (of multiple users), proper permissions to allow impersonation are required to be enabled on the login user
+    </p>
+    <h3 id="federated">Federated</h3>
+    <p>
+    Federated Authentication setup is quite complicated and its documentation is out of the scope of this section.<br>
     NOTE: Federated Authentication has been tested in a limited fashion.
     </p>
+    <br><br>
     <p>
-        It is not uncommon for enterprises to have a single mailbox configured where users can forward suspicious emails for further investigation. The ingestion feature in the Office 365 app is primarily designed to pull emails from such a mailbox and create containers and artifacts in Phantom. 
+        It is not uncommon for enterprises to have a single mailbox configured where users can forward suspicious emails for further investigation. The ingestion feature in the Office 365 app is primarily designed to pull emails from such a mailbox and create containers and artifacts in Phantom.
     </p>
     <p>
     The first thing to do is create the Office 365 asset in Phantom and fill up the required various parameters like <b>url, username, password</b> and <b>poll_user</b>. The other values can be left in the default state for now. The same user can be used to login/authenticate and for polling, just specify the same email address in <b>poll_user</b> and <b>username</b>.<br>
@@ -34,7 +93,7 @@ of Phantom Cyber Corporation.
         <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/ingest_settings.png"/>
       </a><br>
     <p>
-    Once the asset is saved, run Test Connectivity and make sure it passes. The Test Connectivity action attempts to read some infomation about the configured user's mailbox to validate the Auth parameters. Exchange Web Services API is used for all the actions. Impersonation is also used if configured.<br>
+    Once the asset is saved, run Test Connectivity and make sure it passes. The Test Connectivity action attempts to read some information about the configured user's mailbox to validate the Auth parameters. Exchange Web Services API is used for all the actions. Impersonation is also used if configured.<br>
     <a href="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/testing_connectivity.png">
         <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/testing_connectivity.png"/>
     </a>
@@ -43,8 +102,22 @@ of Phantom Cyber Corporation.
     <br>
     Now that the config is out of the way, let's delve into the two modes that ingestion can occur and the differences between them. One thing to note is that for every email that is ingested, a single container is created containing multiple artifacts.
     </a>
-<h2 id="poll_now">POLL NOW</h2>
+<h2 id="impersonation">Impersonation</h2>
     <p>
+    If impersonation is not working, you may need to enable it by configuring the roles for the user.
+    <ul>
+        <li>First, login to <a href="https://outlook.office365.com/ecp/">https://outlook.office365.com/ecp/</a> as an admin user</li>
+        <li>Click on <b>admin roles</b> under the <b>permissions</b> section</li>
+        <li>Press the '+' button on the top left to create a new role group</li>
+            <ul>
+                <li>Give the group a friendly name and description</li>
+                <li>Add the role <b>ApplicationImpersonation</b></li>
+                <li>Assign the user to the members of this group</li>
+            </ul>
+        <li>Click save, and wait. These changes will take a while to have an effect. You may need to wait up to an hour for impersonation to start working in the App</li>
+    </ul>
+    <p>
+<h2 id="poll_now">POLL NOW</h2>
     POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine oldest or latest is what EWS calls <b>item:LastModifiedTime</b>. This value is different than the mail creation time. For example if an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved.
     </p>
 <h2 id="scheduled_polling">Scheduled Polling</h2>
@@ -76,7 +149,7 @@ of Phantom Cyber Corporation.
        As mentioned before, the app will create a single container for each email that it ingests with the following properties:
       <ul>
       <li>Name</li>
-      The email subject is used as the name of the container. If a subject is not present the generated name is set to the unique message ID that office 365 assigns to every mail in the mailboxes</br> 
+      The email subject is used as the name of the container. If a subject is not present the generated name is set to the unique message ID that office 365 assigns to every mail in the mailboxes</br>
       <li>Source ID</li>
           The source ID of the container will be a combination of the unique message id and the datetime it was received by the server.
       </ul>
@@ -90,27 +163,27 @@ of Phantom Cyber Corporation.
       <table style="width:100%">
         <tr>
           <td><b>Artifact Field</b></td>
-          <td><b>Value Details</b></td> 
+          <td><b>Value Details</b></td>
         </tr>
         <tr>
           <td>fromEmail</td>
-          <td>The email address of the sender</td> 
+          <td>The email address of the sender</td>
         </tr>
         <tr>
           <td>fromName</td>
-          <td>The username of the sender of the email.</td> 
+          <td>The username of the sender of the email.</td>
         </tr>
         <tr>
           <td>toEmail</td>
-          <td>The email address of the receiver of the email</td> 
+          <td>The email address of the receiver of the email</td>
         </tr>
         <tr>
           <td>toName</td>
-          <td>The user name of the receiver of the email</td> 
+          <td>The user name of the receiver of the email</td>
         </tr>
         <tr>
           <td>headers</td>
-          <td>A dictionary containing each email header as a key and its value as the key-value</td> 
+          <td>A dictionary containing each email header as a key and its value as the key-value</td>
         </tr>
       </table>
     <br>
