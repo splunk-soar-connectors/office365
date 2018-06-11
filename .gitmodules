@@ -1,4 +1,8 @@
-[submodule "dependencies/ews_dep"]
-  path = dependencies/ews_dep
-  url = ssh://git@bitbucket.phantom.us:7999/PER/ews_deps.git
-  ignore = dirty
+[submodule "ntlm_auth"]
+	path = ntlm_auth
+	url = ssh://git@bitbucket.phantom.us:7999/per/ntlm_auth.git
+        ignore = dirty
+[submodule "requests_ntlm"]
+	path = requests_ntlm
+	url = ssh://git@bitbucket.phantom.us:7999/per/requests_ntlm.git
+        ignore = dirty

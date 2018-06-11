@@ -16,6 +16,18 @@
     "logo_dark": "logo_microsoftoffice365_dark.svg",
     "license": "Copyright (c) Phantom Cyber Corporation, 2016-2018",
     "rest_handler": "request_handler.handle_request",
+    "pip_dependencies": {
+        "wheel": [
+            {
+                "module": "requests_ntlm",
+                "input_file": "requests_ntlm/requests_ntlm-1.0.0-py2.py3-none-any.whl"
+            },
+            {
+                "module": "ntlm_auth",
+                "input_file": "ntlm_auth/ntlm_auth-1.0.5-py2.py3-none-any.whl"
+            }
+        ]
+    },
     "configuration": {
         "url": {
             "data_type": "string",
@@ -504,6 +516,14 @@
                     "column_order": 0
                 },
                 {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Status Message",
@@ -642,6 +662,10 @@
                     "column_order": 3
                 },
                 {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Status Message",
@@ -654,6 +678,410 @@
                 {
                     "data_path": "summary.total_objects_successful",
                     "data_type": "numeric"
+                }
+            ],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "move email",
+            "description": "Move an email to a folder",
+            "verbose": "The action supports moving an email to a folder that is nested within another.<br>To move to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For example, to move email to a folder named <i>phishing</i> which is nested within <i>Inbox</i>, set the value as <b>Inbox/phishing</b>.<br>The action requires the exchange email ID as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>exchange email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.*.new_email_id</b>, however this value is not available for cross-mailbox or mailbox to public folder <b>move email</b> actions (please see the documentation of the <a href=\"https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx\">MoveItem operation on MSDN</a>). However in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Exchange email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>move email</b> action, for reasons explained in this section, <b>move email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>",
+            "type": "generic",
+            "identifier": "move_email",
+            "read_only": false,
+            "parameters": {
+                "id": {
+                    "description": "Message ID to move",
+                    "data_type": "string",
+                    "order": 0,
+                    "contains": [
+                        "exchange email id"
+                    ],
+                    "primary": true,
+                    "required": true
+                },
+                "ph": {
+                    "data_type": "ph",
+                    "order": 1
+                },
+                "email": {
+                    "description": "Destination Mailbox (Email)",
+                    "data_type": "string",
+                    "order": 2,
+                    "contains": [
+                        "email"
+                    ],
+                    "primary": true,
+                    "required": true
+                },
+                "folder": {
+                    "description": "Destination Mail Folder Name/Path",
+                    "data_type": "string",
+                    "order": 3,
+                    "primary": true,
+                    "required": true,
+                    "contains": [
+                        "mail folder",
+                        "mail folder path"
+                    ]
+                },
+                "impersonate_email": {
+                    "description": "Impersonation Email",
+                    "data_type": "string",
+                    "order": 4,
+                    "primary": false,
+                    "required": false,
+                    "contains": [
+                        "email"
+                    ]
+                },
+                "dont_impersonate": {
+                    "description": "Don't use impersonation",
+                    "data_type": "boolean",
+                    "order": 5,
+                    "primary": false,
+                    "required": false,
+                    "default": false
+                },
+                "is_public_folder": {
+                    "description": "Mailbox folder is a public folder",
+                    "data_type": "boolean",
+                    "order": 6,
+                    "required": false,
+                    "default": false
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Copy Email",
+                "type": "table",
+                "height": 5
+            },
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.parameter.dont_impersonate",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.parameter.email",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "column_name": "User Email",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.parameter.folder",
+                    "data_type": "string",
+                    "column_name": "Folder",
+                    "contains": [
+                        "mail folder",
+                        "mail folder path"
+                    ],
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.parameter.id",
+                    "data_type": "string",
+                    "contains": [
+                        "exchange email id"
+                    ],
+                    "column_name": "Source Message ID",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.parameter.impersonate_email",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.is_public_folder",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.new_email_id",
+                    "data_type": "string",
+                    "contains": [
+                        "exchange email id"
+                    ],
+                    "column_name": "Destination Message ID",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "column_name": "Status Message",
+                    "column_order": 4
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "block sender",
+            "description": "Add the sender email into the block list",
+            "verbose": "This action takes as input an email whose sender will be added to the Block Senders List. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List.<ul><li>If the <b>move_to_junk_folder</b> parameter is set to True, the sender of the target email message is added to the blocked sender list and the email message is moved to the Junk Email folder</li><li>If the <b>move_to_junk_folder</b> attribute is set to False, the sender of the target email message is added to the blocked sender list and the email message is not moved from the folder</li></ul>To view the current Block Senders list, please read the following Powershell articles: <ul><li>https://docs.microsoft.com/en-us/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/connect-to-exchange-online-powershell?view=exchange-ps</li><li>https://docs.microsoft.com/en-us/powershell/module/exchange/antispam-antimalware/Get-MailboxJunkEmailConfiguration?view=exchange-ps</li></ul>",
+            "type": "contain",
+            "identifier": "block_sender",
+            "undo": "unblock sender",
+            "read_only": false,
+            "parameters": {
+                "id": {
+                    "description": "Message ID to pick the sender of",
+                    "data_type": "string",
+                    "order": 0,
+                    "contains": [
+                        "office 365 email id"
+                    ],
+                    "primary": true,
+                    "required": true
+                },
+                "move_to_junk_folder": {
+                    "description": "Should the email be moved to the junk folder",
+                    "data_type": "boolean",
+                    "order": 2,
+                    "primary": false,
+                    "required": false
+                },
+                "email": {
+                    "description": "Email of the mailbox owner (used during impersonation)",
+                    "data_type": "string",
+                    "order": 2,
+                    "contains": [
+                        "email"
+                    ],
+                    "primary": false,
+                    "required": false
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Block Sender",
+                "type": "table",
+                "height": 5
+            },
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.email",
+                    "data_type": "string",
+                    "example_values": [
+                        "foo@bar.onmicrosoft.com"
+                    ],
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEMAAC63sxpeq+QSJSiCN540EaIAAHWGo0OAAA="
+                    ],
+                    "contains": [
+                        "office 365 email id"
+                    ],
+                    "column_name": "Input Email ID",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.parameter.move_to_junk_folder",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.new_email_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA="
+                    ],
+                    "contains": [
+                        "office 365 email id"
+                    ],
+                    "column_name": "New Email ID",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.summary.new_email_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA="
+                    ]
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Sender Blocked. Message moved to Junk Folder"
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                }
+            ],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "unblock sender",
+            "description": "Remove the sender email from the block list",
+            "verbose": "This action takes as input an email whose sender will be removed from the Block Senders List. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List.<ul><li>If the <b>move_from_junk_folder</b> parameter is set to True, the sender of the target email message is removed from the blocked sender list and the email message is moved to the Junk Email folder</li><li>If the <b>move_from_junk_folder</b> attribute is set to False, the sender of the target email message is removed from the blocked sender list and the email message is not moved from the folder</li></ul>To view the current Block Senders list, please read the following Powershell articles: <ul><li>https://docs.microsoft.com/en-us/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/connect-to-exchange-online-powershell?view=exchange-ps</li><li>https://docs.microsoft.com/en-us/powershell/module/exchange/antispam-antimalware/Get-MailboxJunkEmailConfiguration?view=exchange-ps</li></ul>",
+            "type": "correct",
+            "identifier": "unblock_sender",
+            "undo": "block sender",
+            "read_only": false,
+            "parameters": {
+                "id": {
+                    "description": "Message ID to pick the sender of",
+                    "data_type": "string",
+                    "order": 0,
+                    "contains": [
+                        "office 365 email id"
+                    ],
+                    "primary": true,
+                    "required": true
+                },
+                "move_from_junk_folder": {
+                    "description": "Should the email be moved out of the junk folder",
+                    "data_type": "boolean",
+                    "order": 2,
+                    "primary": false,
+                    "required": false
+                },
+                "email": {
+                    "description": "Email of the mailbox owner (used during impersonation)",
+                    "data_type": "string",
+                    "order": 2,
+                    "contains": [
+                        "email"
+                    ],
+                    "primary": false,
+                    "required": false
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Block Sender",
+                "type": "table",
+                "height": 5
+            },
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.email",
+                    "data_type": "string",
+                    "example_values": [
+                        "foo@bar.onmicrosoft.com"
+                    ],
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA="
+                    ],
+                    "contains": [
+                        "office 365 email id"
+                    ],
+                    "column_name": "Input Email ID",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.parameter.move_from_junk_folder",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.new_email_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEMAAC63sxpeq+QSJSiCN540EaIAAHWGo0PAAA="
+                    ],
+                    "contains": [
+                        "office 365 email id"
+                    ],
+                    "column_name": "New Email ID",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.summary.new_email_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEMAAC63sxpeq+QSJSiCN540EaIAAHWGo0PAAA="
+                    ],
+                    "contains": [
+                        "office 365 email id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Sender Unblocked. Message moved out of Junk Folder"
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
