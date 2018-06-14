@@ -35,6 +35,24 @@ EXTENDED_PROPERTY_BODY_TEXT = '0x1000'
 EXTENDED_PROPERTY_BODY_HTML = '0x1013'
 
 
+def xml_get_mark_as_junk(input_item_ids, is_junk=None, move_item=None):
+
+    is_junk = True if is_junk is None else is_junk
+    move_item = True if move_item is None else move_item
+
+    input_item_ids = [x.strip() for x in input_item_ids.split(',')]
+
+    item_ids = M.ItemIds()
+    [item_ids.append(T.ItemId({'Id': x})) for x in input_item_ids]
+
+    mark_as_junk = M.MarkAsJunk(
+            {'IsJunk': (str(is_junk)).lower()},
+            {'MoveItem': (str(move_item)).lower()},
+            item_ids)
+
+    return mark_as_junk
+
+
 def xml_get_restriction(greater_than_time=None, message_id=None):
 
     filters = []
@@ -384,6 +402,15 @@ def get_delete_email(message_ids):
             item_ids_m)
 
     return del_item
+
+
+def get_move_email(message_id, folder_id):
+
+    return M.MoveItem(
+            M.ToFolderId(
+                T.FolderId({'Id': folder_id})),
+            M.ItemIds(
+                T.ItemId({'Id': message_id})))
 
 
 def get_copy_email(message_id, folder_id):
