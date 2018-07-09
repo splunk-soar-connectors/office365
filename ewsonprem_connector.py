@@ -727,7 +727,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Make the call
         try:
-            r = self._session.post(self._base_url, data=data, headers=self._headers, verify=config[phantom.APP_JSON_VERIFY])
+            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=60, verify=config[phantom.APP_JSON_VERIFY])
         except Exception as e:
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, e), resp_json)
 
@@ -1850,7 +1850,8 @@ class EWSOnPremConnector(BaseConnector):
                 if (curr_attach_meta_info):
                     # find the attachmetn in the list and update it
                     matched_meta_info = list(filter(lambda x: x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2'), attach_meta_info_ret))
-                    matched_meta_info[0].update(curr_attach_meta_info)
+                    if (matched_meta_info):
+                        matched_meta_info[0].update(curr_attach_meta_info)
 
         return (phantom.APP_SUCCESS, email_headers_ret, attach_meta_info_ret)
 
