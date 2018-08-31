@@ -99,6 +99,9 @@ class EWSOnPremConnector(BaseConnector):
     ACTION_ID_DELETE_EMAIL = "delete_email"
     ACTION_ID_UPDATE_EMAIL = "update_email"
     ACTION_ID_COPY_EMAIL = "copy_email"
+    ACTION_ID_MOVE_EMAIL = "move_email"
+    ACTION_ID_BLOCK_SENDER = "block_sender"
+    ACTION_ID_UNBLOCK_SENDER = "unblock_sender"
     ACTION_ID_EXPAND_DL = "expand_dl"
     ACTION_ID_RESOLVE_NAME = "resolve_name"
     ACTION_ID_ON_POLL = "on_poll"
@@ -643,6 +646,12 @@ class EWSOnPremConnector(BaseConnector):
     def _check_copy_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
 
+    def _check_markasjunk_response(self, resp_json):
+            return resp_json['s:Envelope']['s:Body']['m:MarkAsJunkResponse']['m:ResponseMessages']['m:MarkAsJunkResponseMessage']
+
+    def _check_move_response(self, resp_json):
+            return resp_json['s:Envelope']['s:Body']['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
+
     def _check_expand_dl_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
 
@@ -718,7 +727,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Make the call
         try:
-            r = self._session.post(self._base_url, data=data, headers=self._headers, verify=config[phantom.APP_JSON_VERIFY])
+            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=60, verify=config[phantom.APP_JSON_VERIFY])
         except Exception as e:
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, e), resp_json)
 
@@ -1507,7 +1516,49 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, folder_info)
 
-    def _copy_email(self, param):
+    def _mark_as_junk(self, param, action):
+
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        # Connectivity
+        self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
+
+        message_id = param[EWSONPREM_JSON_ID]
+
+        move_email = param.get('move_to_junk_folder', param.get('move_from_junk_folder', False))
+
+        is_junk = True if action == 'block' else False
+
+        if EWSONPREM_JSON_EMAIL in param:
+            self._target_user = param[EWSONPREM_JSON_EMAIL]
+
+        message = "Sender Blocked" if action == "block" else "Sender Unblocked"
+
+        data = ews_soap.xml_get_mark_as_junk(message_id, is_junk=is_junk, move_item=move_email)
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_markasjunk_response)
+
+        # Process errors
+        if (phantom.is_fail(ret_val)):
+            return action_result.get_status()
+
+        if (move_email):
+            try:
+                new_email_id = resp_json['m:MovedItemId']['@Id']
+            except:
+                return action_result.set_status(phantom.APP_SUCCESS, "Unable to get moved Email ID")
+
+            action_result.add_data({'new_email_id': new_email_id})
+            action_result.update_summary({'new_email_id': new_email_id})
+
+            if (new_email_id != message_id):
+                # Looks like the email was actually moved
+                message += ". Message moved to Junk Folder" if action == "block" else ". Message moved out of Junk Folder"
+
+        # Set the Status
+        return action_result.set_status(phantom.APP_SUCCESS, message)
+
+    def _copy_move_email(self, param, action="copy"):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
@@ -1529,7 +1580,7 @@ class EWSOnPremConnector(BaseConnector):
             self._target_user = impersonate_email
 
         # finally see if impersonation has been enabled/disabled for this action
-        # as of right now copy email is the only action that allows over-ride
+        # as of right now copy or move email is the only action that allows over-ride
         impersonate = not(param.get(EWS_JSON_DONT_IMPERSONATE, False))
 
         self._impersonate = impersonate
@@ -1540,8 +1591,13 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status()
 
         data = ews_soap.get_copy_email(message_id, folder_info['id'])
+        response_checker = self._check_copy_response
 
-        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_copy_response)
+        if (action == "move"):
+            data = ews_soap.get_move_email(message_id, folder_info['id'])
+            response_checker = self._check_move_response
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
 
         # Process errors
         if (phantom.is_fail(ret_val)):
@@ -1552,15 +1608,17 @@ class EWSOnPremConnector(BaseConnector):
 
         new_email_id = None
 
+        action_verb = 'copied' if (action == "copy") else 'moved'
+
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
         except:
-            return action_result.set_status(phantom.APP_SUCCESS, "Unable to get copied Email ID")
+            return action_result.set_status(phantom.APP_SUCCESS, "Unable to get {0} Email ID".format(action_verb))
 
         action_result.add_data({'new_email_id': new_email_id})
 
         # Set the Status
-        return action_result.set_status(phantom.APP_SUCCESS, "Email Copied")
+        return action_result.set_status(phantom.APP_SUCCESS, "Email {0}".format(action_verb.title()))
 
     def _resolve_name(self, param):
 
@@ -1792,7 +1850,8 @@ class EWSOnPremConnector(BaseConnector):
                 if (curr_attach_meta_info):
                     # find the attachmetn in the list and update it
                     matched_meta_info = list(filter(lambda x: x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2'), attach_meta_info_ret))
-                    matched_meta_info[0].update(curr_attach_meta_info)
+                    if (matched_meta_info):
+                        matched_meta_info[0].update(curr_attach_meta_info)
 
         return (phantom.APP_SUCCESS, email_headers_ret, attach_meta_info_ret)
 
@@ -2160,7 +2219,13 @@ class EWSOnPremConnector(BaseConnector):
         elif (action == self.ACTION_ID_GET_EMAIL):
             ret_val = self._get_email(param)
         elif (action == self.ACTION_ID_COPY_EMAIL):
-            ret_val = self._copy_email(param)
+            ret_val = self._copy_move_email(param)
+        elif (action == self.ACTION_ID_MOVE_EMAIL):
+            ret_val = self._copy_move_email(param, action='move')
+        elif (action == self.ACTION_ID_BLOCK_SENDER):
+            ret_val = self._mark_as_junk(param, action='block')
+        elif (action == self.ACTION_ID_UNBLOCK_SENDER):
+            ret_val = self._mark_as_junk(param, action='unblock')
         elif (action == self.ACTION_ID_EXPAND_DL):
             ret_val = self._expand_dl(param)
         elif (action == self.ACTION_ID_RESOLVE_NAME):
