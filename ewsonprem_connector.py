@@ -1639,8 +1639,10 @@ class EWSOnPremConnector(BaseConnector):
         if (phantom.is_fail(ret_val)):
             message = action_result.get_message()
             if ( 'ErrorNameResolutionNoResults' in message):
-                message += ' The input parameter might not be a valid alias or email.'
-            return action_result.set_status(phantom.APP_ERROR, message)
+                message = 'No email found. The input parameter might not be a valid alias or email.'
+                return action_result.set_status(phantom.APP_SUCCESS, message)
+            else:
+                return action_result.set_status(phantom.APP_ERROR, message)
 
         if (not resp_json):
             return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
