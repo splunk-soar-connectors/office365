@@ -727,6 +727,16 @@ class ProcessEmail(object):
 
         return len(email_header_artifacts)
 
+    def _json_cleaned(self, input_data):
+
+        # try to add it to a dictionary and json.dumps it
+        try:
+            json.dumps({'json_data': input_data})
+        except UnicodeDecodeError:
+            return (True, base64.b64encode(input_data))
+
+        return (False, input_data)
+
     def _handle_mail_object(self, mail, email_id, rfc822_email, tmp_dir, start_time_epoch):
 
         self._parsed_mail = OrderedDict()
@@ -802,7 +812,8 @@ class ProcessEmail(object):
         container.update(_container_common)
         self._container['source_data_identifier'] = email_id
         self._container['name'] = container_name
-        self._container['data'] = {'raw_email': rfc822_email}
+        cleaned, clean_data = self._json_cleaned(rfc822_email)
+        self._container['data'] = {'raw_email': clean_data, 'base64encoded': cleaned}
 
         # Create the sets before handling the bodies If both the bodies add the same ip
         # only one artifact should be created
