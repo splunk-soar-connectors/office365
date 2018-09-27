@@ -27,6 +27,10 @@ EXTENDED_PROPERTY_BODY_TEXT = '0x1000'
 EXTENDED_PROPERTY_BODY_HTML = '0x1013'
 
 
+# WARNING: pylint is disabled for the whole file due to ElementMaker
+# pylint: skip-file
+
+
 def xml_get_mark_as_junk(input_item_ids, is_junk=None, move_item=None):
 
     is_junk = True if is_junk is None else is_junk

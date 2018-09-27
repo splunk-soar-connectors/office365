@@ -145,7 +145,11 @@ Do note that if you wish to use a single login user to read and modify multiple 
       <li>Name</li>
       The email subject is used as the name of the container. If a subject is not present the generated name is set to the unique message ID that office 365 assigns to every mail in the mailboxes</br>
       <li>Source ID</li>
-          The source ID of the container will be a combination of the unique message id and the datetime it was received by the server.
+          The source ID of the container will be set to the unique message id.
+      <li>Data Key</li>
+      The Container dictionary contains a data section that looks like the following:
+      <pre>"data": { "raw_email": "...Parsed Email....", "base64encoded": False}</pre>
+      If the App decides to encode the raw_email in base64, the <i>base64encoded</i> key will be set to True
       </ul>
 <h2>Artifacts created</h2>
     <p>
