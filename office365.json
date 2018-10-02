@@ -41,7 +41,7 @@
             "description": "Verify server certificate",
             "required": true,
             "order": 1,
-            "default": true
+            "default": false
         },
         "username": {
             "data_type": "string",
