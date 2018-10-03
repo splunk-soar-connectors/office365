@@ -1,16 +1,8 @@
-# --
-# File: process_email.py
+# Copyright (c) 2016-2018 Splunk Inc.
 #
-# Copyright (c) Phantom Cyber Corporation, 2016-2018
+# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
+# without a valid written license from Splunk Inc. is PROHIBITED.
 #
-# This unpublished material is proprietary to Phantom Cyber.
-# All rights reserved. The methods and
-# techniques described herein are considered trade secrets
-# and/or confidential. Reproduction or distribution, in whole
-# or in part, is forbidden except by express written permission
-# of Phantom Cyber Corporation.
-#
-# --
 
 import email
 import tempfile
@@ -31,6 +23,7 @@ import magic
 from requests.structures import CaseInsensitiveDict
 from copy import deepcopy
 import base64
+import string
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added
@@ -207,16 +200,31 @@ class ProcessEmail(object):
             # first split the file_data since the current match into lines
             multi_line_matches = file_data[start_pos:].splitlines()
             curr_mod_uri = ''
+            end_in_equal_to = False
             for curr_line in multi_line_matches:
                 curr_line = curr_line.strip()
                 if (curr_line.endswith('=')):
                     curr_mod_uri += curr_line[:-1]
+                    end_in_equal_to = True
                 else:
                     curr_mod_uri += curr_line
                     break
 
             if (curr_mod_uri):
-                ret_uris.append(curr_mod_uri)
+                """
+                Due to the softbreak handling (see the function pydoc)
+                We run into a bug where a non-soft broken url could end in '='
+                and the code will end up treating it like one, how do you detect that?
+                for now we validate that the curr_mod_uri is printable
+                and only do this check if the curr line ended in an '='
+                This should take care of most cases. This does make the fucntion
+                a bit of a fuzzy detection function, but that's ok.
+                """
+                if ((end_in_equal_to is True) and (all([x in string.printable for x in curr_mod_uri]))):
+                    ret_uris.append(curr_mod_uri)
+                else:
+                    # added here to put a breakpoint
+                    pass
 
         return ret_uris
 
@@ -727,6 +735,16 @@ class ProcessEmail(object):
 
         return len(email_header_artifacts)
 
+    def _json_cleaned(self, input_data):
+
+        # try to add it to a dictionary and json.dumps it
+        try:
+            json.dumps({'json_data': input_data})
+        except UnicodeDecodeError:
+            return (True, base64.b64encode(input_data))
+
+        return (False, input_data)
+
     def _handle_mail_object(self, mail, email_id, rfc822_email, tmp_dir, start_time_epoch):
 
         self._parsed_mail = OrderedDict()
@@ -802,7 +820,8 @@ class ProcessEmail(object):
         container.update(_container_common)
         self._container['source_data_identifier'] = email_id
         self._container['name'] = container_name
-        self._container['data'] = {'raw_email': rfc822_email}
+        cleaned, clean_data = self._json_cleaned(rfc822_email)
+        self._container['data'] = {'raw_email': clean_data, 'base64encoded': cleaned}
 
         # Create the sets before handling the bodies If both the bodies add the same ip
         # only one artifact should be created
