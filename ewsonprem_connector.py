@@ -1852,7 +1852,12 @@ class EWSOnPremConnector(BaseConnector):
     def _extract_email_headers(self, email_headers):
 
         header_parser = HeaderParser()
-        email_part = header_parser.parsestr(email_headers)
+
+        try:
+            email_part = header_parser.parsestr(email_headers)
+        except UnicodeEncodeError:
+            email_part = header_parser.parsestr(email_headers.encode('utf-8'))
+
         email_headers = email_part.items()
 
         headers = {}
