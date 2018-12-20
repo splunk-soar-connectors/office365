@@ -1,8 +1,8 @@
 [submodule "ntlm_auth"]
 	path = ntlm_auth
-	url = ssh://git@bitbucket.phantom.us:7999/per/ntlm_auth.git
+	url = git@cd.splunkdev.com:phantom-external/ntlm_auth.git
         ignore = dirty
 [submodule "requests_ntlm"]
 	path = requests_ntlm
-	url = ssh://git@bitbucket.phantom.us:7999/per/requests_ntlm.git
+	url = git@cd.splunkdev.com:phantom-external/requests_ntlm.git
         ignore = dirty
