@@ -1,5 +1,5 @@
 # Makefile for Phantom apps CI
-#  created oct-2018 by rbraun at splunk
+#  created oct-2018 by michellel & jacobd at splunk
 #
 # Usage:
 #   make local     - to bring up docker for local dev
@@ -38,7 +38,8 @@ ifneq ($(wildcard /run/secrets/.),)
  export APP_DEPLOY_KEY    ?= $(shell cat /run/secrets/app_deploy_key)
 endif
 
-.PHONY: checkout test upload build release local secrets list_secrets
+APP_RELEASE_TARGETS = test upload build release
+.PHONY: checkout local secrets list_secrets $(APP_RELEASE_TARGETS)
 
 checkout: $(RELEASE_DIR)
 $(RELEASE_DIR): /tmp/ssh-agent
@@ -47,16 +48,7 @@ $(RELEASE_DIR): /tmp/ssh-agent
 	$(info Checkout the test branch: $(TEST_BRANCH))
 	@cd $(RELEASE_DIR) && git checkout $(TEST_BRANCH)
 
-test: checkout
-	@cd $(RELEASE_DIR) && make $@
-
-upload: checkout
-	@cd $(RELEASE_DIR) && make $@
-
-build: checkout
-	@cd $(RELEASE_DIR) && make $@
-
-release: checkout
+$(APP_RELEASE_TARGETS): checkout
 	@cd $(RELEASE_DIR) && make $@
 
 local: secrets
