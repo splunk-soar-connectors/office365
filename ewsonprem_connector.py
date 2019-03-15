@@ -930,7 +930,7 @@ class EWSOnPremConnector(BaseConnector):
         self._target_user = user
         ignore_subfolders = param.get('ignore_subfolders', False)
 
-        self.save_progress("Searching in {0}\{1}{2}".format(
+        self.save_progress("Searching in {0}\\{1}{2}".format(
             self._clean_str(user),
             folder_path if folder_path else 'All Folders',
             ' (and the children)' if (not ignore_subfolders) else ''))
@@ -1465,7 +1465,7 @@ class EWSOnPremConnector(BaseConnector):
 
             curr_valid_folder_path = '/'.join(folder_names[:i + 1])
 
-            self.save_progress('Getting info about {0}\{1}'.format(self._clean_str(user), curr_valid_folder_path))
+            self.save_progress('Getting info about {0}\\{1}'.format(self._clean_str(user), curr_valid_folder_path))
 
             input_xml = ews_soap.xml_get_children_info(user, child_folder_name=folder_name, parent_folder_id=parent_folder_id)
 
@@ -2193,9 +2193,12 @@ class EWSOnPremConnector(BaseConnector):
             email_times = set(email_times)
 
             if (len(email_times) == 1):
-                self.debug_print("Getting all emails with the same LastModifiedTime, down to the second." +
-                        " That means the device is generating max_containers=({0}) per second.".format(max_emails) +
-                        " Skipping to the next second to not get stuck.")
+                debug_message = ' '.join([
+                    "Getting all emails with the same LastModifiedTime, down to the second.",
+                    "That means the device is generating max_containers=({0}) per second.".format(max_emails),
+                    "Skipping to the next second to not get stuck."
+                ])
+                self.debug_print(debug_message)
 
                 self._state['last_email_format'] = self._get_next_start_time(self._state['last_email_format'])
 
@@ -2207,7 +2210,7 @@ class EWSOnPremConnector(BaseConnector):
         # Get the action that we are supposed to carry out, set it in the connection result object
         action = self.get_action_identifier()
 
-        # Intialize it to success
+        # Initialize it to success
         ret_val = phantom.APP_SUCCESS
 
         # Bunch if if..elif to process actions
