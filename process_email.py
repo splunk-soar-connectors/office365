@@ -1062,9 +1062,9 @@ class ProcessEmail(object):
 
         return self._base_connector.set_status(phantom.APP_SUCCESS)
 
-    def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id):
+    def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
 
-        vault_info = Vault.get_file_info(vault_id=vault_id)
+        vault_info = Vault.get_file_info(vault_id=vault_id, container_id=container_id, method='and')
 
         if (not vault_info):
             return (phantom.APP_ERROR, "Vault ID not found")
@@ -1140,7 +1140,7 @@ class ProcessEmail(object):
                 'cs6Label': 'Vault ID'})
 
             # now get the rest of the hashes and add them to the cef artifact
-            self._add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH])
+            self._add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH], container_id)
 
         if (not cef_artifact):
             return (phantom.APP_SUCCESS, phantom.APP_ERROR)
