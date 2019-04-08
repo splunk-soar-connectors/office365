@@ -1064,7 +1064,7 @@ class ProcessEmail(object):
 
     def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
 
-        vault_info = Vault.get_file_info(vault_id=vault_id, container_id=container_id)
+        vault_info = Vault.get_file_info(vault_id=vault_id, container_id=container_id, method='and')
 
         if (not vault_info):
             return (phantom.APP_ERROR, "Vault ID not found")
