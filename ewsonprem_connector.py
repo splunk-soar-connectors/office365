@@ -1049,10 +1049,14 @@ class EWSOnPremConnector(BaseConnector):
         email_data = None
         email_id = None
         resp_data = {}
-
-        ret_val, resp_data, status_code = self.get_container_info(container_id)
+        self.debug_print('_get_email_data_from_container')
+        try:
+            ret_val, resp_data, status_code = self.get_container_info(container_id)
+        except ValueError as e:
+            return RetVal3(action_result.set_status(phantom.APP_ERROR, 'Validation failed for container_id. Error: {}'.format(str(e))), email_data, email_id)
 
         if (phantom.is_fail(ret_val)):
+            self.debug_print('fail... {}'.format(str(resp_data)))
             return RetVal3(action_result.set_status(phantom.APP_ERROR, str(resp_data)), email_data, email_id)
 
         # Keep pylint happy
@@ -1110,9 +1114,13 @@ class EWSOnPremConnector(BaseConnector):
 
     def _handle_email_with_container_id(self, action_result, container_id, ingest_email, target_container_id=None):
 
+        self.debug_print('inside email with container  {}'.format(container_id))
+
         ret_val, email_data, email_id = self._get_email_data_from_container(container_id, action_result)
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
+
+        self.debug_print('unreachable')
 
         action_result.update_summary({"email_id": email_id})
 
@@ -1185,6 +1193,7 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
+        self.debug_print('inside get_email')
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
@@ -1196,6 +1205,7 @@ class EWSOnPremConnector(BaseConnector):
         target_container_id = None
 
         if (use_current_container):
+            self.debug_print('inside use current container')
             target_container_id = self.get_container_id()
 
         if (not email_id and not container_id and not vault_id):
@@ -1204,11 +1214,15 @@ class EWSOnPremConnector(BaseConnector):
         ingest_email = param.get(EWSONPREM_JSON_INGEST_EMAIL, False)
 
         if (container_id is not None):
+            self.debug_print('inside get_email')
             return self._handle_email_with_container_id(action_result, container_id, ingest_email, target_container_id)
         if (vault_id is not None):
             return self._handle_email_with_vault_id(action_result, vault_id, ingest_email, target_container_id)
         else:
-            data = ews_soap.xml_get_emails_data([email_id])
+            try:
+                data = ews_soap.xml_get_emails_data([email_id])
+            except Exception as e:
+                return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
 
             ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1279,7 +1293,10 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
 
         # do a get on the message to get the change id
-        data = ews_soap.xml_get_emails_data([email_id])
+        try:
+            data = ews_soap.xml_get_emails_data([email_id])
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1298,7 +1315,10 @@ class EWSOnPremConnector(BaseConnector):
         if (category is not None):
             category = [x.strip() for x in category.split(',')]
 
-        data = ews_soap.get_update_email(email_id, change_key, category, subject)
+        try:
+            data = ews_soap.get_update_email(email_id, change_key, category, subject)
+        except ValueError as e:
+            return action_result.set_status(phantom.APP_ERROR, "Validation failed for given input paramter. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
 
@@ -1308,8 +1328,10 @@ class EWSOnPremConnector(BaseConnector):
 
         if (not resp_json):
             return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
-
-        data = ews_soap.xml_get_emails_data([email_id])
+        try:
+            data = ews_soap.xml_get_emails_data([email_id])
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1355,7 +1377,10 @@ class EWSOnPremConnector(BaseConnector):
 
         message_ids = ph_utils.get_list_from_string(message_id)
 
-        data = ews_soap.get_delete_email(message_ids)
+        try:
+            data = ews_soap.get_delete_email(message_ids)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for id {}'.format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_delete_response)
 
@@ -1528,7 +1553,10 @@ class EWSOnPremConnector(BaseConnector):
 
         message = "Sender Blocked" if action == "block" else "Sender Unblocked"
 
-        data = ews_soap.xml_get_mark_as_junk(message_id, is_junk=is_junk, move_item=move_email)
+        try:
+            data = ews_soap.xml_get_mark_as_junk(message_id, is_junk=is_junk, move_item=move_email)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_markasjunk_response)
 
@@ -1584,11 +1612,17 @@ class EWSOnPremConnector(BaseConnector):
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
 
-        data = ews_soap.get_copy_email(message_id, folder_info['id'])
+        try:
+            data = ews_soap.get_copy_email(message_id, folder_info['id'])
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for id. Error: {}'.format(str(e)))
         response_checker = self._check_copy_response
 
         if (action == "move"):
-            data = ews_soap.get_move_email(message_id, folder_info['id'])
+            try:
+                data = ews_soap.get_move_email(message_id, folder_info['id'])
+            except Exception as e:
+                return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for id. Error: {}'.format(str(e)))
             response_checker = self._check_move_response
 
         ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
@@ -1634,9 +1668,8 @@ class EWSOnPremConnector(BaseConnector):
             message = action_result.get_message()
             if ( 'ErrorNameResolutionNoResults' in message):
                 message = 'No email found. The input parameter might not be a valid alias or email.'
-                return action_result.set_status(phantom.APP_SUCCESS, message)
-            else:
-                return action_result.set_status(phantom.APP_ERROR, message)
+
+            return action_result.set_status(phantom.APP_ERROR, message)
 
         if (not resp_json):
             return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
@@ -1982,8 +2015,11 @@ class EWSOnPremConnector(BaseConnector):
                 attachments_data=attach_meta_info_list)
 
     def _process_email_id(self, email_id, target_container_id=None):
-
-        data = ews_soap.xml_get_emails_data([email_id])
+        action_result = ActionResult()
+        try:
+            data = ews_soap.xml_get_emails_data([email_id])
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
 
         action_result = ActionResult()
 
