@@ -36,12 +36,9 @@
             "required": true,
             "default": "https://outlook.office365.com/EWS/Exchange.asmx"
         },
-        "verify_server_cert": {
-            "data_type": "boolean",
-            "description": "Verify server certificate",
-            "required": true,
-            "order": 1,
-            "default": false
+        "ph": {
+            "data_type": "ph",
+            "order": 1
         },
         "username": {
             "data_type": "string",

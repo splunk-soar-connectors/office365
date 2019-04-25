@@ -220,7 +220,7 @@ class EWSOnPremConnector(BaseConnector):
         # Now create the request to the server
         headers = {'Content-Type': 'application/soap_xml; charset=utf8'}
 
-        url = config[EWS_JSON_FED_PING_URL]
+        url = (config[EWS_JSON_FED_PING_URL]).encode('utf-8')
 
         # POST the request
         try:
@@ -546,7 +546,7 @@ class EWSOnPremConnector(BaseConnector):
 
         auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
 
-        self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
+        self._base_url = (config[EWSONPREM_JSON_DEVICE_URL]).encode('utf-8')
 
         message = ''
 
@@ -567,7 +567,7 @@ class EWSOnPremConnector(BaseConnector):
                 return ret_val
 
             password = config[phantom.APP_JSON_PASSWORD]
-            username = config[phantom.APP_JSON_USERNAME]
+            username = (config[phantom.APP_JSON_USERNAME]).encode('utf-8')
             username = username.replace('/', '\\')
 
             self._session.auth = HTTPBasicAuth(username, password)
@@ -702,9 +702,6 @@ class EWSOnPremConnector(BaseConnector):
         Needs to return two values, 1st the phantom.APP_[SUCCESS|ERROR], 2nd the response
         """
 
-        # Get the config
-        config = self.get_config()
-
         resp_json = None
 
         if ((self._impersonate) and (not self._target_user)):
@@ -721,7 +718,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Make the call
         try:
-            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=60, verify=config[phantom.APP_JSON_VERIFY])
+            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=60, verify=True)
         except Exception as e:
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, e), resp_json)
 
@@ -1049,11 +1046,10 @@ class EWSOnPremConnector(BaseConnector):
         email_data = None
         email_id = None
         resp_data = {}
-        self.debug_print('_get_email_data_from_container')
         try:
             ret_val, resp_data, status_code = self.get_container_info(container_id)
         except ValueError as e:
-            return RetVal3(action_result.set_status(phantom.APP_ERROR, 'Validation failed for container_id. Error: {}'.format(str(e))), email_data, email_id)
+            return RetVal3(action_result.set_status(phantom.APP_ERROR, 'Validation failed for the container_id. Error: {}'.format(str(e))), email_data, email_id)
 
         if (phantom.is_fail(ret_val)):
             self.debug_print('fail... {}'.format(str(resp_data)))
@@ -1193,8 +1189,6 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        self.debug_print('inside get_email')
-        # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
         email_id = param.get(EWSONPREM_JSON_ID)
@@ -1222,7 +1216,7 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 data = ews_soap.xml_get_emails_data([email_id])
             except Exception as e:
-                return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
+                return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
             ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1296,7 +1290,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             data = ews_soap.xml_get_emails_data([email_id])
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1318,7 +1312,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             data = ews_soap.get_update_email(email_id, change_key, category, subject)
         except ValueError as e:
-            return action_result.set_status(phantom.APP_ERROR, "Validation failed for given input paramter. Error: {}".format(str(e)))
+            return action_result.set_status(phantom.APP_ERROR, "Validation failed for the given input paramter. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
 
@@ -1331,7 +1325,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             data = ews_soap.xml_get_emails_data([email_id])
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1380,7 +1374,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             data = ews_soap.get_delete_email(message_ids)
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for id {}'.format(str(e)))
+            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. Error: {}'.format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_delete_response)
 
@@ -1556,7 +1550,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             data = ews_soap.xml_get_mark_as_junk(message_id, is_junk=is_junk, move_item=move_email)
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_markasjunk_response)
 
@@ -1615,14 +1609,14 @@ class EWSOnPremConnector(BaseConnector):
         try:
             data = ews_soap.get_copy_email(message_id, folder_info['id'])
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for id. Error: {}'.format(str(e)))
+            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. Error: {}'.format(str(e)))
         response_checker = self._check_copy_response
 
         if (action == "move"):
             try:
                 data = ews_soap.get_move_email(message_id, folder_info['id'])
             except Exception as e:
-                return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for id. Error: {}'.format(str(e)))
+                return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. Error: {}'.format(str(e)))
             response_checker = self._check_move_response
 
         ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
@@ -2019,9 +2013,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             data = ews_soap.xml_get_emails_data([email_id])
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for id. Error: {}".format(str(e)))
-
-        action_result = ActionResult()
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -2051,7 +2043,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._target_user = poll_user
 
-        folder_path = config.get(EWS_JSON_POLL_FOLDER, 'Inbox')
+        folder_path = (config.get(EWS_JSON_POLL_FOLDER, 'Inbox')).encode('utf-8')
 
         is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
