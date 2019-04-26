@@ -468,6 +468,7 @@
                     "data_type": "string",
                     "order": 0,
                     "contains": [
+                        "exchange email id",
                         "office 365 email id"
                     ],
                     "primary": true,
@@ -550,6 +551,7 @@
                     "data_type": "string",
                     "order": 0,
                     "contains": [
+                        "exchange email id",
                         "office 365 email id"
                     ],
                     "primary": true,
@@ -692,7 +694,8 @@
                     "data_type": "string",
                     "order": 0,
                     "contains": [
-                        "exchange email id"
+                        "exchange email id",
+                        "office 365 email id"
                     ],
                     "primary": true,
                     "required": true
@@ -846,6 +849,7 @@
                     "data_type": "string",
                     "order": 0,
                     "contains": [
+                        "exchange email id",
                         "office 365 email id"
                     ],
                     "primary": true,
@@ -970,6 +974,7 @@
                     "data_type": "string",
                     "order": 0,
                     "contains": [
+                        "exchange email id",
                         "office 365 email id"
                     ],
                     "primary": true,
@@ -1096,7 +1101,8 @@
                     "data_type": "string",
                     "order": 0,
                     "contains": [
-                        "exchange email id"
+                        "exchange email id",
+                        "office 365 email id"
                     ],
                     "primary": true,
                     "required": false,
@@ -1768,7 +1774,8 @@
                     "data_type": "string",
                     "order": 0,
                     "contains": [
-                        "exchange email id"
+                        "exchange email id",
+                        "office 365 email id"
                     ],
                     "primary": true,
                     "required": true
