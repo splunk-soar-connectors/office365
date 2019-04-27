@@ -132,13 +132,13 @@ class EWSOnPremConnector(BaseConnector):
                 exec script in self._script_module.__dict__
             except Exception as e:
                 self.save_progress("Error loading custom script. Error: {}".format(str(e)))
-                return phantom.APP_ERROR
+                return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
             try:
                 self._preprocess_container = self._script_module.preprocess_container
             except:
                 self.save_progress("Error loading custom script. Does not contain preprocess_container function")
-                return phantom.APP_ERROR
+                return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
         return phantom.APP_SUCCESS
 
@@ -908,6 +908,13 @@ class EWSOnPremConnector(BaseConnector):
         aqs = param.get(EWSONPREM_JSON_QUERY, "")
         is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
+        try:
+            aqs.encode()
+
+        except Exception as e:
+            self.debug_print("Parameter validation failed for the query.", e)
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the query. Unicode value found.")
+
         if (not subject and not sender and not aqs and not body and not int_msg_id):
             return action_result.set_status(phantom.APP_ERROR, "Please specify at-least one search criteria")
 
@@ -921,7 +928,6 @@ class EWSOnPremConnector(BaseConnector):
 
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
-
         user = param[EWSONPREM_JSON_EMAIL]
         folder_path = param.get(EWSONPREM_JSON_FOLDER)
         self._target_user = user
@@ -940,7 +946,6 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status()
 
         folder_infos = []
-
         if (folder_path):
             # get the id of the folder specified
             ret_val, folder_info = self._get_folder_info(user, folder_path, action_result, is_public_folder)
@@ -949,7 +954,6 @@ class EWSOnPremConnector(BaseConnector):
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
-
         parent_folder_info = folder_info
         folder_infos.append(folder_info)
 
@@ -959,7 +963,6 @@ class EWSOnPremConnector(BaseConnector):
                 if (phantom.is_fail(ret_val)):
                     return action_result.get_status()
                 folder_infos.extend(child_folder_infos)
-
         items_matched = 0
 
         num_folder_ids = len(folder_infos)
@@ -1013,7 +1016,6 @@ class EWSOnPremConnector(BaseConnector):
                 action_result.add_data(curr_item)
 
         action_result.update_summary({'emails_matched': items_matched})
-
         # Set the Status
         return action_result.set_status(phantom.APP_SUCCESS)
 
