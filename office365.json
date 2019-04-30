@@ -313,7 +313,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "susan@phantomengineering.onmicrosoft.com"
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {
@@ -366,7 +366,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "susan@phantomengineering.onmicrosoft.com"
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {
@@ -549,7 +549,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "susan@phantomengineering.onmicrosoft.com"
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {
@@ -693,7 +693,7 @@
                     "column_name": "Destination Mailbox",
                     "column_order": 0,
                     "example_values": [
-                        "susan@phantomengineering.onmicrosoft.com"
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {
@@ -729,7 +729,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "susan@phantomengineering.onmicrosoft.com"
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {
@@ -873,7 +873,7 @@
                     "column_name": "User Email",
                     "column_order": 0,
                     "example_values": [
-                        "susan@phantomengineering.onmicrosoft.com"
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {
@@ -909,7 +909,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "susan@phantomengineering.onmicrosoft.com"
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {
@@ -1308,7 +1308,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "susan@phantomengineering.onmicrosoft.com"
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {
@@ -1930,7 +1930,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "susan@phantomengineering.onmicrosoft.com"
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {   "data_path": "action_result.data.*.t_Contact.t_AssistantName",

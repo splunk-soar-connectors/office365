@@ -1054,7 +1054,6 @@ class EWSOnPremConnector(BaseConnector):
             return RetVal3(action_result.set_status(phantom.APP_ERROR, 'Validation failed for the container_id. Error: {}'.format(str(e))), email_data, email_id)
 
         if (phantom.is_fail(ret_val)):
-            self.debug_print('fail... {}'.format(str(resp_data)))
             return RetVal3(action_result.set_status(phantom.APP_ERROR, str(resp_data)), email_data, email_id)
 
         # Keep pylint happy
@@ -1112,13 +1111,9 @@ class EWSOnPremConnector(BaseConnector):
 
     def _handle_email_with_container_id(self, action_result, container_id, ingest_email, target_container_id=None):
 
-        self.debug_print('inside email with container  {}'.format(container_id))
-
         ret_val, email_data, email_id = self._get_email_data_from_container(container_id, action_result)
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
-
-        self.debug_print('unreachable')
 
         action_result.update_summary({"email_id": email_id})
 
@@ -1201,7 +1196,6 @@ class EWSOnPremConnector(BaseConnector):
         target_container_id = None
 
         if (use_current_container):
-            self.debug_print('inside use current container')
             target_container_id = self.get_container_id()
 
         if (not email_id and not container_id and not vault_id):
@@ -1210,7 +1204,6 @@ class EWSOnPremConnector(BaseConnector):
         ingest_email = param.get(EWSONPREM_JSON_INGEST_EMAIL, False)
 
         if (container_id is not None):
-            self.debug_print('inside get_email')
             return self._handle_email_with_container_id(action_result, container_id, ingest_email, target_container_id)
         if (vault_id is not None):
             return self._handle_email_with_vault_id(action_result, vault_id, ingest_email, target_container_id)
@@ -1716,7 +1709,7 @@ class EWSOnPremConnector(BaseConnector):
         if (phantom.is_fail(ret_val)):
 
             message = action_result.get_message()
-            if ( 'ErrorNameResolutionNoResults' in message):
+            if ('ErrorNameResolutionNoResults' in message):
                 message += ' The input parameter might not be a distribution list.'
                 action_result.add_data({"t_EmailAddress": group})
             return action_result.set_status(phantom.APP_ERROR, message)
