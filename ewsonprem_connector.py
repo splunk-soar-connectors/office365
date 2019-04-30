@@ -132,13 +132,13 @@ class EWSOnPremConnector(BaseConnector):
                 exec script in self._script_module.__dict__
             except Exception as e:
                 self.save_progress("Error loading custom script. Error: {}".format(str(e)))
-                return phantom.APP_ERROR
+                return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
             try:
                 self._preprocess_container = self._script_module.preprocess_container
             except:
                 self.save_progress("Error loading custom script. Does not contain preprocess_container function")
-                return phantom.APP_ERROR
+                return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
         return phantom.APP_SUCCESS
 
@@ -220,7 +220,7 @@ class EWSOnPremConnector(BaseConnector):
         # Now create the request to the server
         headers = {'Content-Type': 'application/soap_xml; charset=utf8'}
 
-        url = config[EWS_JSON_FED_PING_URL]
+        url = (config[EWS_JSON_FED_PING_URL]).encode('utf-8')
 
         # POST the request
         try:
@@ -546,7 +546,7 @@ class EWSOnPremConnector(BaseConnector):
 
         auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
 
-        self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
+        self._base_url = (config[EWSONPREM_JSON_DEVICE_URL]).encode('utf-8')
 
         message = ''
 
@@ -567,7 +567,7 @@ class EWSOnPremConnector(BaseConnector):
                 return ret_val
 
             password = config[phantom.APP_JSON_PASSWORD]
-            username = config[phantom.APP_JSON_USERNAME]
+            username = (config[phantom.APP_JSON_USERNAME]).encode('utf-8')
             username = username.replace('/', '\\')
 
             self._session.auth = HTTPBasicAuth(username, password)
@@ -702,9 +702,6 @@ class EWSOnPremConnector(BaseConnector):
         Needs to return two values, 1st the phantom.APP_[SUCCESS|ERROR], 2nd the response
         """
 
-        # Get the config
-        config = self.get_config()
-
         resp_json = None
 
         if ((self._impersonate) and (not self._target_user)):
@@ -721,7 +718,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Make the call
         try:
-            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=60, verify=config[phantom.APP_JSON_VERIFY])
+            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=60, verify=True)
         except Exception as e:
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, e), resp_json)
 
@@ -911,6 +908,13 @@ class EWSOnPremConnector(BaseConnector):
         aqs = param.get(EWSONPREM_JSON_QUERY, "")
         is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
+        try:
+            aqs.encode()
+
+        except Exception as e:
+            self.debug_print("Parameter validation failed for the query.", e)
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the query. Unicode value found.")
+
         if (not subject and not sender and not aqs and not body and not int_msg_id):
             return action_result.set_status(phantom.APP_ERROR, "Please specify at-least one search criteria")
 
@@ -924,7 +928,6 @@ class EWSOnPremConnector(BaseConnector):
 
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
-
         user = param[EWSONPREM_JSON_EMAIL]
         folder_path = param.get(EWSONPREM_JSON_FOLDER)
         self._target_user = user
@@ -943,7 +946,6 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status()
 
         folder_infos = []
-
         if (folder_path):
             # get the id of the folder specified
             ret_val, folder_info = self._get_folder_info(user, folder_path, action_result, is_public_folder)
@@ -952,7 +954,6 @@ class EWSOnPremConnector(BaseConnector):
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
-
         parent_folder_info = folder_info
         folder_infos.append(folder_info)
 
@@ -962,7 +963,6 @@ class EWSOnPremConnector(BaseConnector):
                 if (phantom.is_fail(ret_val)):
                     return action_result.get_status()
                 folder_infos.extend(child_folder_infos)
-
         items_matched = 0
 
         num_folder_ids = len(folder_infos)
@@ -1016,7 +1016,6 @@ class EWSOnPremConnector(BaseConnector):
                 action_result.add_data(curr_item)
 
         action_result.update_summary({'emails_matched': items_matched})
-
         # Set the Status
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -1049,8 +1048,10 @@ class EWSOnPremConnector(BaseConnector):
         email_data = None
         email_id = None
         resp_data = {}
-
-        ret_val, resp_data, status_code = self.get_container_info(container_id)
+        try:
+            ret_val, resp_data, status_code = self.get_container_info(container_id)
+        except ValueError as e:
+            return RetVal3(action_result.set_status(phantom.APP_ERROR, 'Validation failed for the container_id. Error: {}'.format(str(e))), email_data, email_id)
 
         if (phantom.is_fail(ret_val)):
             return RetVal3(action_result.set_status(phantom.APP_ERROR, str(resp_data)), email_data, email_id)
@@ -1185,7 +1186,6 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
         email_id = param.get(EWSONPREM_JSON_ID)
@@ -1208,7 +1208,10 @@ class EWSOnPremConnector(BaseConnector):
         if (vault_id is not None):
             return self._handle_email_with_vault_id(action_result, vault_id, ingest_email, target_container_id)
         else:
-            data = ews_soap.xml_get_emails_data([email_id])
+            try:
+                data = ews_soap.xml_get_emails_data([email_id])
+            except Exception as e:
+                return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
             ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1279,7 +1282,10 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
 
         # do a get on the message to get the change id
-        data = ews_soap.xml_get_emails_data([email_id])
+        try:
+            data = ews_soap.xml_get_emails_data([email_id])
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1298,7 +1304,10 @@ class EWSOnPremConnector(BaseConnector):
         if (category is not None):
             category = [x.strip() for x in category.split(',')]
 
-        data = ews_soap.get_update_email(email_id, change_key, category, subject)
+        try:
+            data = ews_soap.get_update_email(email_id, change_key, category, subject)
+        except ValueError as e:
+            return action_result.set_status(phantom.APP_ERROR, "Validation failed for the given input paramter. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
 
@@ -1308,8 +1317,10 @@ class EWSOnPremConnector(BaseConnector):
 
         if (not resp_json):
             return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
-
-        data = ews_soap.xml_get_emails_data([email_id])
+        try:
+            data = ews_soap.xml_get_emails_data([email_id])
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1355,7 +1366,10 @@ class EWSOnPremConnector(BaseConnector):
 
         message_ids = ph_utils.get_list_from_string(message_id)
 
-        data = ews_soap.get_delete_email(message_ids)
+        try:
+            data = ews_soap.get_delete_email(message_ids)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. Error: {}'.format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_delete_response)
 
@@ -1528,7 +1542,10 @@ class EWSOnPremConnector(BaseConnector):
 
         message = "Sender Blocked" if action == "block" else "Sender Unblocked"
 
-        data = ews_soap.xml_get_mark_as_junk(message_id, is_junk=is_junk, move_item=move_email)
+        try:
+            data = ews_soap.xml_get_mark_as_junk(message_id, is_junk=is_junk, move_item=move_email)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_markasjunk_response)
 
@@ -1584,11 +1601,17 @@ class EWSOnPremConnector(BaseConnector):
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
 
-        data = ews_soap.get_copy_email(message_id, folder_info['id'])
+        try:
+            data = ews_soap.get_copy_email(message_id, folder_info['id'])
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. Error: {}'.format(str(e)))
         response_checker = self._check_copy_response
 
         if (action == "move"):
-            data = ews_soap.get_move_email(message_id, folder_info['id'])
+            try:
+                data = ews_soap.get_move_email(message_id, folder_info['id'])
+            except Exception as e:
+                return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. Error: {}'.format(str(e)))
             response_checker = self._check_move_response
 
         ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
@@ -1634,9 +1657,8 @@ class EWSOnPremConnector(BaseConnector):
             message = action_result.get_message()
             if ( 'ErrorNameResolutionNoResults' in message):
                 message = 'No email found. The input parameter might not be a valid alias or email.'
-                return action_result.set_status(phantom.APP_SUCCESS, message)
-            else:
-                return action_result.set_status(phantom.APP_ERROR, message)
+
+            return action_result.set_status(phantom.APP_ERROR, message)
 
         if (not resp_json):
             return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
@@ -1687,7 +1709,7 @@ class EWSOnPremConnector(BaseConnector):
         if (phantom.is_fail(ret_val)):
 
             message = action_result.get_message()
-            if ( 'ErrorNameResolutionNoResults' in message):
+            if ('ErrorNameResolutionNoResults' in message):
                 message += ' The input parameter might not be a distribution list.'
                 action_result.add_data({"t_EmailAddress": group})
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -1982,10 +2004,11 @@ class EWSOnPremConnector(BaseConnector):
                 attachments_data=attach_meta_info_list)
 
     def _process_email_id(self, email_id, target_container_id=None):
-
-        data = ews_soap.xml_get_emails_data([email_id])
-
         action_result = ActionResult()
+        try:
+            data = ews_soap.xml_get_emails_data([email_id])
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(str(e)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -2015,7 +2038,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._target_user = poll_user
 
-        folder_path = config.get(EWS_JSON_POLL_FOLDER, 'Inbox')
+        folder_path = (config.get(EWS_JSON_POLL_FOLDER, 'Inbox')).encode('utf-8')
 
         is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
