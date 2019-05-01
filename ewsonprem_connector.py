@@ -998,7 +998,7 @@ class EWSOnPremConnector(BaseConnector):
             items = resp_json.get('t:Items')
 
             if (items is None):
-                self.debug_print("items is None")
+                self.debug_print("Items is None")
                 continue
 
             items = resp_json.get('t:Items', {}).get('t:Message', [])
@@ -2031,7 +2031,7 @@ class EWSOnPremConnector(BaseConnector):
         config = self.get_config()
 
         # get the user
-        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])
+        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME]).encode('utf-8')
 
         if (not poll_user):
             return (action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None)
@@ -2074,7 +2074,7 @@ class EWSOnPremConnector(BaseConnector):
         items = resp_json.get('t:Items')
 
         if (items is None):
-            self.debug_print("items is None")
+            self.debug_print("Items is None")
             return (action_result.set_status(phantom.APP_SUCCESS, 'Result does not contain items key. Possibly no emails in folder'), None)
 
         items = resp_json.get('t:Items', {}).get('t:Message', [])
@@ -2124,7 +2124,7 @@ class EWSOnPremConnector(BaseConnector):
         email_ids = [email_id]
 
         # get the user
-        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])
+        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME]).encode('utf-8')
 
         if (not poll_user):
             return (action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None)

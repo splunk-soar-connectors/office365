@@ -63,7 +63,7 @@ https://&lt;phantom_host&gt;/rest/handler/ewsforoffice365_a73f6d32-c9d5-4fec-b02
   <li>If all goes well the browser should instruct you to close the tab</li>
   <li>Now go back and check the message on the Test Connectivity dialog box, it should say Connectivity test passed</li>
 </ul>
-Do note that if you wish to use a single login user to read and modify multiple mailboxes (of multiple users), proper permissions to allow impersonation are required to be enabled on the login user
+Do note that if you wish to use a single login user to read and modify multiple mailboxes (of multiple users), proper permissions to allow impersonation is required to be enabled on the login user
     </p>
     <h3 id="federated">Federated</h3>
     <p>
@@ -75,7 +75,7 @@ Do note that if you wish to use a single login user to read and modify multiple 
         It is not uncommon for enterprises to have a single mailbox configured where users can forward suspicious emails for further investigation. The ingestion feature in the Office 365 app is primarily designed to pull emails from such a mailbox and create containers and artifacts in Phantom.
     </p>
     <p>
-    The first thing to do is create the Office 365 asset in Phantom and fill up the required various parameters like <b>url, username, password</b> and <b>poll_user</b>. The other values can be left in the default state for now. The same user can be used to login/authenticate and for polling, just specify the same email address in <b>poll_user</b> and <b>username</b>.<br>
+    The first thing to do is create the Office 365 asset in Phantom and fill up the required various parameters like <b>url, username, password</b>, and <b>poll_user</b>. The other values can be left in the default state for now. The same user can be used to login/authenticate and for polling, just specify the same email address in <b>poll_user</b> and <b>username</b>.<br>
     <br>
     <a href="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/asset_settings.png">
         <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/asset_settings.png"/>
@@ -83,7 +83,7 @@ Do note that if you wish to use a single login user to read and modify multiple 
     </p>
     <p>
     <br>
-    However it's good practice to set the Label of the objects from this source to a 'NEW ENTRY' called <b>Email</b>.
+    However, it's good practice to set the Label of the objects from this source to a 'NEW ENTRY' called <b>Email</b>.
     <br>
     <a href="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/ingest_settings.png">
         <img src="/app_resource/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/img/ingest_settings.png"/>
@@ -114,7 +114,7 @@ Do note that if you wish to use a single login user to read and modify multiple 
     </ul>
     <p>
 <h2 id="poll_now">POLL NOW</h2>
-    POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine oldest or latest is what EWS calls <b>item:LastModifiedTime</b>. This value is different than the mail creation time. For example if an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved.
+    POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine the oldest or latest is what EWS calls <b>item:LastModifiedTime</b>. This value is different than the mail creation time. For example, if an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved.
     </p>
 <h2 id="scheduled_polling">Scheduled Polling</h2>
     <p>
@@ -222,8 +222,8 @@ Do note that if you wish to use a single login user to read and modify multiple 
       <li>Vault Artifact
         <ul>
           <li>If the email contains any attachments, these are extracted (if <b>extract_attachments</b> is enabled) and added to the vault of the Container.</li>
-          <li>At the same time the vault ID and file name of this item is represented by a Vault Artifact.</li>
-          <li>The same file can be added to the vault multiple times. In this scenario the file name of the item added the second time onwards will be slightly different, but the vault ID will still be the same. However there will be multiple artifacts created.</li>
+          <li>At the same time, the vault ID and file name of this item are represented by a Vault Artifact.</li>
+          <li>The same file can be added to the vault multiple times. In this scenario, the file name of the item added the second time onwards will be slightly different, but the vault ID will still be the same. However, there will be multiple artifacts created.</li>
           <li>Do note that the system does <i>not</i> duplicate the file bytes, only the metadata in the database.
           <table style="width:100%">
             <tr>
