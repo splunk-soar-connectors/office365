@@ -1005,7 +1005,7 @@ class EWSOnPremConnector(BaseConnector):
             items = resp_json.get('t:Items')
 
             if (items is None):
-                self.debug_print("Items is None")
+                self.debug_print("There are no items in the response")
                 continue
 
             items = resp_json.get('t:Items', {}).get('t:Message', [])
