@@ -222,6 +222,13 @@ class EWSOnPremConnector(BaseConnector):
 
         url = (config[EWS_JSON_FED_PING_URL]).encode('utf-8')
 
+        try:
+            url.encode()
+
+        except Exception as e:
+            self.debug_print("Parameter validation failed for the query.", e)
+            return (None, "Parameter validation failed for the Federated Auth Ping URL.")
+
         # POST the request
         try:
             r = requests.post(url, data=fed_request_xml, headers=headers, verify=config[EWS_JSON_FED_VERIFY_CERT])
