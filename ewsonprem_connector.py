@@ -222,6 +222,13 @@ class EWSOnPremConnector(BaseConnector):
 
         url = (config[EWS_JSON_FED_PING_URL]).encode('utf-8')
 
+        try:
+            url.encode()
+
+        except Exception as e:
+            self.debug_print("Parameter validation failed for the query.", e)
+            return (None, "Parameter validation failed for the Federated Auth Ping URL.")
+
         # POST the request
         try:
             r = requests.post(url, data=fed_request_xml, headers=headers, verify=config[EWS_JSON_FED_VERIFY_CERT])
@@ -998,7 +1005,7 @@ class EWSOnPremConnector(BaseConnector):
             items = resp_json.get('t:Items')
 
             if (items is None):
-                self.debug_print("items is None")
+                self.debug_print("There are no items in the response")
                 continue
 
             items = resp_json.get('t:Items', {}).get('t:Message', [])
@@ -2031,7 +2038,7 @@ class EWSOnPremConnector(BaseConnector):
         config = self.get_config()
 
         # get the user
-        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])
+        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME]).encode('utf-8')
 
         if (not poll_user):
             return (action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None)
@@ -2074,7 +2081,7 @@ class EWSOnPremConnector(BaseConnector):
         items = resp_json.get('t:Items')
 
         if (items is None):
-            self.debug_print("items is None")
+            self.debug_print("Items is None")
             return (action_result.set_status(phantom.APP_SUCCESS, 'Result does not contain items key. Possibly no emails in folder'), None)
 
         items = resp_json.get('t:Items', {}).get('t:Message', [])
@@ -2124,7 +2131,7 @@ class EWSOnPremConnector(BaseConnector):
         email_ids = [email_id]
 
         # get the user
-        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])
+        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME]).encode('utf-8')
 
         if (not poll_user):
             return (action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None)
@@ -2311,7 +2318,7 @@ if __name__ == '__main__':
             r2 = requests.post(BaseConnector._get_phantom_base_url() + "login", verify=False, data=data, headers=headers)
             session_id = r2.cookies['sessionid']
         except Exception as e:
-            print ("Unable to get session id from the platfrom. Error: " + str(e))
+            print ("Unable to get session id from the platform. Error: " + str(e))
             exit(1)
 
     with open(args.input_test_json) as f:
