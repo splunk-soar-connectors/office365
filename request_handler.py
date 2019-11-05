@@ -43,13 +43,15 @@ class Office365RequestHandler():
         client_id = state['client_id']
         redirect_uri = state['redirect_url']
         request_url = state['request_url']
+        client_secret = state['client_secret']
 
         body = {
             'grant_type': 'authorization_code',
             'resource': 'https://outlook.office365.com/',
             'redirect_uri': redirect_uri,
             'client_id': client_id,
-            'code': code
+            'code': code,
+            'client_secret': client_secret
         }
 
         try:

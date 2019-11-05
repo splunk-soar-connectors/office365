@@ -354,7 +354,7 @@ class EWSOnPremConnector(BaseConnector):
         url_to_app_rest = "{0}/rest/handler/{1}_{2}/{3}".format(phantom_base_url, app_dir_name, app_json['appid'], asset_name)
         return (phantom.APP_SUCCESS, url_to_app_rest)
 
-    def _azure_int_auth_initial(self, client_id, rsh):
+    def _azure_int_auth_initial(self, client_id, rsh, client_secret):
         state = rsh.load_state()
         asset_id = self.get_asset_id()
 
@@ -369,6 +369,7 @@ class EWSOnPremConnector(BaseConnector):
         state['client_id'] = client_id
         state['redirect_url'] = app_rest_url
         state['request_url'] = request_url
+        state['client_secret'] = client_secret
 
         rsh.save_state(state)
 
@@ -377,7 +378,7 @@ class EWSOnPremConnector(BaseConnector):
             'response_mode': 'query',
             'client_id': client_id,
             'state': asset_id,
-            'redirect_url': app_rest_url
+            'redirect_uri': app_rest_url
         }
         url = requests.Request('GET', request_url + '/authorize', params=params).prepare().url
         url += '&'
@@ -399,7 +400,7 @@ class EWSOnPremConnector(BaseConnector):
         self._state['oauth_token'] = oauth_token
         return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
 
-    def _azure_int_auth_refresh(self, client_id):
+    def _azure_int_auth_refresh(self, client_id, client_secret):
 
         oauth_token = self._state.get('oauth_token')
         if not oauth_token:
@@ -415,7 +416,8 @@ class EWSOnPremConnector(BaseConnector):
             'grant_type': 'refresh_token',
             'resource': 'https://outlook.office365.com/',
             'client_id': client_id,
-            'refresh_token': refresh_token
+            'refresh_token': refresh_token,
+            'client_secret': client_secret
         }
         try:
             r = requests.post(request_url, data=body)
@@ -433,8 +435,13 @@ class EWSOnPremConnector(BaseConnector):
     def _set_azure_int_auth(self, config):
 
         client_id = config.get(EWS_JSON_CLIENT_ID)
+        client_secret = config.get(EWS_JSON_CLIENT_SECRET)
+
         if (not client_id):
             return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
+
+        if (not client_secret):
+            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_SECRET))
 
         asset_id = self.get_asset_id()
         rsh = RequestStateHandler(asset_id)  # Use the states from the OAuth login
@@ -442,16 +449,16 @@ class EWSOnPremConnector(BaseConnector):
         self._state = rsh._decrypt_state(self._state)
 
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
-            ret = self._azure_int_auth_refresh(client_id)
+            ret = self._azure_int_auth_refresh(client_id, client_secret)
         else:
-            ret = self._azure_int_auth_initial(client_id, rsh)
+            ret = self._azure_int_auth_initial(client_id, rsh, client_secret)
 
         self._state = rsh._encrypt_state(self._state)
         self._state['client_id'] = client_id
 
         # NOTE: This state is in the app directory, it is
         #  different than the app state (i.e. self._state)
-        rsh.delete_state()
+        # rsh.delete_state()
 
         return ret
 
@@ -462,10 +469,16 @@ class EWSOnPremConnector(BaseConnector):
             self.save_progress(message)
             return (None, message)
 
+        username = config[phantom.APP_JSON_USERNAME]
+        password = config[phantom.APP_JSON_PASSWORD]
         client_id = config.get(EWS_JSON_CLIENT_ID)
+        client_secret = config.get(EWS_JSON_CLIENT_SECRET)
 
         if (not client_id):
             return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
+
+        if (not client_secret):
+            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_SECRET))
 
         client_req_id = str(uuid.uuid4())
 
@@ -500,11 +513,12 @@ class EWSOnPremConnector(BaseConnector):
 
         data = {
                 'resource': '{0}://{1}'.format(parsed_base_url.scheme, parsed_base_url.netloc),
-                'client_id': config[EWS_JSON_CLIENT_ID],
-                'username': config[phantom.APP_JSON_USERNAME],
-                'password': config[phantom.APP_JSON_PASSWORD],
+                'client_id': client_id,
+                'username': username,
+                'password': password,
                 'grant_type': 'password',
-                'scope': 'openid' }
+                'scope': 'openid',
+                'client_secret': client_secret }
 
         try:
             r = self._session.post(url, params=params, headers=headers, data=data, verify=True)

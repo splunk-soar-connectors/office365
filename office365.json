@@ -36,38 +36,34 @@
             "required": true,
             "default": "https://outlook.office365.com/EWS/Exchange.asmx"
         },
-        "ph": {
-            "data_type": "ph",
-            "order": 1
-        },
         "username": {
             "data_type": "string",
-            "order": 2,
+            "order": 1,
             "description": "Username",
             "required": true
         },
         "password": {
             "data_type": "password",
-            "order": 3,
+            "order": 2,
             "description": "Password",
             "required": false
         },
         "poll_user": {
             "data_type": "string",
-            "order": 4,
+            "order": 3,
             "description": "User Email Mailbox (Test Connectivity and Poll)",
             "required": false
         },
         "use_impersonation": {
             "data_type": "boolean",
-            "order": 5,
+            "order": 4,
             "description": "Use Impersonation",
             "required": true,
             "default": false
         },
         "auth_type": {
             "data_type": "string",
-            "order": 6,
+            "order": 5,
             "description": "Authentication mechanism to use",
             "required": false,
             "value_list": [
@@ -80,8 +76,14 @@
         },
         "client_id": {
             "data_type": "string",
-            "order": 7,
+            "order": 6,
             "description": "Client App ID for Azure/Fed AD Authentication",
+            "required": false
+        },
+        "client_secret": {
+            "data_type": "password",
+            "order": 7,
+            "description": "Client Secret for Azure/Azure(Interactive) Authentication",
             "required": false
         },
         "fed_ping_url": {
