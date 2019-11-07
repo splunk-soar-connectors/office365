@@ -372,6 +372,7 @@ class EWSOnPremConnector(BaseConnector):
         state['client_secret'] = client_secret
 
         rsh.save_state(state)
+        self.save_state(state)
 
         params = {
             'response_type': 'code',
@@ -430,6 +431,7 @@ class EWSOnPremConnector(BaseConnector):
             return (None, "Error retrieving OAuth Token")
 
         self._state['oauth_token'] = oauth_token
+        self.save_state(self._state)
         return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
 
     def _set_azure_int_auth(self, config):
@@ -458,7 +460,8 @@ class EWSOnPremConnector(BaseConnector):
 
         # NOTE: This state is in the app directory, it is
         #  different than the app state (i.e. self._state)
-        # rsh.delete_state()
+
+        rsh.delete_state()
 
         return ret
 
