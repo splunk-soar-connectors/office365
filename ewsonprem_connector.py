@@ -369,7 +369,7 @@ class EWSOnPremConnector(BaseConnector):
         state['client_id'] = client_id
         state['redirect_url'] = app_rest_url
         state['request_url'] = request_url
-        state['client_secret'] = client_secret
+        state['client_secret'] = base64.b64encode(client_secret)
 
         rsh.save_state(state)
         self.save_state(state)
@@ -404,6 +404,7 @@ class EWSOnPremConnector(BaseConnector):
     def _azure_int_auth_refresh(self, client_id, client_secret):
 
         oauth_token = self._state.get('oauth_token')
+
         if not oauth_token:
             return (None, "Unable to get refresh token. Has Test Connectivity been run?")
 
@@ -448,11 +449,16 @@ class EWSOnPremConnector(BaseConnector):
         asset_id = self.get_asset_id()
         rsh = RequestStateHandler(asset_id)  # Use the states from the OAuth login
 
-        self._state = rsh._decrypt_state(self._state)
+        try:
+            self._state = rsh._decrypt_state(self._state)
+        except:
+            return (None, EWS_ASSET_CORRUPTED)
 
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
+            self.debug_print("Try to generate token from refresh token")
             ret = self._azure_int_auth_refresh(client_id, client_secret)
         else:
+            self.debug_print("Try to generate token from authorization code")
             ret = self._azure_int_auth_initial(client_id, rsh, client_secret)
 
         self._state = rsh._encrypt_state(self._state)
@@ -486,7 +492,7 @@ class EWSOnPremConnector(BaseConnector):
         client_req_id = str(uuid.uuid4())
 
         headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
-        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, config[phantom.APP_JSON_USERNAME])
+        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, config[phantom.APP_JSON_USERNAME].encode("utf-8"))
         params = {'api-version': '1.0'}
 
         try:
@@ -504,7 +510,6 @@ class EWSOnPremConnector(BaseConnector):
             return (None, str(e))
 
         domain = resp_json.get('domain_name')
-
         if (not domain):
             return (None, "Did not find domain in response. Cannot continue")
 
@@ -754,6 +759,8 @@ class EWSOnPremConnector(BaseConnector):
         if (not (200 <= r.status_code <= 399)):
             # error
             detail = self._get_http_error_details(r)
+            if r.status_code == 401:
+                detail = "{0}. {1}".format(detail, EWS_MODIFY_CONFIG)
             return (result.set_status(phantom.APP_ERROR,
                 "Call failed with HTTP Code: {0}. Reason: {1}. Details: {2}".format(r.status_code, r.reason, detail)), None)
 
@@ -807,7 +814,7 @@ class EWSOnPremConnector(BaseConnector):
             # Dump error messages in the log
             self.debug_print(action_result.get_message())
 
-            action_result.append_to_message(EWS_MODIFY_CONFIG)
+            # action_result.append_to_message(EWS_MODIFY_CONFIG)
 
             # Set the status of the complete connector result
             self.set_status(phantom.APP_ERROR, action_result.get_message())

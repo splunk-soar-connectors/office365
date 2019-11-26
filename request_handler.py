@@ -8,6 +8,7 @@
 
 import os
 import json
+import base64
 import requests
 import encryption_helper
 
@@ -43,7 +44,7 @@ class Office365RequestHandler():
         client_id = state['client_id']
         redirect_uri = state['redirect_url']
         request_url = state['request_url']
-        client_secret = state['client_secret']
+        client_secret = base64.b64decode(state['client_secret'])
 
         body = {
             'grant_type': 'authorization_code',
