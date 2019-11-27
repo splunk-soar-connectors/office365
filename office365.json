@@ -829,7 +829,7 @@
                     "data_type": "string",
                     "order": 4,
                     "primary": true,
-                    "required": true,
+                    "required": false,
                     "contains": [
                         "email"
                     ]

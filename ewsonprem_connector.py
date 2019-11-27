@@ -1616,14 +1616,18 @@ class EWSOnPremConnector(BaseConnector):
         # Set the user to impersonate (i.e. target_user), by default it is the destination user
         self._target_user = user
 
-        # Use a different email if specified
-        impersonate_email = param.get(EWS_JSON_IMPERSONATE_EMAIL)
-        if (impersonate_email):
-            self._target_user = impersonate_email
-
         # finally see if impersonation has been enabled/disabled for this action
         # as of right now copy or move email is the only action that allows over-ride
         impersonate = not(param.get(EWS_JSON_DONT_IMPERSONATE, False))
+
+        # Use a different email if specified
+        impersonate_email = param.get(EWS_JSON_IMPERSONATE_EMAIL)
+
+        if impersonate and not impersonate_email:
+            return action_result.set_status(phantom.APP_ERROR, "Please provide impersonate email ID")
+
+        if (impersonate_email):
+            self._target_user = impersonate_email
 
         self._impersonate = impersonate
 
@@ -1661,7 +1665,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
         except:
-            return action_result.set_status(phantom.APP_SUCCESS, "Unable to get {0} Email ID".format(action_verb))
+            return action_result.set_status(phantom.APP_SUCCESS, "Successfully {1} but Unable to get {0} Message ID".format(action_verb, action_verb))
 
         action_result.add_data({'new_email_id': new_email_id})
 
