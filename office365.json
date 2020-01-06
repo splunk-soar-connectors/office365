@@ -25,6 +25,22 @@
             {
                 "module": "ntlm_auth",
                 "input_file": "ntlm_auth/ntlm_auth-1.0.5-py2.py3-none-any.whl"
+            },
+            {
+                "module": "ExtractMsg",
+                "input_file": "extract_msg/extract_msg-0.23.2-py2.py3-none-any.whl"
+            },
+            {
+                "module": "tzlocal",
+                "input_file": "tzlocal/tzlocal-2.0.0-py2.py3-none-any.whl"
+            },
+            {
+                "module": "IMAPClient",
+                "input_file": "IMAPClient/IMAPClient-2.0.0-py2.py3-none-any.whl"
+            },
+            {
+                "module": "olefile",
+                "input_file": "olefile/olefile-0.45.1-py2.py3-none-any.whl"
             }
         ]
     },
@@ -95,7 +111,7 @@
         },
         "fed_verify_server_cert": {
             "data_type": "boolean",
-            "description": "Verify Federated server certificate",
+            "description": "Verify Federated Server Certificate",
             "required": true,
             "order": 9,
             "default": true
@@ -109,14 +125,14 @@
         },
         "poll_folder": {
             "data_type": "string",
-            "description": "Mailbox folder to be polled",
+            "description": "Mailbox Folder to be Polled",
             "order": 11,
             "required": true,
             "default": "Inbox"
         },
         "ingest_manner": {
             "data_type": "string",
-            "description": "How to ingest",
+            "description": "How to Ingest",
             "verbose": "During ingestion, should the app get the latest emails or the oldest",
             "required": true,
             "order": 12,
@@ -177,14 +193,14 @@
         },
         "add_body_to_header_artifacts": {
             "data_type": "boolean",
-            "description": "Add email body to the Email Artifact",
+            "description": "Add Email Body to the Email Artifact",
             "required": false,
             "order": 20,
             "default": false
         },
         "preprocess_script": {
             "data_type": "file",
-            "description": "Script with functions to preprocess containers and artifacts",
+            "description": "Script with Functions to Preprocess Containers and Artifacts",
             "required": false,
             "order": 21
         }
@@ -207,14 +223,14 @@
             "type": "investigate",
             "identifier": "run_query",
             "read_only": true,
-            "verbose": "The <b>run query</b> action provides more than one method to search a user's mailbox:<br><ul><li>Simple Search<br>Use the <b>subject</b> and <b>body</b> parameters to search for substring matches. The <b>sender</b> parameter can be used to search for emails from a specific address. However, it has been noticed that a match with the <b>sender</b> email address fails for emails that have been never sent or received, but instead have been created manually as a draft and copied to the searched mailbox. In such cases, an AQS is a better option. If more than one parameter is specified, the search is an <b>And</b> of the given values including the <b>internet_message_id</b>.<br> <b>Simple Search</b> implements search filters. More details regarding search filters can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579422(v=exchg.150).aspx\">MSDN Link</a>.<br></li><li>Query Search<br>For a more fine-grained email search, the use of the <b>query</b> parameter is recommended. If this parameter is specified, the <b>subject</b>, <b>internet_message_id</b>, and <b>body</b> parameters are ignored.<br>This parameter supports AQS queries to search in a Mailbox. More details regarding AQS keywords supported by Exchange can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579420(v=exchg.150).aspx\">MSDN Link.</a><br>Searching with AQS strings does have one notable restriction, however. The AQS search string will only match substrings from the start of a word. If a substring needs to be found in the middle of a word, use a <b>Simple Search</b>.<br>Some examples:<br><ul><li>All emails from user1@contoso.com or user2@contoso.com<br>from:user1@contoso.com OR from:user2@contoso.com</li><li>All emails containing the string <i>free vacations</i><br>body: free vacations</li><li>This will match an email with subject containing the word <i>Details</i> but not <i>Cadet</i><br>subject:det</li></li></ul></ul>If the <b>folder</b> parameter is not specified, each email based folder such as Inbox, Sent, etc. will be searched, including the children (nested) folders.<br>The action supports searching for a folder that is nested within another.<br>To search in such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to search in a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>NOTE: In some cases, search results may return more emails than are visible in an email client. This is due to emails that have been just deleted, but not yet completely cleaned by the server.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. The results are always sorted in <i>descending</i> order to place the latest emails at the top. For example to get the latest 10 emails that matched the filter, specify the range as 0-9. If multiple folders are searched for, then the range will be applied for each folder.<br>So if the folder being searched for example <i>Inbox</i> has a child (nested) folder called <i>phishing</i> and the range specified is 2-10, then the action will return 9 max emails for each folder. If the range parameter is not specified by default the action will use <b>0-10</b>.<br><br>NOTE: The <b>email</b> parameter is required.<br><br>Many actions such as <b>delete email</b> and <b>copy email</b> require the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However, every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this as the value (including the &lt; and &gt; chars if present) of <b>internet_message_id</b> parameter and execute the action. The results will contain the <b>Office 365 email ID</b> of an email, which can be used as input for other actions.",
+            "verbose": "The <b>run query</b> action provides more than one method to search a user's mailbox:<br><ul><li>Simple Search<br>Use the <b>subject</b> and <b>body</b> parameters to search for substring matches. The <b>sender</b> parameter can be used to search for emails from a specific address. However, it has been noticed that a match with the <b>sender</b> email address fails for emails that have been never sent or received, but instead have been created manually as a draft and copied to the searched mailbox. In such cases, an AQS is a better option. If more than one parameter is specified, the search is an <b>And</b> of the given values including the <b>internet_message_id</b>.<br> <b>Simple Search</b> implements search filters. More details regarding search filters can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579422(v=exchg.150).aspx\" target=\"_blank\">MSDN Link</a>.<br></li><li>Query Search<br>For a more fine-grained email search, the use of the <b>query</b> parameter is recommended. If this parameter is specified, the <b>subject</b>, <b>internet_message_id</b>, and <b>body</b> parameters are ignored.<br>This parameter supports AQS queries to search in a Mailbox. More details regarding AQS keywords supported by Exchange can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579420(v=exchg.150).aspx\" target=\"_blank\">MSDN Link.</a><br>Searching with AQS strings does have one notable restriction, however. The AQS search string will only match substrings from the start of a word. If a substring needs to be found in the middle of a word, use a <b>Simple Search</b>.<br>Some examples:<br><ul><li>All emails from user1@contoso.com or user2@contoso.com<br>from:user1@contoso.com OR from:user2@contoso.com</li><li>All emails containing the string <i>free vacations</i><br>body: free vacations</li><li>This will match an email with subject containing the word <i>Details</i> but not <i>Cadet</i><br>subject:det</li></li></ul></ul>If the <b>folder</b> parameter is not specified, each email based folder such as Inbox, Sent, etc. will be searched, including the children (nested) folders.<br>The action supports searching for a folder that is nested within another.<br>To search in such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to search in a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>NOTE: In some cases, search results may return more emails than are visible in an email client. This is due to emails that have been just deleted, but not yet completely cleaned by the server.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. The results are always sorted in <i>descending</i> order to place the latest emails at the top. For example to get the latest 10 emails that matched the filter, specify the range as 0-9. If multiple folders are searched for, then the range will be applied for each folder.<br>So if the folder being searched for example <i>Inbox</i> has a child (nested) folder called <i>phishing</i> and the range specified is 2-10, then the action will return 9 max emails for each folder. If the range parameter is not specified by default the action will use <b>0-10</b>.<br><br>NOTE: The <b>email</b> parameter is required.<br><br>Many actions such as <b>delete email</b> and <b>copy email</b> require the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However, every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this as the value (including the &lt; and &gt; chars if present) of <b>internet_message_id</b> parameter and execute the action. The results will contain the <b>Office 365 email ID</b> of an email, which can be used as input for other actions.",
             "lock": {
                 "enabled": true,
                 "data_path": "parameters.email"
             },
             "parameters": {
                 "email": {
-                    "description": "User's Email (Mailbox to search in)",
+                    "description": "User's email (Mailbox to search in)",
                     "data_type": "string",
                     "order": 0,
                     "contains": [
@@ -224,7 +240,7 @@
                     "required": true
                 },
                 "folder": {
-                    "description": "Folder Name/Path (to search in)",
+                    "description": "Folder name/path (to search in)",
                     "data_type": "string",
                     "order": 1,
                     "required": false,
@@ -236,13 +252,13 @@
                     ]
                 },
                 "subject": {
-                    "description": "Substring to search in Subject",
+                    "description": "Substring to search in subject",
                     "data_type": "string",
                     "order": 2,
                     "required": false
                 },
                 "sender": {
-                    "description": "Sender Email address to match",
+                    "description": "Sender email address to match",
                     "data_type": "string",
                     "contains": [
                         "email"
@@ -252,14 +268,13 @@
                     "required": false
                 },
                 "body": {
-                    "description": "Substring to search in Body",
+                    "description": "Substring to search in body",
                     "data_type": "string",
                     "order": 4,
-                    "primary": false,
                     "required": false
                 },
                 "internet_message_id": {
-                    "description": "Internet Message ID",
+                    "description": "Internet message ID",
                     "data_type": "string",
                     "order": 5,
                     "primary": true,
@@ -272,7 +287,6 @@
                     "description": "AQS string",
                     "data_type": "string",
                     "order": 6,
-                    "primary": false,
                     "required": false
                 },
                 "range": {
@@ -352,7 +366,7 @@
                     "data_path": "action_result.parameter.query",
                     "data_type": "string",
                     "example_values": [
-                        "$top=5&skip=10&filter=contains(subject,'Urgent')"
+                        "subject:test AND from:\"User Name\""
                     ]
                 },
                 {
@@ -544,7 +558,8 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
@@ -581,8 +596,6 @@
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
-                    "column_name": "Status Message",
-                    "column_order": 1,
                     "example_values": [
                         "Successfully deleted email"
                     ]
@@ -607,7 +620,7 @@
         {
             "action": "copy email",
             "description": "Copy an email to a folder",
-            "verbose": "The action supports copying to a folder that is nested within another.<br>To copy to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to copy email to a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>The action requires the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However, every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>Office 365 email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.*.new_email_id</b>, however, this value is not available for cross-mailbox or mailbox to public folder <b>copy email</b> actions (please see the documentation of the <a href=\"https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx\">CopyItem operation on MSDN</a>). However, in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Office 365 email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>copy email</b> action, for reasons explained in this section, <b>copy email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However, depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however, if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case, the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>",
+            "verbose": "The action supports copying to a folder that is nested within another.<br>To copy to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to copy email to a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>The action requires the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However, every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>Office 365 email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.*.new_email_id</b>, however, this value is not available for cross-mailbox or mailbox to public folder <b>copy email</b> actions (please see the documentation of the <a href=\"https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx\" target=\"_blank\">CopyItem operation on MSDN</a>). However, in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Office 365 email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>copy email</b> action, for reasons explained in this section, <b>copy email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However, depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however, if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case, the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>",
             "type": "generic",
             "identifier": "copy_email",
             "read_only": false,
@@ -628,7 +641,7 @@
                     "order": 1
                 },
                 "email": {
-                    "description": "Destination Mailbox (Email)",
+                    "description": "Destination mailbox (Email)",
                     "data_type": "string",
                     "order": 2,
                     "contains": [
@@ -638,7 +651,7 @@
                     "required": true
                 },
                 "folder": {
-                    "description": "Destination Mail Folder Name/Path",
+                    "description": "Destination mail folder name/path",
                     "data_type": "string",
                     "order": 3,
                     "primary": true,
@@ -649,7 +662,7 @@
                     "required": true
                 },
                 "impersonate_email": {
-                    "description": "Impersonation Email",
+                    "description": "Impersonation email",
                     "data_type": "string",
                     "order": 4,
                     "primary": true,
@@ -662,7 +675,13 @@
                     "description": "Don't use impersonation",
                     "data_type": "boolean",
                     "order": 5,
-                    "primary": false,
+                    "required": false,
+                    "default": false
+                },
+                "is_public_folder": {
+                    "description": "Mailbox folder is a public folder",
+                    "data_type": "boolean",
+                    "order": 6,
                     "required": false,
                     "default": false
                 }
@@ -678,11 +697,20 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.dont_impersonate",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.is_public_folder",
                     "data_type": "boolean",
                     "example_values": [
                         true,
@@ -757,8 +785,6 @@
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
-                    "column_name": "Status Message",
-                    "column_order": 4,
                     "example_values": [
                         "Successfully copied email"
                     ]
@@ -783,7 +809,7 @@
         {
             "action": "move email",
             "description": "Move an email to a folder",
-            "verbose": "The action supports moving an email to a folder that is nested within another.<br>To move to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For example, to move an email to a folder named <i>phishing</i> which is nested within <i>Inbox</i>, set the value as <b>Inbox/phishing</b>.<br>The action requires the exchange email ID as input. Many times this value is not easily available, since not many email clients display it. However, every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>exchange email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.*.new_email_id</b>, however, this value is not available for cross-mailbox or mailbox to public folder <b>move email</b> actions (please see the documentation of the <a href=\"https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx\">MoveItem operation on MSDN</a>). However, in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Exchange email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>move email</b> action, for reasons explained in this section, <b>move email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However, depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however, if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case, the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>",
+            "verbose": "The action supports moving an email to a folder that is nested within another.<br>To move to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For example, to move an email to a folder named <i>phishing</i> which is nested within <i>Inbox</i>, set the value as <b>Inbox/phishing</b>.<br>The action requires the exchange email ID as input. Many times this value is not easily available, since not many email clients display it. However, every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>exchange email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.*.new_email_id</b>, however, this value is not available for cross-mailbox or mailbox to public folder <b>move email</b> actions (please see the documentation of the <a href=\"https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx\" target=\"_blank\">MoveItem operation on MSDN</a>). However, in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Exchange email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>move email</b> action, for reasons explained in this section, <b>move email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However, depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however, if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case, the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>",
             "type": "generic",
             "identifier": "move_email",
             "read_only": false,
@@ -838,7 +864,6 @@
                     "description": "Don't use impersonation",
                     "data_type": "boolean",
                     "order": 5,
-                    "primary": false,
                     "required": false,
                     "default": false
                 },
@@ -948,8 +973,6 @@
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
-                    "column_name": "Status Message",
-                    "column_order": 4,
                     "example_values": [
                         "Successfully moved"
                     ]
@@ -995,7 +1018,6 @@
                     "description": "Should the email be moved to the junk folder",
                     "data_type": "boolean",
                     "order": 1,
-                    "primary": false,
                     "required": false
                 },
                 "email": {
@@ -1020,7 +1042,8 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
@@ -1078,7 +1101,7 @@
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        "Sender Blocked. Message moved to Junk Folder"
+                        "Sender blocked. Message moved to Junk Folder"
                     ]
                 },
                 {
@@ -1122,7 +1145,6 @@
                     "description": "Should the email be moved out of the junk folder",
                     "data_type": "boolean",
                     "order": 1,
-                    "primary": false,
                     "required": false
                 },
                 "email": {
@@ -1147,7 +1169,8 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
@@ -1246,8 +1269,7 @@
                         "office 365 email id"
                     ],
                     "primary": true,
-                    "required": false,
-                    "allow_list": true
+                    "required": false
                 },
                 "email": {
                     "description": "Email of the mailbox owner (used during impersonation)",
@@ -1267,8 +1289,7 @@
                         "phantom container id"
                     ],
                     "primary": true,
-                    "required": false,
-                    "allow_list": true
+                    "required": false
                 },
                 "vault_id": {
                     "description": "Vault ID to get email from",
@@ -1278,14 +1299,12 @@
                         "vault id"
                     ],
                     "primary": true,
-                    "required": false,
-                    "allow_list": true
+                    "required": false
                 },
                 "ingest_email": {
                     "description": "Create containers and artifacts",
                     "data_type": "boolean",
                     "order": 4,
-                    "primary": false,
                     "required": false,
                     "default": false
                 }
@@ -1302,7 +1321,8 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
@@ -1953,7 +1973,6 @@
                     "description": "Expand all sub distribution lists",
                     "data_type": "boolean",
                     "order": 1,
-                    "primary": false,
                     "required": false
                 }
             },
@@ -1968,7 +1987,8 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
@@ -1979,7 +1999,7 @@
                         "exchange distribution list"
                     ],
                     "example_values": [
-                        "test_splunkphantom_playbook2@phantomengineering.onmicrosoft.com"
+                        "test_playbook2@testdomain.onmicrosoft.com"
                     ]
                 },
                 {
@@ -2076,7 +2096,8 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
@@ -2299,7 +2320,6 @@
                     "description": "Categories to set",
                     "data_type": "string",
                     "order": 3,
-                    "primary": false,
                     "required": false,
                     "allow_list": true
                 }
@@ -2326,7 +2346,7 @@
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@sample.com"
+                        "test@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -2511,7 +2531,7 @@
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@sample.com"
+                        "test@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -2528,7 +2548,7 @@
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
                     "data_type": "string",
                     "example_values": [
-                        "Phantom"
+                        "Test"
                     ]
                 },
                 {
@@ -2631,7 +2651,7 @@
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@sample.com"
+                        "test@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -2648,7 +2668,7 @@
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
                     "data_type": "string",
                     "example_values": [
-                        "Phantom"
+                        "test"
                     ]
                 },
                 {
@@ -2685,7 +2705,7 @@
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@sample.com"
+                        "test@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -2702,7 +2722,7 @@
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_Name",
                     "data_type": "string",
                     "example_values": [
-                        "Phantom User"
+                        "Test User"
                     ]
                 },
                 {

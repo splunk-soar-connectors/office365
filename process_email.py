@@ -602,8 +602,6 @@ class ProcessEmail(object):
         file_path = "{0}/{1}_{2}".format(tmp_dir, part_index,
                 file_name.translate(None, ''.join(['<', '>', ' '])))
 
-        self._debug_print("file_path: {0}".format(file_path))
-
         # is the part representing the body of the email
         status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
 
@@ -705,16 +703,31 @@ class ProcessEmail(object):
             cef_artifact['emailHeaders'] = dict(headers)
 
         for curr_key in cef_artifact['emailHeaders'].keys():
+
             if curr_key.lower().startswith('body'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 if (self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False)):
                     cef_artifact.update({curr_key: curr_value})
+
+                    try:
+                        soup = BeautifulSoup(curr_value, "html.parser")
+                        body_text = soup.text
+                        split_lines = body_text.split('\n')
+                        split_lines = [x.strip() for x in split_lines if x.strip()]
+                        body_text = '\n'.join(split_lines)
+                    except:
+                        body_text = "Cannot parse email body text details"
+
+                    cef_artifact.update({"emailBody": body_text})
+
             elif (curr_key == 'parentInternetMessageId'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 cef_artifact.update({curr_key: curr_value})
+
             elif (curr_key == 'parentGuid'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 cef_artifact.update({curr_key: curr_value})
+
             elif (curr_key == 'emailGuid'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 cef_artifact.update({curr_key: curr_value})
@@ -969,10 +982,24 @@ class ProcessEmail(object):
 
         ret_val, message, container_id = self._save_ingested(container, using_dummy)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             message = "Failed to save ingested artifacts, error msg: {0}".format(message)
             self._base_connector.debug_print(message)
             return
+
+        if message and "duplicate container found" in message.lower():
+            # Save artifacts because duplicate container found
+            using_dummy = True
+            container = {
+                'id': container_id,
+                'artifacts': artifacts
+            }
+            ret_val, message, container_id = self._save_ingested(container, using_dummy)
+
+            if phantom.is_fail(ret_val):
+                message = "Failed to save ingested artifacts, error msg: {0}".format(message)
+                self._base_connector.debug_print(message)
+                return
 
         if (not container_id):
             message = "save_container did not return a container_id"
@@ -1157,7 +1184,7 @@ class ProcessEmail(object):
 
         if ('parentGuid' in cef_artifact):
             parent_guid = cef_artifact.pop('parentGuid')
-            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
+            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash.get(parent_guid)
 
         ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
         self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
