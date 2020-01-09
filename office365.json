@@ -14,7 +14,7 @@
     "min_phantom_version": "4.5.15922",
     "logo": "logo_microsoftoffice365.svg",
     "logo_dark": "logo_microsoftoffice365_dark.svg",
-    "license": "Copyright (c) 2016-2019 Splunk Inc.",
+    "license": "Copyright (c) 2016-2020 Splunk Inc.",
     "rest_handler": "request_handler.handle_request",
     "pip_dependencies": {
         "wheel": [
@@ -28,19 +28,19 @@
             },
             {
                 "module": "ExtractMsg",
-                "input_file": "extract_msg/extract_msg-0.23.2-py2.py3-none-any.whl"
+                "input_file": "wheels/extract_msg-0.23.2-py2.py3-none-any.whl"
             },
             {
                 "module": "tzlocal",
-                "input_file": "tzlocal/tzlocal-2.0.0-py2.py3-none-any.whl"
+                "input_file": "wheels/tzlocal-2.0.0-py2.py3-none-any.whl"
             },
             {
                 "module": "IMAPClient",
-                "input_file": "IMAPClient/IMAPClient-2.0.0-py2.py3-none-any.whl"
+                "input_file": "wheels/IMAPClient-2.0.0-py2.py3-none-any.whl"
             },
             {
                 "module": "olefile",
-                "input_file": "olefile/olefile-0.45.1-py2.py3-none-any.whl"
+                "input_file": "wheels/olefile-0.45.1-py2.py3-none-any.whl"
             }
         ]
     },
@@ -519,13 +519,13 @@
         {
             "action": "delete email",
             "description": "Delete emails",
-            "verbose": "This action supports a comma separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server.",
+            "verbose": "This action supports a comma-separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server. The deleted emails are moved to the Deleted Items (trash) folder.",
             "type": "contain",
             "identifier": "delete_email",
             "read_only": false,
             "parameters": {
                 "id": {
-                    "description": "Message IDs to delete (comma separated values supported)",
+                    "description": "Message IDs to delete (comma-separated values supported)",
                     "data_type": "string",
                     "order": 0,
                     "contains": [
@@ -2284,7 +2284,7 @@
         {
             "action": "update email",
             "description": "Update an email on the server",
-            "verbose": "Currently, this action only updates the category and subject of an email. To set multiple categories, please pass a comma separated list to the <b>category</b> parameter.",
+            "verbose": "Currently, this action only updates the category and subject of an email. To set multiple categories, please pass a comma-separated list to the <b>category</b> parameter.",
             "type": "generic",
             "identifier": "update_email",
             "read_only": false,

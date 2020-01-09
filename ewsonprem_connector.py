@@ -1,6 +1,6 @@
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2019 Splunk Inc.
+# Copyright (c) 2016-2020 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -1153,7 +1153,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             file_path = Vault.get_file_path(vault_id)
         except Exception as e:
-            return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item"), None, None)
+            return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item. Error: {}".format(str(e))), None, None)
 
         try:
             msg = Message(file_path)
@@ -1277,7 +1277,8 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status(), None
 
         if not item_matched:
-            return action_result.set_status(phantom.APP_ERROR, "Unable to fetch the message from the provided MSG file"), None
+            err_msg = "Unable to ingest the message from the provided MSG file, the MSG file should be associated with the logged in SMTP user to ingest message from vault item."
+            return action_result.set_status(phantom.APP_ERROR, err_msg), None
 
         item = item_matched[0]
         message_id = item.get("t_ItemId", {}).get("@Id")
@@ -1360,7 +1361,7 @@ class EWSOnPremConnector(BaseConnector):
                     return action_result.set_status(phantom.APP_ERROR, action_result.get_message())
 
                 if (not ingest_email):
-                    return action_result.set_status(phantom.APP_SUCCESS)
+                    return action_result.set_status(phantom.APP_SUCCESS, "Successfully retrieved an email for container ID")
 
             elif vault_id:
                 ret_val, email_id = self._handle_email_with_vault_id(action_result, vault_id, ingest_email, target_container_id)
@@ -1368,7 +1369,7 @@ class EWSOnPremConnector(BaseConnector):
                     return action_result.set_status(phantom.APP_ERROR, action_result.get_message())
 
                 if not ingest_email:
-                    return action_result.set_status(phantom.APP_SUCCESS)
+                    return action_result.set_status(phantom.APP_SUCCESS, "Successfully retrieved an email for vault item")
 
         elif message_id:
 
@@ -1377,7 +1378,7 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, action_result.get_message())
 
             if (not ingest_email):
-                return action_result.set_status(phantom.APP_SUCCESS)
+                return action_result.set_status(phantom.APP_SUCCESS, "Successfully retrieved an email for message ID")
 
         else:
             return action_result.set_status(phantom.APP_ERROR, "Please specify id, container_id or vault_id to get the email")
