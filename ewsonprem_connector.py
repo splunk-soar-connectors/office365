@@ -1788,7 +1788,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
         except:
-            return action_result.set_status(phantom.APP_SUCCESS, "Email {0} successfully, but its message ID could not be retrieved".format(action_verb,))
+            return action_result.set_status(phantom.APP_SUCCESS, "Email {0} successfully, but its message ID could not be retrieved".format(action_verb))
 
         action_result.add_data({'new_email_id': new_email_id})
 
