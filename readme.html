@@ -1,7 +1,7 @@
 <!--
 File: readme.html
 
-Copyright (c) 2016-2019 Splunk Inc.
+Copyright (c) 2016-2020 Splunk Inc.
 
 SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 without a valid written license from Splunk Inc. is PROHIBITED.
@@ -34,7 +34,7 @@ without a valid written license from Splunk Inc. is PROHIBITED.
             <ul>
               <li>Sign in and read user profile</li>
             </ul>
-          <li>The next API to add is <b>Office 365 Exchange Online</b>. You will need to check the boxes next to the following permissions:
+          <li>The next API to add is the <b>Office 365 Exchange Online</b>. You will need to check the boxes next to the following permissions:
             <ul>
               <li>Read user and shared mail</li>
               <li>Access mailboxes as the signed-in user via Exchange Web Services</li>
@@ -46,7 +46,7 @@ without a valid written license from Splunk Inc. is PROHIBITED.
         <li>After adding these permissions, click <b>Done</b> at the bottom of the window. If you are editing the API settings, you will have to select <b>Save</b> at the top of the window</li>
     </ul>
     <h3>Phantom Asset for Azure</h3>
-        When creating an asset for the <b>EWS for Office 365</b> app, place the <b>Application ID</b> of the app created during the previous step in the <b>Client App ID for Azure/Fed AD Authentication</b> field.  Then, after filling other values, click <b>SAVE</b>.
+        When creating an asset for the <b>EWS for Office 365</b> app, place the <b>Application ID</b> of the app created during the previous step in the <b>Client App ID for the Azure/Fed AD Authentication</b> field.  Then, after filling other values, click <b>SAVE</b>.
 <br><br>
 After saving, a new field will appear in the <b>Asset Settings</b> tab. Take the URL found in the <b>POST incoming for EWS Office 365 to this location</b> field and place it in the <b>Redirect URIs</b> field mentioned above. After doing so the URL should look something like:
 <br><br>
@@ -121,14 +121,14 @@ Do note that if you wish to use a single login user to read and modify multiple 
        This mode is used to schedule a polling action on the asset at regular intervals, which is configured via the INGEST SETTINGS tab of the asset. It makes use of the following asset configuration parameters (among others):
 
     <ul>
-    <li>Maximum emails to poll first time</li>
+    <li>Maximum emails to poll the first time</li>
         The app detects the first time it is polling an asset and will ingest this number of emails (at the most).
     <li>Maximum emails to poll</li>
         For all scheduled polls after the first, the app will ingest this number of emails.
     <li>How to ingest</li>
         Should the app be ingesting the latest emails or the oldest.
     </ul>
-    <p>In case of Scheduled Polling, on every poll, the app remembers the last email that it has ingested and will pickup from the next one in the next scheduled poll.</p>
+    <p>In the case of Scheduled Polling, on every poll, the app remembers the last email that it has ingested and will pick up from the next one in the next scheduled poll.</p>
     <h3>How to ingest</h3>
     <p>The app allows the user to configure how it should ingest emails on every scheduled poll, <i>oldest first</i> or <i>latest first</i>. Depending upon the scheduled interval and how busy the folder is, one of the following could potentially happen</p>
     <ul>
@@ -138,7 +138,7 @@ Do note that if you wish to use a single login user to read and modify multiple 
         If the app is configured to poll too slowly and the folder is so busy that on every poll the maximum ingested emails is less than the number of new emails, the app will drop the older emails since it is ingesting the latest emails that came into the mailbox.
     </ul>
     For best results, keep the poll interval and <i>Maximum emails to poll</i> values close to the number of emails you would get within a time interval. This way, every poll will end up ingesting all the new emails.<br>
-    In case the asset is configured to poll <b>oldest first</b>, it becomes important that the <i>Maximum emails to poll</i> configured should be greater than maximum emails generated <b>per second</b>. If the app detects it got the maximum configured emails and all occurred in the same second, it will start polling from the next second in the next polling cycle.
+    <p>In case the asset is configured to poll <b>oldest first</b>, it becomes important that the <i>Maximum emails to poll</i> configured should be greater than maximum emails generated <b>per second</b>. If the app detects it got the maximum configured emails and all occurred in the same second, it will start polling from the next second in the next polling cycle.
     </p>
 <h2>Containers created</h2>
     <p>
@@ -251,3 +251,24 @@ Do note that if you wish to use a single login user to read and modify multiple 
       </ul>
     </a>
     </p>
+
+  <h2>Guidelines to provide folder path parameter value</h2>  
+    <p>This is applicable to 'copy email', 'move email', and 'run query' actions.</p>
+    <ul>
+      <li>To specify the complete path, use the <b>'/'</b> (forward slash) as the separator.</li>
+      <li>If a folder name has a literal forward slash in the name escape it with a <b>'\'</b> (back slash) to differentiate.</li>
+      <li>For example, to search in a folder named <b>test/exp</b> which is nested within (is a child of) <b>Inbox</b>, set the value as <b>Inbox/test\/exp</b>.</li>
+    </ul>
+
+  <p>
+      <h2>ExtractMsg</h2>
+      This app uses the python-ExtractMsg module, which is licensed under the GPL License, Copyright (C) 2007 Free Software Foundation, Inc.
+  </p>
+  <p>
+      <h2>Olefile</h2>
+      This app uses the python-OleFileIO module, which is licensed under the PIL library, copyright (c) 2005-2018 Philippe Lagadec.
+  </p>
+  <p>
+      <h2>IMAPClient</h2>
+      This app uses the python-IMAPClient module, which is licensed under the New BSD, copyright (c) 2014, Menno Smits.
+  </p>

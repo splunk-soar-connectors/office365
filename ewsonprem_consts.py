@@ -1,6 +1,6 @@
 # File: ewsonprem_consts.py
 #
-# Copyright (c) 2016-2019 Splunk Inc.
+# Copyright (c) 2016-2020 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -28,6 +28,7 @@ EWS_JSON_POLL_USER = "poll_user"
 EWS_JSON_USE_IMPERSONATE = "use_impersonation"
 EWS_JSON_AUTH_TYPE = "auth_type"
 EWS_JSON_CLIENT_ID = "client_id"
+EWS_JSON_CLIENT_SECRET = "client_secret"
 EWS_JSON_POLL_FOLDER = "poll_folder"
 EWS_JSON_INGEST_MANNER = "ingest_manner"
 EWS_JSON_FIRST_RUN_MAX_EMAILS = "first_run_max_emails"
@@ -52,7 +53,10 @@ EWS_O365_RESOURCE = "https://outlook.office365.com"
 EWS_LOGIN_URL = "https://login.windows.net"
 
 EWS_MODIFY_CONFIG = "Toggling the impersonation configuration on the asset might help, or login user does not have privileges to the mailbox."
+EWS_MODIFY_CONFIG += " Please check the asset configuration parameters"
 
+EWS_ASSET_CORRUPTED = "ERROR: The state file for this asset might get corrupted. Please delete asset file located at "
+EWS_ASSET_CORRUPTED += "(/opt/phantom/local_data/app_states/a73f6d32-c9d5-4fec-b024-43876700daa6/<asset_id>_state.json) and run the test connectivity again"
 EWS_INGEST_LATEST_EMAILS = "latest first"
 EWS_INGEST_OLDEST_EMAILS = "oldest first"
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
