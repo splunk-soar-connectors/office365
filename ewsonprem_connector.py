@@ -1788,12 +1788,12 @@ class EWSOnPremConnector(BaseConnector):
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
         except:
-            return action_result.set_status(phantom.APP_SUCCESS, "Successfully {1} but unable to get new {0} message ID".format(action_verb, action_verb))
+            return action_result.set_status(phantom.APP_SUCCESS, "Email {0} successfully, but its message ID could not be retrieved".format(action_verb,))
 
         action_result.add_data({'new_email_id': new_email_id})
 
         # Set the Status
-        return action_result.set_status(phantom.APP_SUCCESS, "Email {0} successfully".format(action_verb.title()))
+        return action_result.set_status(phantom.APP_SUCCESS, "Email {0} successfully".format(action_verb))
 
     def _resolve_name(self, param):
 
