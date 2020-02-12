@@ -7,5 +7,6 @@
 	url = git@cd.splunkdev.com:phantom-external/requests_ntlm.git
         ignore = dirty
 [submodule "wheels"]
+	ignore = dirty
 	path = wheels
 	url = git@cd.splunkdev.com:phantom-external/ews_msg_deps.git
