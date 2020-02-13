@@ -246,7 +246,7 @@ class EWSOnPremConnector(BaseConnector):
         end_pos = xml_response.find('</saml:Assertion>') + len('</saml:Assertion>')
 
         # validate that the saml assertion is present
-        if (start_pos is -1 or end_pos is -1):
+        if (start_pos == -1 or end_pos == -1):
             return (None, "Could not find Saml Assertion")
 
         saml_assertion = xml_response[start_pos:end_pos]
@@ -654,40 +654,40 @@ class EWSOnPremConnector(BaseConnector):
 
     # TODO: Should change these function to be parameterized, instead of one per type of request
     def _check_get_attachment_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
 
     def _check_getitem_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
 
     def _check_find_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:FindItemResponse']['m:ResponseMessages']['m:FindItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:FindItemResponse']['m:ResponseMessages']['m:FindItemResponseMessage']
 
     def _check_delete_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
 
     def _check_update_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
 
     def _check_copy_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
 
     def _check_markasjunk_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:MarkAsJunkResponse']['m:ResponseMessages']['m:MarkAsJunkResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:MarkAsJunkResponse']['m:ResponseMessages']['m:MarkAsJunkResponseMessage']
 
     def _check_move_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
 
     def _check_expand_dl_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
 
     def _check_findfolder_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:FindFolderResponse']['m:ResponseMessages']['m:FindFolderResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:FindFolderResponse']['m:ResponseMessages']['m:FindFolderResponseMessage']
 
     def _check_getfolder_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:GetFolderResponse']['m:ResponseMessages']['m:GetFolderResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:GetFolderResponse']['m:ResponseMessages']['m:GetFolderResponseMessage']
 
     def _check_resolve_names_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:ResolveNamesResponse']['m:ResponseMessages']['m:ResolveNamesResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:ResolveNamesResponse']['m:ResponseMessages']['m:ResolveNamesResponseMessage']
 
     def _parse_fault_node(self, result, fault_node):
 

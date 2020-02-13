@@ -62,10 +62,8 @@ def xml_get_restriction(greater_than_time=None, message_id=None):
         filters.append(greater_than_time)
 
     if (message_id):
-            message_id = T.IsNotEqualTo(
-                    T.FieldURI({'FieldURI': 'item:ItemId'}),
-                    T.FieldURIOrConstant(T.Constant({'Value': message_id})))
-            filters.append(message_id)
+        message_id = T.IsNotEqualTo(T.FieldURI({'FieldURI': 'item:ItemId'}), T.FieldURIOrConstant(T.Constant({'Value': message_id})))
+        filters.append(message_id)
 
     if (not filters):
         return None
