@@ -9,6 +9,7 @@
 # http://lxml.de/tutorial.html
 from lxml.builder import ElementMaker
 from lxml import etree
+from bs4 import UnicodeDammit
 
 # The name spaces
 SOAP_ENVELOPE_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope/"
@@ -110,7 +111,7 @@ def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction):
     parent_folder_ids = M.ParentFolderIds(
             T.DistinguishedFolderId(
                 {'Id': folder_id},
-                T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
+                T.Mailbox(T.EmailAddress(UnicodeDammit(user).unicode_markup.encode('utf-8').decode('utf-8')))))
 
     if (folder_id != 'inbox'):
         parent_folder_ids = M.ParentFolderIds(T.FolderId({'Id': folder_id}))
@@ -129,7 +130,7 @@ def xml_get_resolve_names(email):
     https://msdn.microsoft.com/en-us/library/office/aa563518(v=exchg.150).aspx
     """
 
-    return M.ResolveNames({'ReturnFullContactData': "true"}, M.UnresolvedEntry(email.decode('utf-8')))
+    return M.ResolveNames({'ReturnFullContactData': "true"}, M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8')))
 
 
 def get_expand_dl(email):
@@ -139,7 +140,7 @@ def get_expand_dl(email):
 
     # All documenation says that Mailbox should be a 'T', but that just throws an error
     # it has to be an 'M' for things to work
-    return M.ExpandDL(M.Mailbox(T.EmailAddress(email.decode('utf-8'))))
+    return M.ExpandDL(M.Mailbox(T.EmailAddress(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8'))))
 
 
 def xml_get_attachments_data(attachment_ids_to_query):
@@ -250,7 +251,7 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
     elements.append(parent_folder_ids)
 
     # query string
-    query_string = M.QueryString(aqs.decode('utf-8'))
+    query_string = M.QueryString(UnicodeDammit(aqs).unicode_markup.encode('utf-8').decode('utf-8'))
     elements.append(query_string)
 
     find_item = M.FindItem(
@@ -305,28 +306,28 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
             sub_filt = T.Contains(
                     {'ContainmentMode': 'Substring', 'ContainmentComparison': 'IgnoreCase'},
                     T.FieldURI({'FieldURI': 'item:Subject'}),
-                    T.Constant({'Value': subject.decode('utf-8')}))
+                    T.Constant({'Value': UnicodeDammit(subject).unicode_markup.encode('utf-8').decode('utf-8')}))
             filters.append(sub_filt)
 
         if (sender):
             sender_filter = T.IsEqualTo(
                     T.FieldURI({'FieldURI': 'message:Sender'}),
                     T.FieldURIOrConstant(
-                        T.Constant({'Value': sender.decode('utf-8')})))
+                        T.Constant({'Value': UnicodeDammit(sender).unicode_markup.encode('utf-8').decode('utf-8')})))
             filters.append(sender_filter)
 
         if (int_msg_id):
             sender_filter = T.IsEqualTo(
                     T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
                     T.FieldURIOrConstant(
-                        T.Constant({'Value': int_msg_id.decode('utf-8')})))
+                        T.Constant({'Value': UnicodeDammit(int_msg_id).unicode_markup.encode('utf-8').decode('utf-8')})))
             filters.append(sender_filter)
 
         if (body):
             body_filter = T.Contains(
                     {'ContainmentMode': 'Substring', 'ContainmentComparison': 'IgnoreCase'},
                     T.FieldURI({'FieldURI': 'item:Body'}),
-                    T.Constant({'Value': body.decode('utf-8')}))
+                    T.Constant({'Value': UnicodeDammit(body).unicode_markup.encode('utf-8').decode('utf-8')}))
             filters.append(body_filter)
 
         if (filters):
@@ -431,7 +432,7 @@ def xml_get_root_folder_id(user, root_folder_id='root'):
         par_folder_id = M.ParentFolderIds(
                 T.DistinguishedFolderId(
                     {'Id': root_folder_id},
-                    T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
+                    T.Mailbox(T.EmailAddress(UnicodeDammit(user).unicode_markup.encode('utf-8').decode('utf-8')))))
         traversal = {'Traversal': 'Deep'}
 
     return M.FindFolder(traversal, folder_shape, par_folder_id)
@@ -478,7 +479,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
         display_name_equal_to = T.IsEqualTo(
                 T.FieldURI({'FieldURI': 'folder:DisplayName'}),
                 T.FieldURIOrConstant(
-                    T.Constant({'Value': child_folder_name.decode('utf-8')})))
+                    T.Constant({'Value': UnicodeDammit(child_folder_name).unicode_markup.encode('utf-8').decode('utf-8')})))
         filters.append(display_name_equal_to)
 
     if (filters):
@@ -492,7 +493,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
             par_folder_id = M.ParentFolderIds(
                     T.DistinguishedFolderId(
                         {'Id': parent_folder_id},
-                        T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
+                        T.Mailbox(T.EmailAddress(UnicodeDammit(user).unicode_markup.encode('utf-8').decode('utf-8')))))
         elif (parent_folder_id == 'publicfoldersroot'):
             par_folder_id = M.ParentFolderIds(
                 T.DistinguishedFolderId({
@@ -532,7 +533,7 @@ def add_to_envelope(lxml_obj, target_user=None):
     if (target_user):
         impersonation = T.ExchangeImpersonation(
                 T.ConnectingSID(
-                    T.SmtpAddress(target_user.decode('utf-8'))))
+                    T.SmtpAddress(UnicodeDammit(target_user).unicode_markup.encode('utf-8').decode('utf-8'))))
         header.append(impersonation)
 
     return S.Envelope(

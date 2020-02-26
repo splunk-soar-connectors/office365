@@ -49,6 +49,7 @@ from email.parser import HeaderParser
 import email
 import urllib
 import imp
+import quopri
 from extract_msg import Message
 from bs4 import UnicodeDammit
 
@@ -1164,6 +1165,22 @@ class EWSOnPremConnector(BaseConnector):
 
         return phantom.APP_SUCCESS, email_data, msg
 
+    def _decode_subject(self, subject, charset):
+        # Decode subject unicode
+        decoded_subject = ''
+        subject = subject.split('?=\r\n\t=')
+        for sub in subject:
+            if '?UTF-8?B?' in sub:
+                sub = sub.replace('?UTF-8?B?', '').replace('?=', '')
+                sub = base64.b64decode(sub)
+            elif '?UTF-8?Q?' in sub:
+                sub = sub.replace('?UTF-8?Q?', '').replace('?=', '')
+                sub = quopri.decodestring(sub)
+            sub = sub.decode(charset)
+            decoded_subject = decoded_subject + sub
+
+        return decoded_subject
+
     def _get_email_headers_from_mail(self, mail, charset=None, email_headers=None):
 
         if mail:
@@ -1298,7 +1315,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
+            message = "Error while getting email data for id {0}. Error: {1}".format(UnicodeDammit(email_id).unicode_markup.encode('utf-8'), action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
             return action_result.set_status(phantom.APP_ERROR, message), None
@@ -1427,7 +1444,7 @@ class EWSOnPremConnector(BaseConnector):
         subject = param.get('subject')
 
         if subject:
-            subject = subject.decode('utf-8')
+            subject = UnicodeDammit(subject).unicode_markup.encode('utf-8').decode('utf-8')
 
         if ((subject is None) and (category is None)):
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
@@ -1442,7 +1459,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
+            message = "Error while getting email data for id {0}. Error: {1}".format(UnicodeDammit(email_id).unicode_markup.encode('utf-8'), action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
@@ -1610,14 +1627,17 @@ class EWSOnPremConnector(BaseConnector):
         """
 
         if (not folder_list):
-            return (action_result(phantom.APP_ERROR, "Unable to find info about folder '{0}'. Returned info list empty".format(folder_name)), None)
+            return (action_result(phantom.APP_ERROR,
+                        "Unable to find info about folder '{0}'. Returned info list empty".format(UnicodeDammit(folder_name).unicode_markup.encode('utf-8'))), None)
 
         for curr_folder in folder_list:
             curr_folder_path = self._extract_folder_path(curr_folder.get('t:ExtendedProperty'))
-            if (curr_folder_path == folder_path):
+
+            if (UnicodeDammit(curr_folder_path).unicode_markup.encode('utf-8') == UnicodeDammit(folder_path).unicode_markup.encode('utf-8')):
                 return (phantom.APP_SUCCESS, curr_folder)
 
-        return (action_result.set_status(phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'".format(folder_name)), None)
+        return (action_result.set_status(phantom.APP_ERROR,
+                    "Folder paths did not match while searching for folder: '{0}'".format(UnicodeDammit(folder_name).unicode_markup.encode('utf-8'))), None)
 
     def _get_folder_info(self, user, folder_path, action_result, is_public_folder=False):
         # hindsight is always 20-20, set the folder path separator to be '/', thinking folder names allow '\' as a char.
@@ -1636,7 +1656,8 @@ class EWSOnPremConnector(BaseConnector):
 
             curr_valid_folder_path = '\\'.join(folder_names[:i + 1])
 
-            self.save_progress('Getting info about {0}\\{1}'.format(self._clean_str(user), curr_valid_folder_path))
+            self.save_progress('Getting info about {0}\\{1}'.format(
+                    UnicodeDammit(self._clean_str(user)).unicode_markup.encode('utf-8'), UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8')))
 
             input_xml = ews_soap.xml_get_children_info(user, child_folder_name=folder_name, parent_folder_id=parent_folder_id)
 
@@ -1648,12 +1669,15 @@ class EWSOnPremConnector(BaseConnector):
             total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
 
             if (total_items == '0'):
-                return (action_result.set_status(phantom.APP_ERROR, "Folder '{0}' not found, possibly not present".format(curr_valid_folder_path)), None)
+                return (action_result.set_status(phantom.APP_ERROR,
+                            "Folder '{0}' not found, possibly not present".format(UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8'))), None)
 
             folder = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
 
             if (not folder):
-                return (action_result.set_status(phantom.APP_ERROR, "Information about '{0}' not found in response, possibly not present".format(curr_valid_folder_path)), None)
+                return (action_result.set_status(phantom.APP_ERROR,
+                            "Information about '{0}' not found in response, possibly not present".format(
+                                UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8'))), None)
 
             if (type(folder) != list):
                 folder = [folder]
@@ -1665,13 +1689,15 @@ class EWSOnPremConnector(BaseConnector):
 
             if (not folder):
                 return (action_result.set_status(phantom.APP_ERROR,
-                    "Information for folder '{0}' not found in response, possibly not present".format(curr_valid_folder_path)), None)
+                    "Information for folder '{0}' not found in response, possibly not present".format(
+                        UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8'))), None)
 
             folder_id = folder.get('t:FolderId', {}).get('@Id')
 
             if (not folder_id):
                 return (action_result.set_status(phantom.APP_ERROR,
-                    "Folder ID information not found in response for '{0}', possibly not present".format(curr_valid_folder_path)), None)
+                    "Folder ID information not found in response for '{0}', possibly not present".format(
+                        UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8'))), None)
 
             parent_folder_id = folder_id
             folder_info = {'id': folder_id,
@@ -1688,7 +1714,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        message_id = param[EWSONPREM_JSON_ID]
+        message_id = UnicodeDammit(param[EWSONPREM_JSON_ID]).unicode_markup.encode('utf-8').decode('utf-8')
 
         move_email = param.get('move_to_junk_folder', param.get('move_from_junk_folder', False))
 
@@ -2183,7 +2209,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
+            message = "Error while getting email data for id {0}. Error: {1}".format(UnicodeDammit(email_id).unicode_markup.encode('utf-8'), action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
