@@ -223,13 +223,21 @@ class EWSOnPremConnector(BaseConnector):
         # Now create the request to the server
         headers = {'Content-Type': 'application/soap_xml; charset=utf8'}
 
-        url = (config[EWS_JSON_FED_PING_URL]).encode('utf-8')
-
         try:
-            url.encode()
-
+            url = UnicodeDammit(config[EWS_JSON_FED_PING_URL]).unicode_markup.encode('utf-8')
         except Exception as e:
-            self.debug_print("Parameter validation failed for the query.", e)
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred. Please check the Federated Auth Ping URL."
+            else:
+                error_msg = "Unknown error occurred. Please check the Federated Auth Ping URL."
+
+            self.debug_print("Parameter validation failed for the Federated Auth Ping URL. Error: {}".format(error_msg))
             return (None, "Parameter validation failed for the Federated Auth Ping URL.")
 
         # POST the request
@@ -495,7 +503,7 @@ class EWSOnPremConnector(BaseConnector):
         client_req_id = str(uuid.uuid4())
 
         headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
-        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, config[phantom.APP_JSON_USERNAME].encode("utf-8"))
+        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, UnicodeDammit(config[phantom.APP_JSON_USERNAME]).unicode_markup.encode('utf-8'))
         params = {'api-version': '1.0'}
 
         try:
@@ -578,7 +586,7 @@ class EWSOnPremConnector(BaseConnector):
 
         auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
 
-        self._base_url = (config[EWSONPREM_JSON_DEVICE_URL]).encode('utf-8')
+        self._base_url = UnicodeDammit(config[EWSONPREM_JSON_DEVICE_URL]).unicode_markup.encode('utf-8')
 
         message = ''
 
@@ -599,7 +607,7 @@ class EWSOnPremConnector(BaseConnector):
                 return ret_val
 
             password = config[phantom.APP_JSON_PASSWORD]
-            username = (config[phantom.APP_JSON_USERNAME]).encode('utf-8')
+            username = UnicodeDammit(config[phantom.APP_JSON_USERNAME]).unicode_markup.encode('utf-8')
             username = username.replace('/', '\\')
 
             self._session.auth = HTTPBasicAuth(username, password)
@@ -719,7 +727,18 @@ class EWSOnPremConnector(BaseConnector):
                 # convert from OrderedDict to plain dict
                 resp_json = json.loads(json.dumps(resp_json))
             except Exception as e:
-                self.debug_print("Handled Exp", e)
+                if e.message:
+                    if isinstance(e.message, basestring):
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    else:
+                        try:
+                            error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        except:
+                            error_msg = "Unknown error occurred while parsing the HTTP error details."
+                else:
+                    error_msg = "Unknown error occurred while parsing the HTTP error details."
+
+                self.debug_print("Error occurred while parsing the HTTP error response. Error: {}".format(error_msg))
                 return "Unable to parse error details"
 
             try:
@@ -1034,10 +1053,21 @@ class EWSOnPremConnector(BaseConnector):
         is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
         try:
-            aqs.encode()
-
+            if aqs:
+                UnicodeDammit(aqs).unicode_markup.encode('utf-8')
         except Exception as e:
-            self.debug_print("Parameter validation failed for the query.", e)
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred. Please check the provided parameter value for the AQS query."
+            else:
+                error_msg = "Unknown error occurred. Please check the provided parameter value for the AQS query."
+
+            self.debug_print("Parameter validation failed for the AQS query. Error: {}".format(error_msg))
             return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the query. Unicode value found.")
 
         if (not subject and not sender and not aqs and not body and not int_msg_id):
@@ -1049,7 +1079,7 @@ class EWSOnPremConnector(BaseConnector):
             aqs = self._create_aqs(subject, sender, body)
         '''
 
-        self.debug_print("AQS_STR", aqs)
+        self.debug_print("AQS_STR: {}".format(UnicodeDammit(aqs).unicode_markup.encode('utf-8')))
 
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
@@ -1413,9 +1443,20 @@ class EWSOnPremConnector(BaseConnector):
         try:
             self._process_email_id(email_id, target_container_id, flag=flag)
         except Exception as e:
-            self.debug_print("ErrorExp in _process_email_id with Message ID: {0}".format(email_id), e)
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred. Please check the provided action parameters."
+            else:
+                error_msg = "Unknown error occurred. Please check the provided action parameters."
+
+            self.debug_print("Error occurred in _process_email_id with Message ID: {0}. Error: {1}".format(email_id, error_msg))
             action_result.update_summary({"container_id": None})
-            return action_result.set_status(phantom.APP_ERROR, "Error processing email", e)
+            return action_result.set_status(phantom.APP_ERROR, "Error processing email. Error: {}".format(e))
 
         if (target_container_id is None):
             # get the container id that of the email that was ingested
@@ -1606,7 +1647,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             str(value)
         except UnicodeEncodeError:
-            return value.encode('utf-8')
+            return UnicodeDammit(value).unicode_markup.encode('utf-8')
 
         return value
 
@@ -1935,7 +1976,18 @@ class EWSOnPremConnector(BaseConnector):
         try:
             rfc822_email = base64.b64decode(mime_content)
         except Exception as e:
-            self.debug_print("Unable to decode Email Mime Content", e)
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred."
+            else:
+                error_msg = "Unknown error occurred."
+
+            self.debug_print("Unable to decode Email Mime Content. Error: {}".format(error_msg))
             return action_result.set_status(phantom.APP_ERROR, "Unable to decode Email Mime Content")
 
         return (phantom.APP_SUCCESS, rfc822_email)
@@ -2064,7 +2116,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             email_part = header_parser.parsestr(email_headers)
         except UnicodeEncodeError:
-            email_part = header_parser.parsestr(email_headers.encode('utf-8'))
+            email_part = header_parser.parsestr(UnicodeDammit(email_headers).unicode_markup.encode('utf-8'))
 
         email_headers = email_part.items()
 
@@ -2161,7 +2213,18 @@ class EWSOnPremConnector(BaseConnector):
         try:
             rfc822_email = base64.b64decode(mime_content)
         except Exception as e:
-            self.debug_print("Unable to decode Email Mime Content", e)
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred."
+            else:
+                error_msg = "Unknown error occurred."
+
+            self.debug_print("Unable to decode Email Mime Content. Error: {}".format(error_msg))
             return (phantom.APP_ERROR, "Unable to decode Email Mime Content")
 
         epoch = self._get_email_epoch(resp_json)
@@ -2226,14 +2289,14 @@ class EWSOnPremConnector(BaseConnector):
         config = self.get_config()
 
         # get the user
-        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME]).encode('utf-8')
+        poll_user = UnicodeDammit(config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])).unicode_markup.encode('utf-8')
 
         if (not poll_user):
             return (action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None)
 
         self._target_user = poll_user
 
-        folder_path = (config.get(EWS_JSON_POLL_FOLDER, 'Inbox')).encode('utf-8')
+        folder_path = UnicodeDammit(config.get(EWS_JSON_POLL_FOLDER, 'Inbox')).unicode_markup.encode('utf-8')
 
         is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
@@ -2297,7 +2360,19 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 self._process_email_id(email_id)
             except Exception as e:
-                self.debug_print("ErrorExp in _process_email_id # {0} with Message ID: {1}".format(i, email_id), e)
+                if e.message:
+                    if isinstance(e.message, basestring):
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    else:
+                        try:
+                            error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        except:
+                            error_msg = "Unknown error occurred. Please check the provided action parameters."
+                else:
+                    error_msg = "Unknown error occurred. Please check the provided action parameters."
+
+                self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. Error: {2}".format(i, email_id, error_msg))
+
                 failed_emails_parsing_list.append(email_id)
 
         if len(failed_emails_parsing_list) == len(email_ids):
@@ -2326,7 +2401,7 @@ class EWSOnPremConnector(BaseConnector):
         email_ids = [email_id]
 
         # get the user
-        poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME]).encode('utf-8')
+        poll_user = UnicodeDammit(config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])).unicode_markup.encode('utf-8')
 
         if (not poll_user):
             return (action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None)
