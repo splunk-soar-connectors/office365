@@ -1380,20 +1380,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.Cc",
-                    "data_type": "string",
-                    "example_values": [
-                        "Test1 Test,\r\n\tTest3 test,\r\n\ttest4-test <test4-test@test.onmicrosoft.com>"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.Content-Language",
-                    "data_type": "string",
-                    "example_values": [
-                        "en-US"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.Content-Language",
                     "data_type": "string",
                     "example_values": [
@@ -1428,13 +1414,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.Keywords",
-                    "data_type": "string",
-                    "example_values": [
-                        "Yellow,Blue"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.MIME-Version",
                     "data_type": "string"
                 },
@@ -1447,11 +1426,7 @@
                     "data_type": "string",
                     "contains": [
                         "internet message id"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.Message-Id",
-                    "data_type": "string",
+                    ],
                     "example_values": [
                         "9D50879E-56CC-4692-B069-EF71BFC8B956@test.com"
                     ]
@@ -1461,13 +1436,6 @@
                     "data_type": "string",
                     "example_values": [
                         "9D50879E-56CC-4692-B069-EF71BFC8B956@test.com"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.Mime-Version",
-                    "data_type": "string",
-                    "example_values": [
-                        "1.0 (Mac OS X Mail 11.5 \\(3445.9.1\\))"
                     ]
                 },
                 {
@@ -1498,20 +1466,6 @@
                     "data_type": "string",
                     "example_values": [
                         "AQHU+Oj1xuD20z3Pd0q457aXRQmm/A=="
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.Thread-Index",
-                    "data_type": "string",
-                    "example_values": [
-                        "AQHU+Oj1xuD20z3Pd0q457aXRQmm/A=="
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.Thread-Topic",
-                    "data_type": "string",
-                    "example_values": [
-                        "Backup Details"
                     ]
                 },
                 {
@@ -1576,13 +1530,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-AuthAs",
-                    "data_type": "string",
-                    "example_values": [
-                        "Anonymous"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.X-MS-Exchange-Organization-AuthMechanism",
                     "data_type": "string",
                     "example_values": [
@@ -1597,31 +1544,10 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-AuthSource",
-                    "data_type": "string",
-                    "example_values": [
-                        "DM3NAM03FT025.eop-NAM03.prod.protection.outlook.com"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.X-MS-Exchange-Organization-Network-Message-Id",
                     "data_type": "string",
                     "example_values": [
                         "5f710505-67ec-412d-1f18-08d6c43b2595"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-Network-Message-Id",
-                    "data_type": "string",
-                    "example_values": [
-                        "5f710505-67ec-412d-1f18-08d6c43b2595"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-RecordReviewCfmType",
-                    "data_type": "string",
-                    "example_values": [
-                        "0"
                     ]
                 },
                 {
@@ -1639,34 +1565,19 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-SCL",
+                    "data_path": "action_result.data.*.X-MS-Has-Attach",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-TNEF-Correlator",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-From",
                     "data_type": "string",
-                    "example_values": [
-                        "1"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Has-Attach",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Has-Attach",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-TNEF-Correlator",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-TNEF-Correlator",
-                    "data_type": "string"
-                },
-                {
                     "contains": [
                         "email"
-                    ],
-                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-From",
-                    "data_type": "string"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.X-Mail-Filter-Gateway-ID",
@@ -1697,17 +1608,6 @@
                     "example_values": [
                         "ENG:(20160514016)(750119)(520011016)(944506303)(944626516)"
                     ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-Microsoft-Antispam-Mailbox-Delivery",
-                    "data_type": "string",
-                    "example_values": [
-                        "ENG:(20160514016)(750119)(520011016)(944506303)(944626516)"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-Microsoft-Antispam-Message-Info",
-                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.X-Microsoft-Antispam-Message-Info",
@@ -1749,13 +1649,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.X-Universally-Unique-Identifier",
-                    "data_type": "string",
-                    "example_values": [
-                        "5D79A10E-C85D-4CE7-B6D1-9DCC124FFD5B"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.acceptlanguage",
                     "data_type": "string",
                     "example_values": [
@@ -1767,13 +1660,6 @@
                     "data_type": "string",
                     "example_values": [
                         "All content together"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.received-spf",
-                    "data_type": "string",
-                    "example_values": [
-                        "Pass (protection.outlook.com: domain of microsoft.com)"
                     ]
                 },
                 {
@@ -2090,13 +1976,6 @@
                     "data_type": "string",
                     "example_values": [
                         "::1"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.x-ms-publictraffictype",
-                    "data_type": "string",
-                    "example_values": [
-                        "Email"
                     ]
                 },
                 {
@@ -2433,20 +2312,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_Mailbox.t_ItemId.@ChangeKey",
-                    "data_type": "string",
-                    "example_values": [
-                        "EQAAABYAAABBKXVvwEWISZupmqX4mJS3AAKo15Rj"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Mailbox.t_ItemId.@Id",
-                    "data_type": "string",
-                    "example_values": [
-                        "AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0+MMHKonvdoWQcAQSl1b8BFiEmbqZql+JiUtwAAAgEOAAAAQSl1b8BFiEmbqZql+JiUtwACqImgdwAAAA=="
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.t_Mailbox.t_ItemId.@Id",
                     "data_type": "string",
                     "example_values": [
@@ -2743,31 +2608,10 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag",
-                    "data_type": "string",
-                    "example_values": [
-                        "0x7d"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType",
                     "data_type": "string",
                     "example_values": [
                         "String"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType",
-                    "data_type": "string",
-                    "example_values": [
-                        "String"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ExtendedProperty.t_Value",
-                    "data_type": "string",
-                    "example_values": [
-                        "MWHPR18MB1519.namprd18.prod.outlook.com"
                     ]
                 },
                 {
@@ -2890,19 +2734,7 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_ResponseObjects.t_ForwardItem",
-                    "data_type": "string"
-                },
-                {
                     "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyAllToItem",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyAllToItem",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyToItem",
                     "data_type": "string"
                 },
                 {
