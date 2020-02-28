@@ -9,3 +9,4 @@
 [submodule "wheels"]
 	path = wheels
 	url = git@cd.splunkdev.com:phantom-external/ews_msg_deps.git
+	ignore = dirty
