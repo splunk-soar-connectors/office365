@@ -1,6 +1,6 @@
 # File: request_handler.py
 #
-# Copyright (c) 2016-2019 Splunk Inc.
+# Copyright (c) 2016-2020 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -8,6 +8,7 @@
 
 import os
 import json
+import base64
 import requests
 import encryption_helper
 
@@ -43,13 +44,15 @@ class Office365RequestHandler():
         client_id = state['client_id']
         redirect_uri = state['redirect_url']
         request_url = state['request_url']
+        client_secret = base64.b64decode(state['client_secret'])
 
         body = {
             'grant_type': 'authorization_code',
             'resource': 'https://outlook.office365.com/',
             'redirect_uri': redirect_uri,
             'client_id': client_id,
-            'code': code
+            'code': code,
+            'client_secret': client_secret
         }
 
         try:

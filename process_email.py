@@ -1,6 +1,6 @@
 # File: process_email.py
 #
-# Copyright (c) 2016-2019 Splunk Inc.
+# Copyright (c) 2016-2020 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -11,7 +11,7 @@ import tempfile
 from collections import OrderedDict
 import os
 import re
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, UnicodeDammit
 import phantom.app as phantom
 import phantom.utils as ph_utils
 import mimetypes
@@ -239,7 +239,18 @@ class ProcessEmail(object):
         try:
             soup = BeautifulSoup(file_data, "html.parser")
         except Exception as e:
-            self._debug_print("Handled exception", e)
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred."
+            else:
+                error_msg = "Unknown error occurred."
+
+            self._debug_print("Error occurred while extracting domains of the URLs. Error: {}".format(error_msg))
             return
 
         uris = []
@@ -460,7 +471,18 @@ class ProcessEmail(object):
             decoded_strings = [decode_header(x)[0] for x in encoded_strings]
             decoded_strings = [{'value': x[0], 'encoding': x[1]} for x in decoded_strings]
         except Exception as e:
-            self._debug_print("decoding: {0}".format(encoded_strings), e)
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred while decoding the encoded strings."
+            else:
+                error_msg = "Unknown error occurred while decoding the encoded strings."
+
+            self._debug_print("Decoding: {0}. Error: {1}".format(encoded_strings, error_msg))
             return def_name
 
         # convert to dict for safe access, if it's an empty list, the dict will be empty
@@ -602,8 +624,6 @@ class ProcessEmail(object):
         file_path = "{0}/{1}_{2}".format(tmp_dir, part_index,
                 file_name.translate(None, ''.join(['<', '>', ' '])))
 
-        self._debug_print("file_path: {0}".format(file_path))
-
         # is the part representing the body of the email
         status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
 
@@ -666,7 +686,7 @@ class ProcessEmail(object):
         subject = headers.get('Subject')
         if (subject):
             if (type(subject) == unicode):
-                headers['decodedSubject'] = self._decode_uni_string(subject.encode('utf8'), subject)
+                headers['decodedSubject'] = self._decode_uni_string(UnicodeDammit(subject).unicode_markup.encode('utf-8'), subject)
 
         return headers
 
@@ -705,16 +725,31 @@ class ProcessEmail(object):
             cef_artifact['emailHeaders'] = dict(headers)
 
         for curr_key in cef_artifact['emailHeaders'].keys():
+
             if curr_key.lower().startswith('body'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 if (self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False)):
                     cef_artifact.update({curr_key: curr_value})
+
+                    try:
+                        soup = BeautifulSoup(curr_value, "html.parser")
+                        body_text = soup.text
+                        split_lines = body_text.split('\n')
+                        split_lines = [x.strip() for x in split_lines if x.strip()]
+                        body_text = '\n'.join(split_lines)
+                    except:
+                        body_text = "Cannot parse email body text details"
+
+                    cef_artifact.update({"emailBody": body_text})
+
             elif (curr_key == 'parentInternetMessageId'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 cef_artifact.update({curr_key: curr_value})
+
             elif (curr_key == 'parentGuid'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 cef_artifact.update({curr_key: curr_value})
+
             elif (curr_key == 'emailGuid'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 cef_artifact.update({curr_key: curr_value})
@@ -792,7 +827,18 @@ class ProcessEmail(object):
                 try:
                     ret_val = self._handle_part(part, i, tmp_dir, extract_attach, self._parsed_mail)
                 except Exception as e:
-                    self._debug_print("ErrorExp in _handle_part # {0}".format(i), e)
+                    if e.message:
+                        if isinstance(e.message, basestring):
+                            error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        else:
+                            try:
+                                error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                            except:
+                                error_msg = "Unknown error occurred."
+                    else:
+                        error_msg = "Unknown error occurred."
+
+                    self._debug_print("Error occurred in _handle_part # {0}. Error: {1}".format(i, error_msg))
                     continue
 
                 if (phantom.is_fail(ret_val)):
@@ -840,7 +886,18 @@ class ProcessEmail(object):
             try:
                 self._handle_body(body, self._parsed_mail, i, email_id)
             except Exception as e:
-                self._debug_print("ErrorExp in _handle_body # {0}: {1}".format(i, str(e)))
+                if e.message:
+                    if isinstance(e.message, basestring):
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    else:
+                        try:
+                            error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        except:
+                            error_msg = "Unknown error occurred."
+                else:
+                    error_msg = "Unknown error occurred."
+
+                self._debug_print("Error occurred in _handle_body # {0}. Error: {1}".format(i, error_msg))
                 continue
 
         # Files
@@ -879,7 +936,18 @@ class ProcessEmail(object):
         try:
             ret_val = self._handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
         except Exception as e:
-            message = "ErrorExp in self._handle_mail_object: {0}".format(e)
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred."
+            else:
+                error_msg = "Unknown error occurred."
+
+            message = "Error occurred in _handle_mail_object. Error: {0}".format(error_msg)
             self._debug_print(message)
             return (phantom.APP_ERROR, message, [])
 
@@ -969,10 +1037,24 @@ class ProcessEmail(object):
 
         ret_val, message, container_id = self._save_ingested(container, using_dummy)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             message = "Failed to save ingested artifacts, error msg: {0}".format(message)
             self._base_connector.debug_print(message)
             return
+
+        if message and "duplicate container found" in message.lower():
+            # Save artifacts because duplicate container found
+            using_dummy = True
+            container = {
+                'id': container_id,
+                'artifacts': artifacts
+            }
+            ret_val, message, container_id = self._save_ingested(container, using_dummy)
+
+            if phantom.is_fail(ret_val):
+                message = "Failed to save ingested artifacts, error msg: {0}".format(message)
+                self._base_connector.debug_print(message)
+                return
 
         if (not container_id):
             message = "save_container did not return a container_id"
@@ -1108,7 +1190,7 @@ class ProcessEmail(object):
         if (not file_name):
             file_name = os.path.basename(local_file_path)
 
-        self._base_connector.debug_print("Vault file name: {0}".format(file_name))
+        self._base_connector.debug_print("Vault file name: {0}".format(UnicodeDammit(file_name).unicode_markup.encode('utf-8')))
 
         vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
         vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
@@ -1120,7 +1202,18 @@ class ProcessEmail(object):
         try:
             vault_ret = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
         except Exception as e:
-            self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(e))
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred."
+            else:
+                error_msg = "Unknown error occurred."
+
+            self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(error_msg))
             return (phantom.APP_ERROR, phantom.APP_ERROR)
 
         # self._base_connector.debug_print("vault_ret_dict", vault_ret_dict)
@@ -1157,7 +1250,7 @@ class ProcessEmail(object):
 
         if ('parentGuid' in cef_artifact):
             parent_guid = cef_artifact.pop('parentGuid')
-            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
+            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash.get(parent_guid)
 
         ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
         self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
@@ -1203,7 +1296,18 @@ class ProcessEmail(object):
         try:
             input_dict_str = json.dumps(input_dict, sort_keys=True)
         except Exception as e:
-            self._base_connector.debug_print('Handled exception in _create_dict_hash', e)
+            if e.message:
+                if isinstance(e.message, basestring):
+                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                else:
+                    try:
+                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    except:
+                        error_msg = "Unknown error occurred."
+            else:
+                error_msg = "Unknown error occurred."
+
+            self._base_connector.debug_print('Error occurred in _create_dict_hash. Error: {0}'.format(error_msg))
             return None
 
         return hashlib.md5(input_dict_str).hexdigest()
