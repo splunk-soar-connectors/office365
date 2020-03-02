@@ -40,18 +40,21 @@ import uuid
 from requests.auth import AuthBase
 from requests.auth import HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
-from urlparse import urlparse
+from urllib.parse import urlparse
 import base64
 from datetime import datetime, timedelta
 import re
 from process_email import ProcessEmail
 from email.parser import HeaderParser
 import email
-import urllib
+import urllib.request
+import urllib.parse
+import urllib.error
 import imp
 import quopri
 from extract_msg import Message
 from bs4 import UnicodeDammit
+import six
 
 import time
 
@@ -132,7 +135,7 @@ class EWSOnPremConnector(BaseConnector):
         if script:
             try:  # Try to laod in script to preprocess artifacts
                 self._script_module = imp.new_module('preprocess_methods')
-                exec script in self._script_module.__dict__
+                exec(script in self._script_module.__dict__)
             except Exception as e:
                 self.save_progress("Error loading custom script. Error: {}".format(str(e)))
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
@@ -224,14 +227,14 @@ class EWSOnPremConnector(BaseConnector):
         headers = {'Content-Type': 'application/soap_xml; charset=utf8'}
 
         try:
-            url = UnicodeDammit(config[EWS_JSON_FED_PING_URL]).unicode_markup.encode('utf-8')
+            url = UnicodeDammit(config[EWS_JSON_FED_PING_URL]).unicode_markup
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred. Please check the Federated Auth Ping URL."
             else:
@@ -439,7 +442,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             oauth_token = r.json()
-        except Exception as e:
+        except:
             return (None, "Error retrieving OAuth Token")
 
         self._state['oauth_token'] = oauth_token
@@ -503,7 +506,7 @@ class EWSOnPremConnector(BaseConnector):
         client_req_id = str(uuid.uuid4())
 
         headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
-        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, UnicodeDammit(config[phantom.APP_JSON_USERNAME]).unicode_markup.encode('utf-8'))
+        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, UnicodeDammit(config[phantom.APP_JSON_USERNAME]).unicode_markup)
         params = {'api-version': '1.0'}
 
         try:
@@ -564,7 +567,7 @@ class EWSOnPremConnector(BaseConnector):
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
     def _check_password(self, config):
-        if phantom.APP_JSON_PASSWORD not in config.keys():
+        if phantom.APP_JSON_PASSWORD not in list(config.keys()):
             return phantom.APP_ERROR, "Password not present in asset configuration"
         return phantom.APP_SUCCESS, ''
 
@@ -586,7 +589,7 @@ class EWSOnPremConnector(BaseConnector):
 
         auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
 
-        self._base_url = UnicodeDammit(config[EWSONPREM_JSON_DEVICE_URL]).unicode_markup.encode('utf-8')
+        self._base_url = UnicodeDammit(config[EWSONPREM_JSON_DEVICE_URL]).unicode_markup
 
         message = ''
 
@@ -607,7 +610,7 @@ class EWSOnPremConnector(BaseConnector):
                 return ret_val
 
             password = config[phantom.APP_JSON_PASSWORD]
-            username = UnicodeDammit(config[phantom.APP_JSON_USERNAME]).unicode_markup.encode('utf-8')
+            username = UnicodeDammit(config[phantom.APP_JSON_USERNAME]).unicode_markup
             username = username.replace('/', '\\')
 
             self._session.auth = HTTPBasicAuth(username, password)
@@ -728,11 +731,11 @@ class EWSOnPremConnector(BaseConnector):
                 resp_json = json.loads(json.dumps(resp_json))
             except Exception as e:
                 if e.message:
-                    if isinstance(e.message, basestring):
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    if isinstance(e.message, str):
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     else:
                         try:
-                            error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                            error_msg = UnicodeDammit(e.message).unicode_markup
                         except:
                             error_msg = "Unknown error occurred while parsing the HTTP error details."
                 else:
@@ -854,7 +857,7 @@ class EWSOnPremConnector(BaseConnector):
         step_size = 500
         folder_infos = list()
 
-        for curr_step_value in xrange(0, 10000, step_size):
+        for curr_step_value in range(0, 10000, step_size):
 
             curr_range = "{0}-{1}".format(curr_step_value, curr_step_value + step_size - 1)
 
@@ -911,7 +914,7 @@ class EWSOnPremConnector(BaseConnector):
         if (type(input_dict) != dict):
             return input_dict
 
-        for k, v in input_dict.items():
+        for k, v in list(input_dict.items()):
             if (k.find(':') != -1):
                 new_key = k.replace(':', '_')
                 input_dict[new_key] = v
@@ -1054,14 +1057,14 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             if aqs:
-                UnicodeDammit(aqs).unicode_markup.encode('utf-8')
+                UnicodeDammit(aqs).unicode_markup
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred. Please check the provided parameter value for the AQS query."
             else:
@@ -1079,7 +1082,7 @@ class EWSOnPremConnector(BaseConnector):
             aqs = self._create_aqs(subject, sender, body)
         '''
 
-        self.debug_print("AQS_STR: {}".format(UnicodeDammit(aqs).unicode_markup.encode('utf-8')))
+        self.debug_print("AQS_STR: {}".format(UnicodeDammit(aqs).unicode_markup))
 
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
@@ -1125,7 +1128,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_container_id(self, email_id):
 
-        email_id = urllib.quote_plus(email_id)
+        email_id = urllib.parse.quote_plus(email_id)
         url = self.get_phantom_base_url() + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
         try:
@@ -1214,7 +1217,7 @@ class EWSOnPremConnector(BaseConnector):
     def _get_email_headers_from_mail(self, mail, charset=None, email_headers=None):
 
         if mail:
-            email_headers = mail.items()  # it's gives message headers
+            email_headers = list(mail.items())  # it's gives message headers
 
             # TODO: the next 2 ifs can be condensed to use 'or'
             if (charset is None):
@@ -1228,7 +1231,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Convert the header tuple into a dictionary
         headers = CaseInsensitiveDict()
-        [headers.update({x[0]: unicode(str(x[1]), charset)}) for x in email_headers]
+        [headers.update({x[0]: str(str(x[1]), charset)}) for x in email_headers]
 
         # Decode unicode subject
         if '?UTF-8?' in headers['Subject']:
@@ -1236,7 +1239,7 @@ class EWSOnPremConnector(BaseConnector):
             headers['Subject'] = self._decode_subject(headers['Subject'], chars)
 
         # Handle received seperately
-        received_headers = [unicode(str(x[1]), charset) for x in email_headers if x[0].lower() == 'received']
+        received_headers = [str(str(x[1]), charset) for x in email_headers if x[0].lower() == 'received']
 
         if (received_headers):
             headers['Received'] = received_headers
@@ -1244,8 +1247,8 @@ class EWSOnPremConnector(BaseConnector):
         # handle the subject string, if required add a new key
         subject = headers.get('Subject')
         if (subject):
-            if (type(subject) == unicode):
-                headers['decodedSubject'] = UnicodeDammit(subject).unicode_markup.encode('utf-8')
+            if (type(subject) == str):
+                headers['decodedSubject'] = UnicodeDammit(subject).unicode_markup
 
         return headers
 
@@ -1345,7 +1348,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            message = "Error while getting email data for id {0}. Error: {1}".format(UnicodeDammit(email_id).unicode_markup.encode('utf-8'), action_result.get_message())
+            message = "Error while getting email data for id {0}. Error: {1}".format(UnicodeDammit(email_id).unicode_markup, action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
             return action_result.set_status(phantom.APP_ERROR, message), None
@@ -1444,11 +1447,11 @@ class EWSOnPremConnector(BaseConnector):
             self._process_email_id(email_id, target_container_id, flag=flag)
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred. Please check the provided action parameters."
             else:
@@ -1485,7 +1488,7 @@ class EWSOnPremConnector(BaseConnector):
         subject = param.get('subject')
 
         if subject:
-            subject = UnicodeDammit(subject).unicode_markup.encode('utf-8').decode('utf-8')
+            subject = UnicodeDammit(subject).unicode_markup
 
         if ((subject is None) and (category is None)):
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
@@ -1500,7 +1503,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            message = "Error while getting email data for id {0}. Error: {1}".format(UnicodeDammit(email_id).unicode_markup.encode('utf-8'), action_result.get_message())
+            message = "Error while getting email data for id {0}. Error: {1}".format(UnicodeDammit(email_id).unicode_markup, action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
@@ -1647,7 +1650,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             str(value)
         except UnicodeEncodeError:
-            return UnicodeDammit(value).unicode_markup.encode('utf-8')
+            return UnicodeDammit(value).unicode_markup
 
         return value
 
@@ -1669,16 +1672,16 @@ class EWSOnPremConnector(BaseConnector):
 
         if (not folder_list):
             return (action_result(phantom.APP_ERROR,
-                        "Unable to find info about folder '{0}'. Returned info list empty".format(UnicodeDammit(folder_name).unicode_markup.encode('utf-8'))), None)
+                        "Unable to find info about folder '{0}'. Returned info list empty".format(UnicodeDammit(folder_name).unicode_markup)), None)
 
         for curr_folder in folder_list:
             curr_folder_path = self._extract_folder_path(curr_folder.get('t:ExtendedProperty'))
 
-            if (UnicodeDammit(curr_folder_path).unicode_markup.encode('utf-8') == UnicodeDammit(folder_path).unicode_markup.encode('utf-8')):
+            if (UnicodeDammit(curr_folder_path).unicode_markup == UnicodeDammit(folder_path).unicode_markup):
                 return (phantom.APP_SUCCESS, curr_folder)
 
         return (action_result.set_status(phantom.APP_ERROR,
-                    "Folder paths did not match while searching for folder: '{0}'".format(UnicodeDammit(folder_name).unicode_markup.encode('utf-8'))), None)
+                    "Folder paths did not match while searching for folder: '{0}'".format(UnicodeDammit(folder_name).unicode_markup)), None)
 
     def _get_folder_info(self, user, folder_path, action_result, is_public_folder=False):
         # hindsight is always 20-20, set the folder path separator to be '/', thinking folder names allow '\' as a char.
@@ -1698,7 +1701,7 @@ class EWSOnPremConnector(BaseConnector):
             curr_valid_folder_path = '\\'.join(folder_names[:i + 1])
 
             self.save_progress('Getting info about {0}\\{1}'.format(
-                    UnicodeDammit(self._clean_str(user)).unicode_markup.encode('utf-8'), UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8')))
+                    UnicodeDammit(self._clean_str(user)).unicode_markup, UnicodeDammit(curr_valid_folder_path).unicode_markup))
 
             input_xml = ews_soap.xml_get_children_info(user, child_folder_name=folder_name, parent_folder_id=parent_folder_id)
 
@@ -1711,14 +1714,14 @@ class EWSOnPremConnector(BaseConnector):
 
             if (total_items == '0'):
                 return (action_result.set_status(phantom.APP_ERROR,
-                            "Folder '{0}' not found, possibly not present".format(UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8'))), None)
+                            "Folder '{0}' not found, possibly not present".format(UnicodeDammit(curr_valid_folder_path).unicode_markup)), None)
 
             folder = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
 
             if (not folder):
                 return (action_result.set_status(phantom.APP_ERROR,
                             "Information about '{0}' not found in response, possibly not present".format(
-                                UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8'))), None)
+                                UnicodeDammit(curr_valid_folder_path).unicode_markup)), None)
 
             if (type(folder) != list):
                 folder = [folder]
@@ -1731,14 +1734,14 @@ class EWSOnPremConnector(BaseConnector):
             if (not folder):
                 return (action_result.set_status(phantom.APP_ERROR,
                     "Information for folder '{0}' not found in response, possibly not present".format(
-                        UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8'))), None)
+                        UnicodeDammit(curr_valid_folder_path).unicode_markup)), None)
 
             folder_id = folder.get('t:FolderId', {}).get('@Id')
 
             if (not folder_id):
                 return (action_result.set_status(phantom.APP_ERROR,
                     "Folder ID information not found in response for '{0}', possibly not present".format(
-                        UnicodeDammit(curr_valid_folder_path).unicode_markup.encode('utf-8'))), None)
+                        UnicodeDammit(curr_valid_folder_path).unicode_markup)), None)
 
             parent_folder_id = folder_id
             folder_info = {'id': folder_id,
@@ -1755,7 +1758,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        message_id = UnicodeDammit(param[EWSONPREM_JSON_ID]).unicode_markup.encode('utf-8').decode('utf-8')
+        message_id = UnicodeDammit(param[EWSONPREM_JSON_ID]).unicode_markup
 
         move_email = param.get('move_to_junk_folder', param.get('move_from_junk_folder', False))
 
@@ -1977,11 +1980,11 @@ class EWSOnPremConnector(BaseConnector):
             rfc822_email = base64.b64decode(mime_content)
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred."
             else:
@@ -2010,9 +2013,9 @@ class EWSOnPremConnector(BaseConnector):
         attach_meta_info['parentGuid'] = parent_guid
 
         # attachmentID, attachmentType
-        for k, v in attachment.iteritems():
+        for k, v in six.iteritems(attachment):
 
-            if (not isinstance(v, basestring)):
+            if (not isinstance(v, str)):
                 continue
 
             # convert the key to the convention used by cef
@@ -2028,7 +2031,7 @@ class EWSOnPremConnector(BaseConnector):
         attach_meta_info_ret = list()
 
         if ('m:Items' not in resp_json):
-            k = resp_json.keys()[0]
+            k = list(resp_json.keys())[0]
             resp_json['m:Items'] = resp_json.pop(k)
 
         # Get the attachments
@@ -2047,7 +2050,7 @@ class EWSOnPremConnector(BaseConnector):
 
         email_guid = resp_json['emailGuid']
 
-        for curr_key in attachments.iterkeys():
+        for curr_key in list(attachments.keys()):
 
             attachment_data = attachments[curr_key]
 
@@ -2103,7 +2106,7 @@ class EWSOnPremConnector(BaseConnector):
                 curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment', internet_message_id, email_guid)
                 if (curr_attach_meta_info):
                     # find the attachmetn in the list and update it
-                    matched_meta_info = list(filter(lambda x: x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2'), attach_meta_info_ret))
+                    matched_meta_info = list([x for x in attach_meta_info_ret if x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2')])
                     if (matched_meta_info):
                         matched_meta_info[0].update(curr_attach_meta_info)
 
@@ -2116,16 +2119,16 @@ class EWSOnPremConnector(BaseConnector):
         try:
             email_part = header_parser.parsestr(email_headers)
         except UnicodeEncodeError:
-            email_part = header_parser.parsestr(UnicodeDammit(email_headers).unicode_markup.encode('utf-8'))
+            email_part = header_parser.parsestr(UnicodeDammit(email_headers).unicode_markup)
 
-        email_headers = email_part.items()
+        email_headers = list(email_part.items())
 
         headers = {}
         charset = 'utf-8'
-        [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
+        [headers.update({x[0]: str(x[1], charset)}) for x in email_headers]
 
         # Handle received seperately
-        received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+        received_headers = [str(x[1], charset) for x in email_headers if x[0].lower() == 'received']
 
         if (received_headers):
             headers['Received'] = received_headers
@@ -2135,7 +2138,7 @@ class EWSOnPremConnector(BaseConnector):
     def _extract_ext_properties(self, resp_json, parent_internet_message_id=None, parent_guid=None):
 
         if ('m:Items' not in resp_json):
-            k = resp_json.keys()[0]
+            k = list(resp_json.keys())[0]
             resp_json['m:Items'] = resp_json.pop(k)
 
         headers = dict()
@@ -2214,11 +2217,11 @@ class EWSOnPremConnector(BaseConnector):
             rfc822_email = base64.b64decode(mime_content)
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred."
             else:
@@ -2272,7 +2275,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            message = "Error while getting email data for id {0}. Error: {1}".format(UnicodeDammit(email_id).unicode_markup.encode('utf-8'), action_result.get_message())
+            message = "Error while getting email data for id {0}. Error: {1}".format(UnicodeDammit(email_id).unicode_markup, action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
@@ -2289,14 +2292,14 @@ class EWSOnPremConnector(BaseConnector):
         config = self.get_config()
 
         # get the user
-        poll_user = UnicodeDammit(config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])).unicode_markup.encode('utf-8')
+        poll_user = UnicodeDammit(config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])).unicode_markup
 
         if (not poll_user):
             return (action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None)
 
         self._target_user = poll_user
 
-        folder_path = UnicodeDammit(config.get(EWS_JSON_POLL_FOLDER, 'Inbox')).unicode_markup.encode('utf-8')
+        folder_path = UnicodeDammit(config.get(EWS_JSON_POLL_FOLDER, 'Inbox')).unicode_markup
 
         is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
@@ -2361,11 +2364,11 @@ class EWSOnPremConnector(BaseConnector):
                 self._process_email_id(email_id)
             except Exception as e:
                 if e.message:
-                    if isinstance(e.message, basestring):
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    if isinstance(e.message, str):
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     else:
                         try:
-                            error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                            error_msg = UnicodeDammit(e.message).unicode_markup
                         except:
                             error_msg = "Unknown error occurred. Please check the provided action parameters."
                 else:
@@ -2401,7 +2404,7 @@ class EWSOnPremConnector(BaseConnector):
         email_ids = [email_id]
 
         # get the user
-        poll_user = UnicodeDammit(config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])).unicode_markup.encode('utf-8')
+        poll_user = UnicodeDammit(config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])).unicode_markup
 
         if (not poll_user):
             return (action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None)
@@ -2596,7 +2599,7 @@ if __name__ == '__main__':
 
     if (username and password):
         try:
-            print ("Accessing the Login page")
+            print("Accessing the Login page")
             r = requests.get(BaseConnector._get_phantom_base_url() + "login", verify=False)
             csrftoken = r.cookies['csrftoken']
 
@@ -2609,11 +2612,11 @@ if __name__ == '__main__':
             headers['Cookie'] = 'csrftoken=' + csrftoken
             headers['Referer'] = BaseConnector._get_phantom_base_url() + 'login'
 
-            print ("Logging into Platform to get the session id")
+            print("Logging into Platform to get the session id")
             r2 = requests.post(BaseConnector._get_phantom_base_url() + "login", verify=False, data=data, headers=headers)
             session_id = r2.cookies['sessionid']
         except Exception as e:
-            print ("Unable to get session id from the platform. Error: " + str(e))
+            print("Unable to get session id from the platform. Error: " + str(e))
             exit(1)
 
     with open(args.input_test_json) as f:
@@ -2634,7 +2637,7 @@ if __name__ == '__main__':
             if (session_id is not None):
                 in_json['user_session_token'] = session_id
             result = connector._handle_action(json.dumps(in_json), None)
-            print result
+            print(result)
             exit(0)
 
         if (data):
