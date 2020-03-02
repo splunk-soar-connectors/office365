@@ -240,11 +240,11 @@ class ProcessEmail(object):
             soup = BeautifulSoup(file_data, "html.parser")
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred."
             else:
@@ -472,11 +472,11 @@ class ProcessEmail(object):
             decoded_strings = [{'value': x[0], 'encoding': x[1]} for x in decoded_strings]
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred while decoding the encoded strings."
             else:
@@ -504,7 +504,7 @@ class ProcessEmail(object):
                 continue
 
             if (encoding != 'utf-8'):
-                value = unicode(value, encoding).encode('utf-8')
+                value = str(value, encoding)
 
             try:
                 # substitute the encoded string with the decoded one
@@ -660,7 +660,7 @@ class ProcessEmail(object):
 
     def _get_email_headers_from_part(self, part, charset=None):
 
-        email_headers = part.items()
+        email_headers = list(part.items())
 
         # TODO: the next 2 ifs can be condensed to use 'or'
         if (charset is None):
@@ -674,10 +674,10 @@ class ProcessEmail(object):
 
         # Convert the header tuple into a dictionary
         headers = CaseInsensitiveDict()
-        [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
+        [headers.update({x[0]: str(x[1], charset)}) for x in email_headers]
 
         # Handle received seperately
-        received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+        received_headers = [str(x[1], charset) for x in email_headers if x[0].lower() == 'received']
 
         if (received_headers):
             headers['Received'] = received_headers
@@ -685,8 +685,8 @@ class ProcessEmail(object):
         # handle the subject string, if required add a new key
         subject = headers.get('Subject')
         if (subject):
-            if (type(subject) == unicode):
-                headers['decodedSubject'] = self._decode_uni_string(UnicodeDammit(subject).unicode_markup.encode('utf-8'), subject)
+            if (type(subject) == str):
+                headers['decodedSubject'] = self._decode_uni_string(UnicodeDammit(subject).unicode_markup, subject)
 
         return headers
 
@@ -724,7 +724,7 @@ class ProcessEmail(object):
             self._update_headers(headers)
             cef_artifact['emailHeaders'] = dict(headers)
 
-        for curr_key in cef_artifact['emailHeaders'].keys():
+        for curr_key in list(cef_artifact['emailHeaders'].keys()):
 
             if curr_key.lower().startswith('body'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
@@ -828,11 +828,11 @@ class ProcessEmail(object):
                     ret_val = self._handle_part(part, i, tmp_dir, extract_attach, self._parsed_mail)
                 except Exception as e:
                     if e.message:
-                        if isinstance(e.message, basestring):
-                            error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        if isinstance(e.message, str):
+                            error_msg = UnicodeDammit(e.message).unicode_markup
                         else:
                             try:
-                                error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                                error_msg = UnicodeDammit(e.message).unicode_markup
                             except:
                                 error_msg = "Unknown error occurred."
                     else:
@@ -887,11 +887,11 @@ class ProcessEmail(object):
                 self._handle_body(body, self._parsed_mail, i, email_id)
             except Exception as e:
                 if e.message:
-                    if isinstance(e.message, basestring):
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                    if isinstance(e.message, str):
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     else:
                         try:
-                            error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                            error_msg = UnicodeDammit(e.message).unicode_markup
                         except:
                             error_msg = "Unknown error occurred."
                 else:
@@ -937,11 +937,11 @@ class ProcessEmail(object):
             ret_val = self._handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred."
             else:
@@ -1027,7 +1027,7 @@ class ProcessEmail(object):
         if (hasattr(self._base_connector, '_preprocess_container')):
             container = self._base_connector._preprocess_container(container)
 
-        for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
+        for artifact in list([x for x in container.get('artifacts', []) if not x.get('source_data_identifier')]):
             self._set_sdi(artifact)
 
         if files and container.get('artifacts'):
@@ -1190,7 +1190,7 @@ class ProcessEmail(object):
         if (not file_name):
             file_name = os.path.basename(local_file_path)
 
-        self._base_connector.debug_print("Vault file name: {0}".format(UnicodeDammit(file_name).unicode_markup.encode('utf-8')))
+        self._base_connector.debug_print("Vault file name: {0}".format(UnicodeDammit(file_name).unicode_markup))
 
         vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
         vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
@@ -1203,11 +1203,11 @@ class ProcessEmail(object):
             vault_ret = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred."
             else:
@@ -1297,11 +1297,11 @@ class ProcessEmail(object):
             input_dict_str = json.dumps(input_dict, sort_keys=True)
         except Exception as e:
             if e.message:
-                if isinstance(e.message, basestring):
-                    error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                if isinstance(e.message, str):
+                    error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
                     try:
-                        error_msg = UnicodeDammit(e.message).unicode_markup.encode('utf-8')
+                        error_msg = UnicodeDammit(e.message).unicode_markup
                     except:
                         error_msg = "Unknown error occurred."
             else:
