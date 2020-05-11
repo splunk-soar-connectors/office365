@@ -997,7 +997,7 @@ class ProcessEmail(object):
             )
 
         else:
-            self._base_connector.debug_print("jang; using container id {}".format(cid))
+            self._base_connector.debug_print("jang; using container id {}".format(container.get('id')))
             ret_val, message, cid = self._base_connector.save_container(container)
             self._base_connector.debug_print(
                 "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(

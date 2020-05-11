@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.pyc",
-    "app_version": "1.0.105",
+    "app_version": "1.0.905",
     "utctime_updated": "2020-02-28T19:50:30.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
