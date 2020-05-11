@@ -569,6 +569,7 @@ class EWSOnPremConnector(BaseConnector):
         return phantom.APP_SUCCESS, ''
 
     def finalize(self):
+        self.debug_print("state is {}".format(self._state))
         self.save_state(self._state)
         return phantom.APP_SUCCESS
 
@@ -578,6 +579,13 @@ class EWSOnPremConnector(BaseConnector):
         self._state = self.load_state()
 
         config = self.get_config()
+
+        # if container exists when adding artifacts, we can;
+        # [add] artifacts to existing container, [new] container (not implemented), [ignore] message all together
+        self._ingest_duplicated_containers = config.get('ingest_duplicated_containers')
+        if not self._ingest_duplicated_containers:
+            # there is a way to save modified params. I don't remember it off-hand
+            self._ingest_duplicated_containers = "add"
 
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
@@ -2382,6 +2390,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _poll_now(self, param):
 
+        self.debug_print("jang;poll now")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         # Get the maximum number of emails that we can pull
@@ -2424,7 +2433,9 @@ class EWSOnPremConnector(BaseConnector):
         else:
             self.save_progress("POLL NOW Getting the single email id")
 
+        self.debug_print("jang;poll now processing emails")
         ret_val = self._process_email_ids(email_ids, action_result)
+        self.debug_print("jang;poll now finished processing emails")
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -2435,13 +2446,17 @@ class EWSOnPremConnector(BaseConnector):
 
         config = self.get_config()
 
-        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'
+        #emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'
+        emails_after_key = 'last_email_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'
 
         date_time_string = self._state.get(emails_after_key)
+        self.debug_print("jang; using this as the time key {} {}".format(emails_after_key, date_time_string))
+        self.debug_print("jang; using this as the state key {}".format(self._state))
 
         if (not date_time_string):
             return None
 
+        self.debug_print("jang; restricting with {}".format(date_time_string))
         return ews_soap.xml_get_restriction(date_time_string)
 
     def _get_next_start_time(self, last_time):
@@ -2470,8 +2485,9 @@ class EWSOnPremConnector(BaseConnector):
         if (self._state.get('first_run', True)):
             # set the config to _not_ first run
             max_emails = config[EWS_JSON_FIRST_RUN_MAX_EMAILS]
-            self.save_progress("First time Ingestion detected.")
+            self.debug_print("jang;First time Ingestion detected.")
         else:
+            self.debug_print("jang;Not first time Ingestion detected.")
             max_emails = config[EWS_JSON_POLL_MAX_CONTAINERS]
 
         try:
@@ -2479,18 +2495,24 @@ class EWSOnPremConnector(BaseConnector):
             if max_emails == 0 or (max_emails and (not str(max_emails).isdigit() or max_emails <= 0)):
                 msg = "Please provide a valid non-zero positive integer value in "
                 msg += "'{0}' and '{1}' asset configuration parameters".format(EWS_JSON_FIRST_RUN_MAX_EMAILS, EWS_JSON_POLL_MAX_CONTAINERS)
+                self.debug_print("jang;error 2")
                 return action_result.set_status(phantom.APP_ERROR, msg)
         except:
+            self.debug_print("jang;error 1")
             return self.set_status(phantom.APP_ERROR, "Invalid container count")
 
         restriction = self._get_restriction()
 
+        self.debug_print("jang;getting email_infos")
         ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction)
+        self.debug_print("jang;found len {} email infos {} {} {}".format(len(email_infos), ret_val, email_infos[0], email_infos[-1]))
 
         if (phantom.is_fail(ret_val)) or email_infos is None:
+            self.debug_print("jang;return 2")
             return action_result.get_status()
 
         if not email_infos:
+            self.debug_print("jang;success 2")
             return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the restiriction: {}".format(str(restriction)))
 
         # if the config is for latest emails, then the 0th is the latest in the list returned, else
@@ -2500,10 +2522,13 @@ class EWSOnPremConnector(BaseConnector):
         # Define current time to store as starting reference for the next run of scheduled | interval polling
         utc_now = datetime.utcnow()
 
+        self.debug_print("jang;processing email ids")
         email_ids = [x['id'] for x in email_infos]
         ret_val = self._process_email_ids(email_ids, action_result)
+        self.debug_print("jang;done processing email ids {}".format(ret_val))
 
         if phantom.is_fail(ret_val):
+            self.debug_print("jang;return 1")
             return action_result.get_status()
 
         # Save the state file data only if the ingestion gets successfully completed
@@ -2512,6 +2537,8 @@ class EWSOnPremConnector(BaseConnector):
 
         self._state['last_ingested_epoch'] = utc_now.strftime("%s")
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
+
+        self.debug_print("jang;save state set to valid values {}".format(self._state))
 
         if ((email_ids) and (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_OLDEST_EMAILS)):
             email_times = [x['last_modified_time'] for x in email_infos]
@@ -2527,6 +2554,7 @@ class EWSOnPremConnector(BaseConnector):
 
                 self._state['last_email_format'] = self._get_next_start_time(self._state['last_email_format'])
 
+        self.debug_print("jang;success 1")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def handle_action(self, param):

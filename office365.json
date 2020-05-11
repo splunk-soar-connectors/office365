@@ -143,9 +143,20 @@
             ],
             "default": "oldest first"
         },
+        "ingest_duplicated_containers": {
+            "data_type": "string",
+            "order": 13,
+            "description": "if container exists, [add] new artifacts to container, or [ignore] message, do not ingest, skip to next message.",
+            "default": "add",
+            "required": false,
+            "value_list": [
+                "add",
+                "ignore"
+            ]
+        },
         "first_run_max_emails": {
             "data_type": "numeric",
-            "order": 13,
+            "order": 14,
             "description": "Maximum Emails to Poll First Time",
             "default": 2000,
             "required": true
@@ -153,51 +164,51 @@
         "max_containers": {
             "data_type": "numeric",
             "description": "Maximum Containers for Scheduled Polling",
-            "order": 14,
+            "order": 15,
             "default": 100,
             "required": true
         },
         "extract_attachments": {
             "data_type": "boolean",
             "description": "Extract Attachments",
-            "order": 15,
+            "order": 16,
             "default": true
         },
         "extract_urls": {
             "data_type": "boolean",
             "description": "Extract URLs",
-            "order": 16,
+            "order": 17,
             "default": true
         },
         "extract_ips": {
             "data_type": "boolean",
             "description": "Extract IPs",
-            "order": 17,
+            "order": 18,
             "default": true
         },
         "extract_domains": {
             "data_type": "boolean",
             "description": "Extract Domain Names",
-            "order": 18,
+            "order": 19,
             "default": true
         },
         "extract_hashes": {
             "data_type": "boolean",
             "description": "Extract Hashes",
-            "order": 19,
+            "order": 20,
             "default": true
         },
         "add_body_to_header_artifacts": {
             "data_type": "boolean",
             "description": "Add Email Body to the Email Artifact",
-            "order": 20,
+            "order": 21,
             "default": false
         },
         "preprocess_script": {
             "data_type": "file",
             "description": "Script with Functions to Preprocess Containers and Artifacts",
             "required": false,
-            "order": 21
+            "order": 22
         }
     },
     "actions": [

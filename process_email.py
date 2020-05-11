@@ -983,6 +983,7 @@ class ProcessEmail(object):
 
     def _save_ingested(self, container, using_dummy):
         if using_dummy:
+            self._base_connector.debug_print("jang; using dummy container")
             cid = container['id']
             artifacts = container['artifacts']
             for artifact in artifacts:
@@ -996,6 +997,7 @@ class ProcessEmail(object):
             )
 
         else:
+            self._base_connector.debug_print("jang; using container id {}".format(cid))
             ret_val, message, cid = self._base_connector.save_container(container)
             self._base_connector.debug_print(
                 "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
@@ -1005,6 +1007,7 @@ class ProcessEmail(object):
                 )
             )
 
+        self._base_connector.debug_print("jang; attempted to save to container id {}: {}".format(cid, message))
         return ret_val, message, cid
 
     def _handle_save_ingested(self, artifacts, container, container_id, files):
@@ -1043,11 +1046,18 @@ class ProcessEmail(object):
             return
 
         if message and "duplicate container found" in message.lower():
+            if self._base_connector._ingest_duplicated_containers != "add":
+                message = "Duplicated container ({}) detected, ignoring message, skip to the next. # artifacts ignored: {}".format(container_id, len(artifacts))
+                self._base_connector.debug_print(message)
+                self._base_connector.debug_print("jang; dup container {}: skipping {} artifacts: _ingest_duplicated_containers: {}".format(container_id, len(artifacts), self._base_connector._ingest_duplicated_containers))
+                return
+
+            self._base_connector.debug_print("jang; container {}: saving {} artifacts: _ingest_duplicated_containers: {}".format(container_id, len(artifacts), self._base_connector._ingest_duplicated_containers))
             # Save artifacts because duplicate container found
             using_dummy = True
             container = {
                 'id': container_id,
-                'artifacts': artifacts
+                'artifacts': container['artifacts']
             }
             ret_val, message, container_id = self._save_ingested(container, using_dummy)
 
