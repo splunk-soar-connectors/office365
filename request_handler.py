@@ -36,7 +36,7 @@ class Office365RequestHandler():
         state = self._rsh.load_state()
         state['error'] = True
         self._rsh.save_state(state)
-        return HttpResponse(error_msg, status=status)
+        return HttpResponse(error_msg, status=status, content_type="text/plain")
 
     def _get_oauth_token(self, code):
         state = self._rsh.load_state()
@@ -73,28 +73,35 @@ class Office365RequestHandler():
         return (True, None)
 
     def handle_request(self):
-        GET = self._request.GET
-        asset_id = GET.get('state')
-        self._rsh = RequestStateHandler(asset_id)
-        error = GET.get('error')
-        if error:
-            error_msg = GET.get('error_description')
-            return self._return_error(error_msg, 401)
+        try:
+            GET = self._request.GET
+            asset_id = GET.get('state')
+            self._rsh = RequestStateHandler(asset_id)
+            error = GET.get('error')
+            if error:
+                error_msg = GET.get('error_description')
+                return self._return_error(error_msg, 401)
 
-        code = GET.get('code')
+            code = GET.get('code')
 
-        ret_val, http_object = self._get_oauth_token(code)
+            ret_val, http_object = self._get_oauth_token(code)
 
-        if (ret_val is False):
-            return http_object
+            if (ret_val is False):
+                return http_object
 
-        return HttpResponse("You can now close this page")
+            return HttpResponse("You can now close this page", content_type="text/plain")
+        except Exception as e:
+            return self._return_error("Error handling request: {}".format(str(e)), 400)
+
 
 
 class RequestStateHandler():
     def __init__(self, asset_id):
-        self._asset_id = asset_id
-        pass
+        asset_id = str(asset_id)
+        if asset_id and asset_id.isalnum():
+            self._asset_id = asset_id
+        else:
+            raise AttributeError("RequestStateHandler got invalid asset_id")
 
     def _encrypt_state(self, state):
         if 'oauth_token' in state:
