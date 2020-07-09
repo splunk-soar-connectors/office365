@@ -982,19 +982,11 @@ class ProcessEmail(object):
         return (phantom.APP_SUCCESS, "Email Processed")
 
     def _save_ingested(self, container, using_dummy):
+
+        artifacts = container.pop('artifacts')
+
         if using_dummy:
             cid = container['id']
-            artifacts = container['artifacts']
-            for artifact in artifacts:
-                artifact['container_id'] = cid
-            ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
-            self._base_connector.debug_print(
-                "save_artifacts returns, value: {0}, reason: {1}".format(
-                    ret_val,
-                    message
-                )
-            )
-
         else:
             ret_val, message, cid = self._base_connector.save_container(container)
             self._base_connector.debug_print(
@@ -1004,6 +996,20 @@ class ProcessEmail(object):
                     cid
                 )
             )
+            if phantom.is_fail(ret_val):
+                return ret_val, message, cid
+
+        for artifact in artifacts:
+            artifact['container_id'] = cid
+        ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
+        self._base_connector.debug_print(
+            "save_artifacts returns, value: {0}, reason: {1}".format(
+                ret_val,
+                message
+            )
+        )
+
+        container['artifacts'] = artifacts
 
         return ret_val, message, cid
 
@@ -1037,6 +1043,8 @@ class ProcessEmail(object):
 
         ret_val, message, container_id = self._save_ingested(container, using_dummy)
 
+        self._base_connector.debug_print("In process_email 1 artifact json:", container['artifacts'])
+
         if phantom.is_fail(ret_val):
             message = "Failed to save ingested artifacts, error msg: {0}".format(message)
             self._base_connector.debug_print(message)
@@ -1050,6 +1058,8 @@ class ProcessEmail(object):
                 'artifacts': artifacts
             }
             ret_val, message, container_id = self._save_ingested(container, using_dummy)
+
+            self._base_connector.debug_print("In process_email 2 artifact json:", container['artifacts'])
 
             if phantom.is_fail(ret_val):
                 message = "Failed to save ingested artifacts, error msg: {0}".format(message)
