@@ -855,8 +855,7 @@ class ProcessEmail(object):
         # get the container name
         # remove leading characters
         container_name = self._get_container_name(self._parsed_mail, email_id)
-        container_new_name = container_name.lstrip()
-        container_name = container_new_name
+        container_name = container_name.lstrip()
 
         if (container_name is None):
             return phantom.APP_ERROR
