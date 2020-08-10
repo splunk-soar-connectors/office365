@@ -951,6 +951,7 @@ class ProcessEmail(object):
 
             message = "Error occurred in _handle_mail_object. Error: {0}".format(error_msg)
             self._debug_print(message)
+
             return (phantom.APP_ERROR, message, [])
 
         results = [{'container': self._container, 'artifacts': self._artifacts, 'files': self._attachments, 'temp_directory': tmp_dir}]
@@ -977,9 +978,19 @@ class ProcessEmail(object):
         ret_val, message, results = self._int_process_email(rfc822_email, email_id, epoch)
 
         if (not ret_val):
+            self._debug_print("Processing email failed, removing temporary directories")
+            shutil.rmtree(tmp_dir, ignore_errors=True)
             return (phantom.APP_ERROR, message)
 
-        self._parse_results(results, container_id)
+        try:
+            self._parse_results(results, container_id)
+        except Exception as e:
+            message = "Parsing results failed, error: {0}".format(e)
+            self._debug_print(message)
+            return (phantom.APP_ERROR, message)
+        finally:
+            # delete any temp directories that were created by the email parsing function
+            [shutil.rmtree(x['temp_directory'], ignore_errors=True) for x in results if x.get('temp_directory')]
 
         return (phantom.APP_SUCCESS, "Email Processed")
 
@@ -1150,9 +1161,6 @@ class ProcessEmail(object):
                     del cef_artifact['emailGuid']
 
             self._handle_save_ingested(artifacts, container, container_id, result.get('files'))
-
-        # delete any temp directories that were created by the email parsing function
-        [shutil.rmtree(x['temp_directory'], ignore_errors=True) for x in results if x.get('temp_directory')]
 
         return self._base_connector.set_status(phantom.APP_SUCCESS)
 
