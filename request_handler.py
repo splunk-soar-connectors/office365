@@ -94,7 +94,6 @@ class Office365RequestHandler():
             return self._return_error("Error handling request: {}".format(str(e)), 400)
 
 
-
 class RequestStateHandler():
     def __init__(self, asset_id):
         asset_id = str(asset_id)

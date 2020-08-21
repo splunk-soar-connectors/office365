@@ -15,7 +15,7 @@
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
     "product_version_regex": ".*",
-    "min_phantom_version": "4.6.19142",
+    "min_phantom_version": "4.8.24304",
     "python_version": "3",
     "latest_tested_versions": [
         "Cloud 11-27-2019"
