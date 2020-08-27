@@ -140,8 +140,14 @@ class EWSOnPremConnector(BaseConnector):
 
         if script:
             try:  # Try to laod in script to preprocess artifacts
-                self._script_module = imp.new_module('preprocess_methods')
-                exec(script in self._script_module.__dict__)
+                if self._python_version < 3:
+                    self._script_module = imp.new_module('preprocess_methods')
+                    exec(script, self._script_module.__dict__)
+                else:
+                    import importlib.util
+                    preprocess_methods = importlib.util.spec_from_loader('preprocess_methods', loader=None)
+                    self._script_module = importlib.util.module_from_spec(preprocess_methods)
+                    exec(script, self._script_module.__dict__)
             except Exception as e:
                 self.save_progress("Error loading custom script. Error: {}".format(str(e)))
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
