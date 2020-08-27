@@ -18,7 +18,7 @@
     "min_phantom_version": "4.8.24304",
     "python_version": "3",
     "latest_tested_versions": [
-        "Cloud 11-27-2019"
+        "Cloud, August 27, 2020"
     ],
     "pip_dependencies": {
         "wheel": [
@@ -65,14 +65,12 @@
         "password": {
             "data_type": "password",
             "order": 2,
-            "description": "Password",
-            "required": false
+            "description": "Password"
         },
         "poll_user": {
             "data_type": "string",
             "order": 3,
-            "description": "User Email Mailbox (Test Connectivity and Poll)",
-            "required": false
+            "description": "User Email Mailbox (Test Connectivity and Poll)"
         },
         "use_impersonation": {
             "data_type": "boolean",
@@ -84,7 +82,6 @@
             "data_type": "string",
             "order": 5,
             "description": "Authentication Mechanism to Use",
-            "required": false,
             "value_list": [
                 "Basic",
                 "Azure",
@@ -96,20 +93,17 @@
         "client_id": {
             "data_type": "string",
             "order": 6,
-            "description": "Client App ID for Azure/Fed AD Authentication",
-            "required": false
+            "description": "Client App ID for Azure/Fed AD Authentication"
         },
         "client_secret": {
             "data_type": "password",
             "order": 7,
-            "description": "Client Secret for Azure/Azure(Interactive) Authentication",
-            "required": false
+            "description": "Client Secret for Azure/Azure(Interactive) Authentication"
         },
         "fed_ping_url": {
             "data_type": "string",
             "order": 8,
             "description": "Federated Auth Ping URL",
-            "required": false,
             "default": "https://corp.contoso.com/fss/idp/sts.wst?TokenProcessorId=SentryPOC"
         },
         "fed_verify_server_cert": {
@@ -122,7 +116,6 @@
             "data_type": "string",
             "order": 10,
             "description": "Office 365 Authority URL (For Federated Auth)",
-            "required": false,
             "default": "https://login.windows.net/contoso.onmicrosoft.com"
         },
         "poll_folder": {
@@ -197,7 +190,6 @@
         "preprocess_script": {
             "data_type": "file",
             "description": "Script with Functions to Preprocess Containers and Artifacts",
-            "required": false,
             "order": 21
         }
     },
@@ -205,7 +197,7 @@
         {
             "action": "test connectivity",
             "description": "Validate the asset configuration for connectivity",
-            "verbose": "To check the connection and credentials, this action tries to list the email ids of the configured <b>poll_user</b>.",
+            "verbose": "To check the connection and credentials, this action tries to list the email ids of the configured <b>poll_user</b>",
             "type": "test",
             "identifier": "test_asset_connectivity",
             "read_only": true,
@@ -239,7 +231,6 @@
                     "description": "Folder name/path (to search in)",
                     "data_type": "string",
                     "order": 1,
-                    "required": false,
                     "primary": true,
                     "default": "Inbox",
                     "contains": [
@@ -250,8 +241,7 @@
                 "subject": {
                     "description": "Substring to search in subject",
                     "data_type": "string",
-                    "order": 2,
-                    "required": false
+                    "order": 2
                 },
                 "sender": {
                     "description": "Sender email address to match",
@@ -260,21 +250,18 @@
                         "email"
                     ],
                     "order": 3,
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "body": {
                     "description": "Substring to search in body",
                     "data_type": "string",
-                    "order": 4,
-                    "required": false
+                    "order": 4
                 },
                 "internet_message_id": {
                     "description": "Internet message ID",
                     "data_type": "string",
                     "order": 5,
                     "primary": true,
-                    "required": false,
                     "contains": [
                         "internet message id"
                     ]
@@ -282,8 +269,7 @@
                 "query": {
                     "description": "AQS string",
                     "data_type": "string",
-                    "order": 6,
-                    "required": false
+                    "order": 6
                 },
                 "range": {
                     "description": "Email range to return (min_offset-max_offset)",
@@ -539,8 +525,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 }
             },
             "render": {
@@ -662,7 +647,6 @@
                     "data_type": "string",
                     "order": 4,
                     "primary": true,
-                    "required": false,
                     "contains": [
                         "email"
                     ]
@@ -849,7 +833,6 @@
                     "data_type": "string",
                     "order": 4,
                     "primary": true,
-                    "required": false,
                     "contains": [
                         "email"
                     ]
@@ -1019,8 +1002,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 }
             },
             "render": {
@@ -1145,8 +1127,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 }
             },
             "render": {
@@ -1259,8 +1240,7 @@
                         "exchange email id",
                         "office 365 email id"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "email": {
                     "description": "Email of the mailbox owner (used during impersonation)",
@@ -1269,8 +1249,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "container_id": {
                     "description": "Container ID to get email data from",
@@ -1279,8 +1258,7 @@
                     "contains": [
                         "phantom container id"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "vault_id": {
                     "description": "Vault ID to get email from",
@@ -1289,8 +1267,7 @@
                     "contains": [
                         "vault id"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "ingest_email": {
                     "description": "Create containers and artifacts",
@@ -2385,20 +2362,17 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "subject": {
                     "description": "Subject to set",
                     "data_type": "string",
-                    "order": 2,
-                    "required": false
+                    "order": 2
                 },
                 "category": {
                     "description": "Categories to set",
                     "data_type": "string",
                     "order": 3,
-                    "required": false,
                     "allow_list": true
                 }
             },
@@ -2901,7 +2875,6 @@
                 "artifact_count": {
                     "data_type": "numeric",
                     "description": "Parameter Ignored in this app",
-                    "required": false,
                     "default": 1000
                 }
             },
