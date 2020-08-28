@@ -42,12 +42,10 @@ from requests.auth import AuthBase
 from requests.auth import HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
 try:
-    import urllib.parse as urlparse
-    import urllib.request
-    import urllib.error
+    from urllib.parse import urlparse, quote_plus
 except ImportError:
-    import urlparse
-    import urllib
+    from urllib import quote_plus
+    from urlparse import urlparse
 
 import base64
 from datetime import datetime, timedelta
@@ -277,7 +275,7 @@ class EWSOnPremConnector(BaseConnector):
         headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
 
         # URL
-        parsed_auth_url = urlparse.urlparse(self._base_url)
+        parsed_auth_url = urlparse(self._base_url)
 
         # Form data
         data = {
@@ -534,7 +532,7 @@ class EWSOnPremConnector(BaseConnector):
         url = "{0}/{1}/oauth2/token".format(EWS_LOGIN_URL, domain)
         params = None
 
-        parsed_base_url = urlparse.urlparse(self._base_url)
+        parsed_base_url = urlparse(self._base_url)
 
         data = {
                 'resource': '{0}://{1}'.format(parsed_base_url.scheme, parsed_base_url.netloc),
@@ -584,7 +582,7 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, "Please provide a valid integer value in the '{0}' parameter".format(key)), None
 
         if not allow_zero and parameter <= 0:
-            return action_result.set_status(phantom.APP_ERROR, 'Please provide non-zero positive integer in "{0}"'.format(key)), None
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a non-zero positive integer in the '{0}' parameter".format(key)), None
         elif allow_zero and parameter < 0:
             return action_result.set_status(phantom.APP_ERROR, "Please provide a valid non-negative integer value in the '{0}' parameter".format(key)), None
 
@@ -643,7 +641,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             error_msg = self._handle_py_ver_compat_for_input_str(error_msg)
         except TypeError:
-            error_msg = "Error occurred while connecting to the Jira server. Please check the asset configuration and|or the action parameters."
+            error_msg = "Error occurred while connecting to the EWS server. Please check the asset configuration and|or the action parameters."
         except:
             error_msg = "Error message unavailable. Please check the asset configuration and|or action parameters."
 
@@ -934,17 +932,16 @@ class EWSOnPremConnector(BaseConnector):
             # action_result.append_to_message(EWS_MODIFY_CONFIG)
 
             # Set the status of the complete connector result
-            self.set_status(phantom.APP_ERROR, action_result.get_message())
+            action_result.set_status(phantom.APP_ERROR, action_result.get_message())
 
             # Append the message to display
-            self.append_to_message(EWSONPREM_ERR_CONNECTIVITY_TEST)
+            self.save_progress(EWSONPREM_ERR_CONNECTIVITY_TEST)
 
             # return error
             return phantom.APP_ERROR
 
         # Set the status of the connector result
-        action_result.set_status(phantom.APP_SUCCESS)
-        return self.set_status_save_progress(phantom.APP_SUCCESS, EWSONPREM_SUCC_CONNECTIVITY_TEST)
+        return action_result.set_status_save_progress(phantom.APP_SUCCESS, EWSONPREM_SUCC_CONNECTIVITY_TEST)
 
     def _get_child_folder_infos(self, user, action_result, parent_folder_info):
 
@@ -1034,7 +1031,7 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, "Unable to parse the range. Please specify the range as min_offset-max_offset")
 
         if (mini < 0) or (maxi < 0):
-            return action_result.set_status(phantom.APP_ERROR, "Invalid min or max offset value specified in range", )
+            return action_result.set_status(phantom.APP_ERROR, "Invalid min or max offset value specified in range")
 
         if (mini > maxi):
             return action_result.set_status(phantom.APP_ERROR, "Invalid range value, min_offset greater than max_offset")
@@ -1213,10 +1210,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_container_id(self, email_id):
 
-        if self._python_version < 3:
-            email_id = urllib.quote_plus(email_id)
-        else:
-            email_id = urlparse.quote_plus(email_id)
+        email_id = quote_plus(email_id)
 
         url = self.get_phantom_base_url() + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
@@ -1383,7 +1377,7 @@ class EWSOnPremConnector(BaseConnector):
             if (charset is None):
                 charset = mail.get_content_charset()
 
-        if (charset is None):
+        if (not charset):
             charset = 'utf-8'
 
         if (not email_headers):
