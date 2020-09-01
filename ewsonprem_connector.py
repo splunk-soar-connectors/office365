@@ -384,7 +384,10 @@ class EWSOnPremConnector(BaseConnector):
         state['client_id'] = client_id
         state['redirect_url'] = app_rest_url
         state['request_url'] = request_url
-        state['client_secret'] = base64.b64encode(client_secret)
+        # This handling is for the python version 3, working fine with both the python version 2 and 3
+        client_secret = client_secret.encode('ascii')
+        client_secret = base64.b64encode(client_secret)
+        state['client_secret'] = client_secret.decode('ascii')
 
         rsh.save_state(state)
         self.save_state(state)
@@ -941,7 +944,7 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         # Set the status of the connector result
-        return action_result.set_status_save_progress(phantom.APP_SUCCESS, EWSONPREM_SUCC_CONNECTIVITY_TEST)
+        return self.set_status_save_progress(phantom.APP_SUCCESS, EWSONPREM_SUCC_CONNECTIVITY_TEST)
 
     def _get_child_folder_infos(self, user, action_result, parent_folder_info):
 

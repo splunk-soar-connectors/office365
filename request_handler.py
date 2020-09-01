@@ -45,6 +45,7 @@ class Office365RequestHandler():
         redirect_uri = state['redirect_url']
         request_url = state['request_url']
         client_secret = base64.b64decode(state['client_secret'])
+        client_secret = client_secret.decode('ascii')
 
         body = {
             'grant_type': 'authorization_code',
@@ -140,7 +141,6 @@ class RequestStateHandler():
         try:
             with open(state_file, 'w+') as fp:
                 fp.write(json.dumps(state))
-                fp.close()
         except:
             pass
 
@@ -153,7 +153,6 @@ class RequestStateHandler():
             with open(state_file, 'r') as fp:
                 in_json = fp.read()
                 state = json.loads(in_json)
-                fp.close()
         except:
             pass
 
