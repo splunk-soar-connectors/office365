@@ -147,7 +147,7 @@
         "first_run_max_emails": {
             "data_type": "numeric",
             "order": 13,
-            "description": "Maximum Emails to Poll First Time",
+            "description": "Maximum Emails to Poll First Time for Scheduled Polling",
             "default": 2000,
             "required": true
         },
