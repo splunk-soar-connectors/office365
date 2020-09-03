@@ -449,7 +449,6 @@ class EWSOnPremConnector(BaseConnector):
             return (None, "Error retrieving OAuth Token")
 
         self._state['oauth_token'] = oauth_token
-        self.save_state(self._state)
         return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
 
     def _set_azure_int_auth(self, config):
@@ -468,11 +467,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             self._state = rsh._decrypt_state(self._state)
-        except Exception as e:
-            self.save_progress("Except")
-            self.save_progress(str(type(e).__name__))
-            self.save_progress(str(e))
-            self.save_progress("Except")
+        except:
             return (None, EWS_ASSET_CORRUPTED)
 
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
@@ -482,13 +477,14 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print("Try to generate token from authorization code")
             ret = self._azure_int_auth_initial(client_id, rsh, client_secret)
 
-        self._state = rsh._encrypt_state(self._state)
         self._state['client_id'] = client_id
+        self._state = rsh._encrypt_state(self._state)
+        self.save_state(self._state)
 
         # NOTE: This state is in the app directory, it is
         #  different than the app state (i.e. self._state)
 
-        # rsh.delete_state()
+        rsh.delete_state()
 
         return ret
 
@@ -674,12 +670,6 @@ class EWSOnPremConnector(BaseConnector):
         """ Called once for every action, all member initializations occur here"""
 
         self._state = self.load_state()
-        self.debug_print("--------------------")
-        self.debug_print(str(type(self._state)))
-        self.debug_print(str(self._state))
-        self.debug_print("--------------------")
-        # if not self._state:
-        #     self._state = dict()
 
         config = self.get_config()
 
@@ -725,7 +715,7 @@ class EWSOnPremConnector(BaseConnector):
             # depending on the app, it's either basic or NTML
             if (self.get_app_id() != OFFICE365_APP_ID):
                 self.save_progress("Using NTLM authentication")
-                # use NTLM (E2xchange on Prem)
+                # use NTLM (Exchange on Prem)
                 self._session.auth = HttpNtlmAuth(username, password)
             else:
                 self.save_progress("Using HTTP Basic authentication")
