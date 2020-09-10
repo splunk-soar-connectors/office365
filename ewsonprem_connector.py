@@ -1928,7 +1928,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        message_id = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_ID])
+        message_id = self._handle_py_ver_compat_for_input_unicode(param[EWSONPREM_JSON_ID])
 
         move_email = param.get('move_to_junk_folder', param.get('move_from_junk_folder', False))
 

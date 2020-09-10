@@ -529,8 +529,7 @@
                         "office 365 email id"
                     ],
                     "primary": true,
-                    "required": true,
-                    "allow_list": true
+                    "required": true
                 },
                 "email": {
                     "description": "Email of the mailbox owner (used during impersonation)",
