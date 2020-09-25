@@ -388,7 +388,10 @@ class ProcessEmail(object):
     def _parse_email_headers_as_inline(self, file_data, parsed_mail, charset, email_id):
 
         # remove the 'Forwarded Message' from the email text and parse it
-        p = re.compile(r'.*Forwarded Message.*\r\n(.*)', re.IGNORECASE)
+        if self._base_connector._python_version == 2:
+            p = re.compile(r'.*Forwarded Message.*\r\n(.*)', re.IGNORECASE)
+        else:
+            p = re.compile(r'.*Forwarded Message.*\n(.*)', re.IGNORECASE)
         email_text = p.sub(r'\1', file_data.strip())
         mail = email.message_from_string(email_text)
 
@@ -679,6 +682,10 @@ class ProcessEmail(object):
         if (subject):
             if (type(subject) == str):
                 headers['decodedSubject'] = self._base_connector._decode_uni_string(subject, subject)
+
+        self._debug_print("MJ Headers")
+        self._debug_print(str(headers))
+        self._debug_print("MJ Headers")
 
         return headers
 
