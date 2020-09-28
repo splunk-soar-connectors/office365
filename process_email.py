@@ -683,10 +683,6 @@ class ProcessEmail(object):
             if (type(subject) == str):
                 headers['decodedSubject'] = self._base_connector._decode_uni_string(subject, subject)
 
-        self._debug_print("MJ Headers")
-        self._debug_print(str(headers))
-        self._debug_print("MJ Headers")
-
         return headers
 
     def _parse_email_headers(self, parsed_mail, part, charset=None, add_email_id=None):
