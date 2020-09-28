@@ -2327,26 +2327,27 @@ class EWSOnPremConnector(BaseConnector):
         try:
             extended_properties = resp_json['m:Items']['t:Message']['t:ExtendedProperty']
         except:
-            return RetVal2(phantom.APP_SUCCESS)
+            pass
 
-        if (type(extended_properties) != list):
-            extended_properties = [extended_properties]
+        if extended_properties:
+            if (type(extended_properties) != list):
+                extended_properties = [extended_properties]
 
-        for curr_ext_property in extended_properties:
+            for curr_ext_property in extended_properties:
 
-            property_tag = curr_ext_property.get('t:ExtendedFieldURI', {}).get('@PropertyTag')
-            value = curr_ext_property.get('t:Value')
+                property_tag = curr_ext_property.get('t:ExtendedFieldURI', {}).get('@PropertyTag')
+                value = curr_ext_property.get('t:Value')
 
-            if (not property_tag):
-                continue
-
-            if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
-                email_headers = self._extract_email_headers(value)
-                if (email_headers is not None):
-                    headers.update(email_headers)
+                if (not property_tag):
                     continue
-            if (property_tag == ews_soap.EXTENDED_PROPERTY_BODY_TEXT):
-                headers.update({'bodyText': value})
+
+                if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
+                    email_headers = self._extract_email_headers(value)
+                    if (email_headers is not None):
+                        headers.update(email_headers)
+                        continue
+                if (property_tag == ews_soap.EXTENDED_PROPERTY_BODY_TEXT):
+                    headers.update({'bodyText': value})
 
         # now parse the body in the main resp_json
         try:
