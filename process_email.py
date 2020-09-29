@@ -332,9 +332,10 @@ class ProcessEmail(object):
         domains = parsed_mail[PROC_EMAIL_JSON_DOMAINS]
 
         file_data = None
-        with open(local_file_path, 'r') as f:
+        with open(local_file_path, 'rb') as f:
             file_data = f.read()
 
+        file_data = self._base_connector._get_string(file_data, 'utf-8')
         if ((file_data is None) or (len(file_data) == 0)):
             return phantom.APP_ERROR
 
