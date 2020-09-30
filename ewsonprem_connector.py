@@ -1864,7 +1864,7 @@ class EWSOnPremConnector(BaseConnector):
 
         folder_names = list(filter(None, folder_names))
         if not folder_names:
-            return (action_result.set_status(phantom.APP_ERROR, "Please provide valid value for folder path"), None)
+            return (action_result.set_status(phantom.APP_ERROR, "Please provide a valid value for folder path"), None)
 
         for i, folder_name in enumerate(folder_names):
             folder_names[i] = folder_name.replace(self.REPLACE_CONST, '/')
