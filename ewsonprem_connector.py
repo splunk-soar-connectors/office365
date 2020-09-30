@@ -1854,13 +1854,18 @@ class EWSOnPremConnector(BaseConnector):
                 return (phantom.APP_SUCCESS, curr_folder)
 
         return (action_result.set_status(phantom.APP_ERROR,
-                    "Folder paths did not match while searching for folder: '{0}'".format(folder_name)), None)
+                    "Folder paths did not match while searching for folder: '{0}'".format(folder_path)), None)
 
     def _get_folder_info(self, user, folder_path, action_result, is_public_folder=False):
         # hindsight is always 20-20, set the folder path separator to be '/', thinking folder names allow '\' as a char.
         # turns out even '/' is supported by office365, so let the action escape the '/' char if it's part of the folder name
         folder_path = folder_path.replace('\\/', self.REPLACE_CONST)
         folder_names = folder_path.split('/')
+
+        folder_names = list(filter(None, folder_names))
+        if not folder_names:
+            return (action_result.set_status(phantom.APP_ERROR, "Please provide valid value for folder path"), None)
+
         for i, folder_name in enumerate(folder_names):
             folder_names[i] = folder_name.replace(self.REPLACE_CONST, '/')
 
