@@ -240,7 +240,7 @@ class EWSOnPremConnector(BaseConnector):
             url = self._handle_py_ver_compat_for_input_str(config[EWS_JSON_FED_PING_URL])
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self.debug_print("Parameter validation failed for the Federated Auth Ping URL. Error: {}".format(error_text))
             return (None, "Parameter validation failed for the Federated Auth Ping URL.")
 
@@ -828,7 +828,7 @@ class EWSOnPremConnector(BaseConnector):
                 resp_json = json.loads(json.dumps(resp_json))
             except Exception as e:
                 error_code, error_msg = self._get_error_message_from_exception(e)
-                error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 self.debug_print("Error occurred while parsing the HTTP error response. {0}".format(error_text))
                 return "Unable to parse error details"
 
@@ -861,7 +861,7 @@ class EWSOnPremConnector(BaseConnector):
             r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=60, verify=True)
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, error_text), resp_json)
 
         if (hasattr(result, 'add_debug_data')):
@@ -887,7 +887,7 @@ class EWSOnPremConnector(BaseConnector):
             # r.text is guaranteed to be NON None, it will be empty, but not None
             msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=r.text)
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return (result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json)
 
         # Check if there is a fault node present
@@ -902,7 +902,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=r.text)
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return (result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json)
 
         if (type(resp_message) != dict):
@@ -1153,7 +1153,7 @@ class EWSOnPremConnector(BaseConnector):
                 UnicodeDammit(aqs).unicode_markup
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self.debug_print("Parameter validation failed for the AQS query. {0}".format(error_text))
             return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the query. Unicode value found.")
 
@@ -1221,7 +1221,7 @@ class EWSOnPremConnector(BaseConnector):
             resp_json = r.json()
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self.debug_print("Unable to query Email container", error_text)
             return None
 
@@ -1233,7 +1233,7 @@ class EWSOnPremConnector(BaseConnector):
             container_id = resp_json.get('data', [])[0]['id']
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self.debug_print("Container results, not proper", error_text)
             return None
 
@@ -1248,7 +1248,7 @@ class EWSOnPremConnector(BaseConnector):
             ret_val, resp_data, status_code = self.get_container_info(container_id)
         except ValueError as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return RetVal3(action_result.set_status(phantom.APP_ERROR, 'Validation failed for the container_id. {0}'.format(error_text)), email_data, email_id)
 
         if (phantom.is_fail(ret_val)):
@@ -1279,7 +1279,7 @@ class EWSOnPremConnector(BaseConnector):
             file_path = Vault.get_file_path(vault_id)
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item. {0}".format(error_text)), None, None)
 
         if not file_path:
@@ -1289,7 +1289,7 @@ class EWSOnPremConnector(BaseConnector):
             msg = Message(file_path)
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return action_result.set_status(phantom.APP_ERROR, "Failed to parse message. {0}".format(error_text)), None, None
 
         email_data = msg._getStringStream('__substg1.0_007D')
@@ -1471,7 +1471,7 @@ class EWSOnPremConnector(BaseConnector):
                 headers = self._get_email_headers_from_mail(None, charset, email_headers=headers_dict.get('_headers'))
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return action_result.set_status(phantom.APP_ERROR, "Unable to get email header string from message. {0}".format(error_text)), None
 
         if (not headers):
@@ -1510,7 +1510,7 @@ class EWSOnPremConnector(BaseConnector):
             data = ews_soap.xml_get_emails_data([email_id])
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. {0}".format(error_text)), None
 
         action_result.update_summary({"email_id": email_id})
@@ -1624,7 +1624,7 @@ class EWSOnPremConnector(BaseConnector):
             self._process_email_id(email_id, target_container_id, flag=flag)
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self.debug_print("Error occurred in _process_email_id with Message ID: {0}. {1}".format(email_id, error_text))
             action_result.update_summary({"container_id": None})
             return action_result.set_status(phantom.APP_ERROR, "Error processing email. {0}".format(error_text))
@@ -1663,7 +1663,7 @@ class EWSOnPremConnector(BaseConnector):
             data = ews_soap.xml_get_emails_data([email_id])
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. {0}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
@@ -1687,7 +1687,7 @@ class EWSOnPremConnector(BaseConnector):
             data = ews_soap.get_update_email(email_id, change_key, category, subject)
         except ValueError as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return action_result.set_status(phantom.APP_ERROR, "Validation failed for the given input paramter. {0}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
@@ -1702,7 +1702,7 @@ class EWSOnPremConnector(BaseConnector):
             data = ews_soap.xml_get_emails_data([email_id])
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
@@ -1754,7 +1754,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             self.add_action_result(action_result)
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. {0}'.format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_delete_response)
@@ -2008,7 +2008,7 @@ class EWSOnPremConnector(BaseConnector):
             data = ews_soap.get_copy_email(message_id, folder_info['id'])
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. {0}'.format(error_text))
         response_checker = self._check_copy_response
 
@@ -2017,7 +2017,7 @@ class EWSOnPremConnector(BaseConnector):
                 data = ews_soap.get_move_email(message_id, folder_info['id'])
             except Exception as e:
                 error_code, error_msg = self._get_error_message_from_exception(e)
-                error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. {0}'.format(error_text))
             response_checker = self._check_move_response
 
@@ -2159,7 +2159,7 @@ class EWSOnPremConnector(BaseConnector):
             rfc822_email = base64.b64decode(mime_content)
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self.debug_print("Unable to decode Email Mime Content. {0}".format(error_text))
             return action_result.set_status(phantom.APP_ERROR, "Unable to decode Email Mime Content")
 
@@ -2257,7 +2257,7 @@ class EWSOnPremConnector(BaseConnector):
                 curr_attachment_data = curr_attachment_data['m:Attachments']
             except Exception as e:
                 error_code, error_msg = self._get_error_message_from_exception(e)
-                error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 self.debug_print("Could not parse the attachments response", error_text)
                 continue
 
@@ -2404,7 +2404,7 @@ class EWSOnPremConnector(BaseConnector):
                 rfc822_email = UnicodeDammit(rfc822_email).unicode_markup
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self.debug_print("Unable to decode Email Mime Content. {0}".format(error_text))
             return (phantom.APP_ERROR, "Unable to decode Email Mime Content")
 
@@ -2448,7 +2448,7 @@ class EWSOnPremConnector(BaseConnector):
             data = ews_soap.xml_get_emails_data([email_id])
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. {0}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
@@ -2546,7 +2546,7 @@ class EWSOnPremConnector(BaseConnector):
                     failed_emails_parsing_list.append(email_id)
             except Exception as e:
                 error_code, error_msg = self._get_error_message_from_exception(e)
-                error_text = "Error Code:{0}. Error Message:{1}".format(error_code, error_msg)
+                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. {2}".format(i, email_id, error_text))
 
                 failed_emails_parsing_list.append(email_id)
