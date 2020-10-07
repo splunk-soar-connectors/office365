@@ -1356,16 +1356,16 @@ class EWSOnPremConnector(BaseConnector):
                 value = self._get_string(value, encoding)
 
             try:
-                # make new string insted of replacing in the input string because issue find in PAPP-9531
+                # make new string instead of replacing in the input string because of the issue found in PAPP-9531
                 if value:
                     new_str += self._get_string(value, 'utf-8')
                     new_str_create_count += 1
             except:
                 pass
 
-        # replace input string with new string because issue find in PAPP-9531
+        # replace input string with new string because of the issue found in PAPP-9531
         if new_str and new_str_create_count == len(encoded_strings):
-            self.debug_print("Creating a new string entirely from the encoded_strings and assiging into input_str")
+            self.debug_print("Creating a new string entirely from the encoded_strings and assiging to the input_str")
             input_str = new_str
 
         return input_str
