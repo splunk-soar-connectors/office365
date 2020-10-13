@@ -250,14 +250,14 @@ without a valid written license from Splunk Inc. is PROHIBITED.
 
 {% if result.data.email_text %}
 <h4 class="wf-h4-style">Stripped Email Text</h4>
-<pre>
+<p>
   {{ result.data.email_text }}
-</pre>
+</p>
 {% else %}
 <h4 class="wf-h4-style">Raw Email</h4>
-<pre>
+<p>
   {{ result.data.email_data }}
-</pre>
+</p>
 {% endif %}
 
 {% if result.message %}

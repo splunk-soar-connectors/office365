@@ -9,16 +9,16 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.0.1",
-    "utctime_updated": "2020-03-02T22:20:47.000000Z",
+    "app_version": "2.0.16",
+    "utctime_updated": "2020-07-07T22:57:23.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
     "product_version_regex": ".*",
-    "min_phantom_version": "4.6.19142",
+    "min_phantom_version": "4.8.24304",
     "python_version": "3",
     "latest_tested_versions": [
-        "Cloud 11-27-2019"
+        "Cloud 08-28-2020"
     ],
     "pip_dependencies": {
         "wheel": [
@@ -147,7 +147,7 @@
         "first_run_max_emails": {
             "data_type": "numeric",
             "order": 13,
-            "description": "Maximum Emails to Poll First Time",
+            "description": "Maximum Emails to Poll First Time for Scheduled Polling",
             "default": 2000,
             "required": true
         },
@@ -529,8 +529,7 @@
                         "office 365 email id"
                     ],
                     "primary": true,
-                    "required": true,
-                    "allow_list": true
+                    "required": true
                 },
                 "email": {
                     "description": "Email of the mailbox owner (used during impersonation)",
