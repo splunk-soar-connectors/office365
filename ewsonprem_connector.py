@@ -1086,7 +1086,7 @@ class EWSOnPremConnector(BaseConnector):
 
             folder_id = folder_info['id']
 
-            self.send_progress(EWSONPREM_SEARCH_FINISHED_STATUS, float(i) / float(num_folder_ids))
+            # self.send_progress(EWSONPREM_SEARCH_FINISHED_STATUS, float(i) / float(num_folder_ids))
 
             ar_folder = ActionResult()
             if (aqs):

@@ -465,13 +465,12 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
 
     filters = []
     restriction = None
-    """
+
     note_equal_to = T.IsEqualTo(
             T.FieldURI({'FieldURI': 'folder:FolderClass'}),
             T.FieldURIOrConstant(
                 T.Constant({'Value': 'IPF.Note'})))
     filters.append(note_equal_to)
-    """
 
     traversal = {'Traversal': 'Deep'}
 
