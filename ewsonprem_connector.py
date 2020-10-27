@@ -1086,8 +1086,6 @@ class EWSOnPremConnector(BaseConnector):
 
             folder_id = folder_info['id']
 
-            self.send_progress(EWSONPREM_SEARCH_FINISHED_STATUS, float(i) / float(num_folder_ids))
-
             ar_folder = ActionResult()
             if (aqs):
                 data = ews_soap.get_search_request_aqs([folder_id], aqs, email_range)
