@@ -1,6 +1,6 @@
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2020 Splunk Inc.
+# Copyright (c) 2016-2021 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -25,7 +25,7 @@
 import phantom.app as phantom
 from phantom.base_connector import BaseConnector
 from phantom.action_result import ActionResult
-from phantom.vault import Vault
+import phantom.rules as ph_rules
 import phantom.utils as ph_utils
 
 # THIS Connector imports
@@ -1274,11 +1274,14 @@ class EWSOnPremConnector(BaseConnector):
         file_path = None
 
         try:
-            file_path = Vault.get_file_path(vault_id)
+            success, message, file_info = ph_rules.vault_info(vault_id=vault_id)
+            file_info = list(file_info)[0]
+            file_path = file_info.get('path')
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item. {0}".format(error_text)), None, None)
+            self.debug_print(error_text)
+            return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item"), None, None)
 
         if not file_path:
             return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item"), None, None)
