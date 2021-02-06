@@ -1,6 +1,6 @@
 # File: process_email.py
 #
-# Copyright (c) 2016-2020 Splunk Inc.
+# Copyright (c) 2016-2021 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -17,7 +17,7 @@ import phantom.utils as ph_utils
 import mimetypes
 import socket
 from email.header import decode_header
-from phantom.vault import Vault
+import phantom.rules as ph_rules
 import shutil
 import hashlib
 import json
@@ -1137,7 +1137,11 @@ class ProcessEmail(object):
 
     def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
 
-        vault_info = Vault.get_file_info(vault_id=vault_id, container_id=container_id, method='and')
+        try:
+            success, message, vault_info = ph_rules.vault_info(vault_id=vault_id, container_id=container_id)
+            vault_info = list(vault_info)
+        except Exception:
+            return phantom.APP_ERROR, "Vault ID not found"
 
         if (not vault_info):
             return (phantom.APP_ERROR, "Vault ID not found")
@@ -1187,12 +1191,15 @@ class ProcessEmail(object):
         vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
         vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
 
-        vault_ret = {}
-
         file_name = self._base_connector._decode_uni_string(file_name, file_name)
 
         try:
-            vault_ret = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
+            success, message, vault_id = ph_rules.vault_add(
+                container=container_id,
+                file_location=local_file_path,
+                file_name=file_name,
+                metadata=vault_attach_dict
+            )
         except Exception as e:
             error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
             err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
@@ -1201,8 +1208,8 @@ class ProcessEmail(object):
 
         # self._base_connector.debug_print("vault_ret_dict", vault_ret_dict)
 
-        if (not vault_ret.get('succeeded')):
-            self._base_connector.debug_print("Failed to add file to Vault: {0}".format(json.dumps(vault_ret)))
+        if not success:
+            self._base_connector.debug_print("Failed to add file to Vault: {0}".format(message))
             return (phantom.APP_ERROR, phantom.APP_ERROR)
 
         # add the vault id artifact to the container
@@ -1210,13 +1217,13 @@ class ProcessEmail(object):
         if (file_name):
             cef_artifact.update({'fileName': file_name})
 
-        if (phantom.APP_JSON_HASH in vault_ret):
-            cef_artifact.update({'vaultId': vault_ret[phantom.APP_JSON_HASH],
-                'cs6': vault_ret[phantom.APP_JSON_HASH],
+        if vault_id:
+            cef_artifact.update({'vaultId': vault_id,
+                'cs6': vault_id,
                 'cs6Label': 'Vault ID'})
 
             # now get the rest of the hashes and add them to the cef artifact
-            self._add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH], container_id)
+            self._add_vault_hashes_to_dictionary(cef_artifact, vault_id, container_id)
 
         if (not cef_artifact):
             return (phantom.APP_SUCCESS, phantom.APP_ERROR)
