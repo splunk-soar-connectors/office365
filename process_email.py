@@ -575,8 +575,31 @@ class ProcessEmail(object):
         part_payload = part.get_payload(decode=True)
         if (not part_payload):
             return phantom.APP_SUCCESS
-        with open(file_path, 'wb') as f:
-            f.write(part_payload)
+        try:
+            with open(file_path, 'wb') as f:
+                f.write(part_payload)
+        except IOError as e:
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            try:
+                if "File name too long" in error_msg:
+                    new_file_name = "ph_long_file_name_temp"
+                    file_path = "{}{}".format(file_path.rstrip(file_name.replace('<', '').replace('>', '').replace(' ', '')), new_file_name)
+                    self._base_connector.debug_print("Original filename: {}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
+                    self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
+                    with open(file_path, 'wb') as uncompressed_file:
+                        uncompressed_file.write(part_payload)
+                else:
+                    self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_msg))
+                    return
+            except Exception as e:
+                error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+                self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_msg))
+                return
+        except Exception as e:
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_msg))
+            return
+
         files.append({'file_name': file_name, 'file_path': file_path, 'meta_info': attach_meta_info})
 
     def _handle_part(self, part, part_index, tmp_dir, extract_attach, parsed_mail):
