@@ -2542,7 +2542,7 @@ class EWSOnPremConnector(BaseConnector):
         for i, email_id in enumerate(email_ids):
             self.send_progress("Querying email # {0} with id: {1}".format(i + 1, self._pprint_email_id(email_id)))
             try:
-                ret_val, message = self._process_email_id(email_id)
+                ret_val = self._process_email_id(email_id)
                 if phantom.is_fail(ret_val):
                     failed_emails_parsing_list.append(email_id)
             except Exception as e:
