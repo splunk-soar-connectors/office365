@@ -1537,6 +1537,11 @@ class EWSOnPremConnector(BaseConnector):
         """
 
         message = resp_json.get('m_Items', {}).get('t_Message', {})
+
+        # Remove mime content because it can be very large
+        if 't_MimeContent' in message:
+            message.pop('t_MimeContent')
+
         action_result.add_data(message)
 
         recipients_mailbox = message.get('t_ToRecipients', {}).get('t_Mailbox')
