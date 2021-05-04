@@ -56,7 +56,7 @@ from email.header import decode_header
 import email
 import imp
 import quopri
-from extract_msg import Message
+import outlookmsgfile
 from bs4 import UnicodeDammit
 import six
 
@@ -943,7 +943,8 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         # Set the status of the connector result
-        return self.set_status_save_progress(phantom.APP_SUCCESS, EWSONPREM_SUCC_CONNECTIVITY_TEST)
+        self.save_progress(EWSONPREM_SUCC_CONNECTIVITY_TEST)
+        return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_child_folder_infos(self, user, action_result, parent_folder_info):
 
@@ -1270,7 +1271,6 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_email_data_from_vault(self, vault_id, action_result):
 
-        email_data = None
         file_path = None
 
         try:
@@ -1281,21 +1281,24 @@ class EWSOnPremConnector(BaseConnector):
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self.debug_print(error_text)
-            return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item"), None, None)
+            return RetVal2(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item"), None)
 
         if not file_path:
-            return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item"), None, None)
+            return RetVal2(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item"), None)
 
         try:
-            msg = Message(file_path)
+            mail = outlookmsgfile.load(file_path)
+        except UnicodeDecodeError as e:
+            error_code, error_msg = self._get_error_message_from_exception(e)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            return action_result.set_status(phantom.APP_ERROR, "Failed to parse message. {0}".format(error_text)), None
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR, "Failed to parse message. {0}".format(error_text)), None, None
+            self.debug_print("Failed to parse message. {0}".format(error_text))
+            return action_result.set_status(phantom.APP_ERROR, "Failed to parse message. Please check if the provided file is valid msg file."), None
 
-        email_data = msg._getStringStream('__substg1.0_007D')
-
-        return phantom.APP_SUCCESS, email_data, msg
+        return phantom.APP_SUCCESS, mail
 
     def _decode_subject(self, subject, charset):
         # Decode subject unicode
@@ -1456,20 +1459,13 @@ class EWSOnPremConnector(BaseConnector):
 
     def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email, target_container_id=None, charset=None, user=None):
 
-        ret_val, email_data, msg = self._get_email_data_from_vault(vault_id, action_result)
+        ret_val, mail = self._get_email_data_from_vault(vault_id, action_result)
         if (phantom.is_fail(ret_val)):
             return action_result.get_status(), None
 
         try:
-            if email_data:
-                mail = email.message_from_string(email_data)
+            if mail:
                 headers = self._get_email_headers_from_mail(mail, charset)
-            else:
-                headers_data = msg._header
-                if not headers_data:
-                    return action_result.set_status(phantom.APP_ERROR, "Unable to get email headers from message"), None
-                headers_dict = headers_data.__dict__
-                headers = self._get_email_headers_from_mail(None, charset, email_headers=headers_dict.get('_headers'))
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
