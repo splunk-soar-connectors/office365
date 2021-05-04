@@ -1,6 +1,5 @@
 requests_ntlm==1.0.0
 ntlm_auth==1.0.5
-ExtractMsg==0.23.2
-tzlocal==2.0.0
-IMAPClient==2.0.0
-olefile==0.45.1
+compoundfiles==0.3
+compressed_rtf==1.0.6
+outlookmsgfile==0.1.0

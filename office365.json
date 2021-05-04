@@ -9,7 +9,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.1.4",
+    "app_version": "2.2.0",
     "utctime_updated": "2021-04-28T00:38:11.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
@@ -18,7 +18,7 @@
     "min_phantom_version": "4.9.39220",
     "python_version": "3",
     "latest_tested_versions": [
-        "Cloud 02-18-2021"
+        "Cloud 04-27-2021"
     ],
     "pip_dependencies": {
         "wheel": [
@@ -31,20 +31,16 @@
                 "input_file": "ntlm_auth/ntlm_auth-1.0.5-py2.py3-none-any.whl"
             },
             {
-                "module": "ExtractMsg",
-                "input_file": "wheels/extract_msg-0.23.2-py2.py3-none-any.whl"
+                "module": "outlookmsgfile",
+                "input_file": "wheels/convert_outlook_msg_file-0.1.0-py2.py3-none-any.whl"
             },
             {
-                "module": "tzlocal",
-                "input_file": "wheels/tzlocal-2.0.0-py2.py3-none-any.whl"
+                "module": "compoundfiles",
+                "input_file": "wheels/compoundfiles-0.3-py2.py3-none-any.whl"
             },
             {
-                "module": "IMAPClient",
-                "input_file": "wheels/IMAPClient-2.0.0-py2.py3-none-any.whl"
-            },
-            {
-                "module": "olefile",
-                "input_file": "wheels/olefile-0.45.1-py2.py3-none-any.whl"
+                "module": "compressed_rtf",
+                "input_file": "wheels/compressed_rtf-1.0.6-py2.py3-none-any.whl"
             }
         ]
     },
@@ -65,14 +61,12 @@
         "password": {
             "data_type": "password",
             "order": 2,
-            "description": "Password",
-            "required": false
+            "description": "Password"
         },
         "poll_user": {
             "data_type": "string",
             "order": 3,
-            "description": "User Email Mailbox (Test Connectivity and Poll)",
-            "required": false
+            "description": "User Email Mailbox (Test Connectivity and Poll)"
         },
         "use_impersonation": {
             "data_type": "boolean",
@@ -84,7 +78,6 @@
             "data_type": "string",
             "order": 5,
             "description": "Authentication Mechanism to Use",
-            "required": false,
             "value_list": [
                 "Basic",
                 "Azure",
@@ -96,20 +89,17 @@
         "client_id": {
             "data_type": "string",
             "order": 6,
-            "description": "Client App ID for Azure/Fed AD Authentication",
-            "required": false
+            "description": "Client App ID for Azure/Fed AD Authentication"
         },
         "client_secret": {
             "data_type": "password",
             "order": 7,
-            "description": "Client Secret for Azure/Azure(Interactive) Authentication",
-            "required": false
+            "description": "Client Secret for Azure/Azure(Interactive) Authentication"
         },
         "fed_ping_url": {
             "data_type": "string",
             "order": 8,
             "description": "Federated Auth Ping URL",
-            "required": false,
             "default": "https://corp.contoso.com/fss/idp/sts.wst?TokenProcessorId=SentryPOC"
         },
         "fed_verify_server_cert": {
@@ -122,7 +112,6 @@
             "data_type": "string",
             "order": 10,
             "description": "Office 365 Authority URL (For Federated Auth)",
-            "required": false,
             "default": "https://login.windows.net/contoso.onmicrosoft.com"
         },
         "poll_folder": {
@@ -197,7 +186,6 @@
         "preprocess_script": {
             "data_type": "file",
             "description": "Script with Functions to Preprocess Containers and Artifacts",
-            "required": false,
             "order": 21
         }
     },
@@ -239,7 +227,6 @@
                     "description": "Folder name/path (to search in)",
                     "data_type": "string",
                     "order": 1,
-                    "required": false,
                     "primary": true,
                     "default": "Inbox",
                     "contains": [
@@ -250,8 +237,7 @@
                 "subject": {
                     "description": "Substring to search in subject",
                     "data_type": "string",
-                    "order": 2,
-                    "required": false
+                    "order": 2
                 },
                 "sender": {
                     "description": "Sender email address to match",
@@ -260,21 +246,18 @@
                         "email"
                     ],
                     "order": 3,
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "body": {
                     "description": "Substring to search in body",
                     "data_type": "string",
-                    "order": 4,
-                    "required": false
+                    "order": 4
                 },
                 "internet_message_id": {
                     "description": "Internet message ID",
                     "data_type": "string",
                     "order": 5,
                     "primary": true,
-                    "required": false,
                     "contains": [
                         "internet message id"
                     ]
@@ -282,8 +265,7 @@
                 "query": {
                     "description": "AQS string",
                     "data_type": "string",
-                    "order": 6,
-                    "required": false
+                    "order": 6
                 },
                 "range": {
                     "description": "Email range to return (min_offset-max_offset)",
@@ -538,8 +520,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 }
             },
             "render": {
@@ -661,7 +642,6 @@
                     "data_type": "string",
                     "order": 4,
                     "primary": true,
-                    "required": false,
                     "contains": [
                         "email"
                     ]
@@ -848,7 +828,6 @@
                     "data_type": "string",
                     "order": 4,
                     "primary": true,
-                    "required": false,
                     "contains": [
                         "email"
                     ]
@@ -1018,8 +997,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 }
             },
             "render": {
@@ -1144,8 +1122,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 }
             },
             "render": {
@@ -1258,8 +1235,7 @@
                         "exchange email id",
                         "office 365 email id"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "email": {
                     "description": "Email of the mailbox owner (used during impersonation)",
@@ -1268,8 +1244,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "container_id": {
                     "description": "Container ID to get email data from",
@@ -1278,8 +1253,7 @@
                     "contains": [
                         "phantom container id"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "vault_id": {
                     "description": "Vault ID to get email from",
@@ -1288,8 +1262,7 @@
                     "contains": [
                         "vault id"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "ingest_email": {
                     "description": "Create containers and artifacts",
@@ -1373,11 +1346,19 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.Authentication-Results",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.CC",
                     "data_type": "string",
                     "example_values": [
                         "Test1 Test <Test1-test@test.onmicrosoft.com>, Test3 test\r\n\t<test3-test@test.onmicrosoft.com>, test4-test\r\n\t<test4-test@test.onmicrosoft.com>"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.Cc",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.Content-Language",
@@ -1387,7 +1368,15 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.Content-Transfer-Encoding",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.Content-Type",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.DKIM-Signature",
                     "data_type": "string"
                 },
                 {
@@ -1407,11 +1396,19 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.In-Reply-To",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.Keywords",
                     "data_type": "string",
                     "example_values": [
                         "Yellow,Blue"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.List-ID",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.MIME-Version",
@@ -1450,11 +1447,31 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.Received-SPF",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.References",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Reply-To",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.Return-Path",
                     "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.Sender",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.SpamDiagnosticMetadata",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.SpamDiagnosticOutput",
                     "data_type": "string"
                 },
                 {
@@ -1484,7 +1501,15 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.X-CSA-Complaints",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.X-CTCH-RefID",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-DkimResult-Test",
                     "data_type": "string"
                 },
                 {
@@ -1523,6 +1548,50 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.X-EOPAttributedMessage",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-EOPTenantAttributedMessage",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Exchange-Antispam-Report-CFA-Test",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Exchange-Antispam-Report-Test",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Forefront-Antispam-Report",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-IncomingHeaderCount",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-IncomingTopHeaderMarker",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-FromEntityHeader",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-Id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-OriginalArrivalTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-AVStamp-Service",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.X-MS-Exchange-Organization-AuthAs",
                     "data_type": "string",
                     "example_values": [
@@ -1542,6 +1611,10 @@
                     "example_values": [
                         "DM3NAM03FT025.eop-NAM03.prod.protection.outlook.com"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-MessageDirectionality",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.X-MS-Exchange-Organization-Network-Message-Id",
@@ -1565,7 +1638,19 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Transport-CrossTenantHeadersStamped",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Transport-EndToEndLatency",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.X-MS-Has-Attach",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Office365-Filtering-Correlation-Id",
                     "data_type": "string"
                 },
                 {
@@ -1603,6 +1688,10 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.X-Microsoft-Antispam",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.X-Microsoft-Antispam-Mailbox-Delivery",
                     "data_type": "string",
                     "example_values": [
@@ -1611,6 +1700,10 @@
                 },
                 {
                     "data_path": "action_result.data.*.X-Microsoft-Antispam-Message-Info",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Microsoft-Exchange-Diagnostics",
                     "data_type": "string"
                 },
                 {
@@ -1654,6 +1747,10 @@
                     "example_values": [
                         "en-US"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.authentication-results",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.decodedSubject",
@@ -1944,6 +2041,54 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.x-forefront-antispam-report",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-job",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-microsoft-antispam",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-antispam-messagedata",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-crosstenant-authas",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-crosstenant-authsource",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-crosstenant-fromentityheader",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-crosstenant-id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-crosstenant-mailboxtype",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-crosstenant-network-message-id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-crosstenant-originalarrivaltime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-crosstenant-userprincipalname",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.x-ms-exchange-organization-authas",
                     "data_type": "string",
                     "example_values": [
@@ -1979,6 +2124,18 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.x-ms-exchange-transport-crosstenantheadersstamped",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-office365-filtering-correlation-id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-oob-tlc-oobclassifiers",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.x-ms-publictraffictype",
                     "data_type": "string",
                     "example_values": [
@@ -1986,8 +2143,16 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.x-ms-traffictypediagnostic",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-originating-ip",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.summary.container_id",
-                    "data_type": "string",
+                    "data_type": "numeric",
                     "contains": [
                         "phantom container id"
                     ]
@@ -2384,20 +2549,17 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "subject": {
                     "description": "Subject to set",
                     "data_type": "string",
-                    "order": 2,
-                    "required": false
+                    "order": 2
                 },
                 "category": {
                     "description": "Categories to set",
                     "data_type": "string",
                     "order": 3,
-                    "required": false,
                     "allow_list": true
                 }
             },
@@ -2449,6 +2611,39 @@
                     "example_values": [
                         "Both value are modified"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_AttachmentId.@Id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentType",
+                    "data_type": "string",
+                    "example_value": "application/pdf"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsContactPhoto",
+                    "data_type": "string",
+                    "example_value": "false"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsInline",
+                    "data_type": "string",
+                    "example_value": "false"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_LastModifiedTime",
+                    "data_type": "string",
+                    "example_value": "2010-07-30T10:52:32"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Name",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Size",
+                    "data_type": "string",
+                    "example_value": "23433"
                 },
                 {
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_AttachmentId.@Id",
@@ -2578,6 +2773,26 @@
                     "example_values": [
                         "red"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "example_value": "abc@xyz.com"
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_MailboxType",
+                    "data_type": "string",
+                    "example_value": "OneOff"
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_Name",
+                    "data_type": "string",
+                    "example_value": "abc@xyz.com"
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_value": "SMTP"
                 },
                 {
                     "data_path": "action_result.data.*.t_DateTimeCreated",
@@ -2900,7 +3115,6 @@
                 "artifact_count": {
                     "data_type": "numeric",
                     "description": "Parameter Ignored in this app",
-                    "required": false,
                     "default": 1000
                 }
             },
