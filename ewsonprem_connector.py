@@ -1887,7 +1887,7 @@ class EWSOnPremConnector(BaseConnector):
             ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
 
             if (phantom.is_fail(ret_val)):
-                return (action_result.get_status(), None)
+                return (ret_val, None)
 
             total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
 
@@ -1907,7 +1907,7 @@ class EWSOnPremConnector(BaseConnector):
             ret_val, folder = self._get_matching_folder_path(folder, folder_name, curr_valid_folder_path, action_result)
 
             if (phantom.is_fail(ret_val)):
-                return (action_result.get_status(), None)
+                return (ret_val, None)
 
             if (not folder):
                 return (action_result.set_status(phantom.APP_ERROR,
@@ -2487,7 +2487,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
 
         if (phantom.is_fail(ret_val)):
-            return (action_result.get_status(), None)
+            return (ret_val, None)
 
         manner = config[EWS_JSON_INGEST_MANNER]
         folder_id = folder_info['id']
@@ -2507,7 +2507,7 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print(action_result.get_message())
 
             # return error
-            return (action_result.get_status(), None)
+            return (ret_val, None)
 
         resp_json = resp_json.get('m:RootFolder')
 
