@@ -9,8 +9,8 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.2.3",
-    "utctime_updated": "2021-05-07T08:47:18.000000Z",
+    "app_version": "2.3.2",
+    "utctime_updated": "2021-05-25T13:30:34.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
@@ -1443,6 +1443,10 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.Mime-version",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.Received",
                     "data_type": "string"
                 },
@@ -1494,6 +1498,10 @@
                 },
                 {
                     "data_path": "action_result.data.*.To",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.User-Agent",
                     "data_type": "string"
                 },
                 {
@@ -1767,6 +1775,34 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_AttachmentId.@Id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsContactPhoto",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsInline",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_LastModifiedTime",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Name",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Size",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_AttachmentId.@Id",
                     "data_type": "string",
                     "example_values": [
@@ -1880,6 +1916,22 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_EmailAddress",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_MailboxType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_Name",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_RoutingType",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.t_DateTimeCreated",
                     "data_type": "string"
                 },
@@ -1948,7 +2000,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_IsDeliveryReceiptRequested",
-                    "data_type": "boolean"
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.t_IsRead",

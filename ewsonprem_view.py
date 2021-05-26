@@ -139,5 +139,5 @@ def display_resolve_names(provides, all_app_runs, context):
                 continue
 
             results.append(ctx_result)
-    print(context)
+    # print(context)
     return 'display_resolve_names.html'
