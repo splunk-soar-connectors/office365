@@ -2633,7 +2633,7 @@ class EWSOnPremConnector(BaseConnector):
         if (self._state.get('first_run', True)):
             self._state['first_run'] = False
 
-        self._state['last_ingested_epoch'] = utc_now.strftime("%s")
+        self._state['last_ingested_format'] = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
 
         if ((email_ids) and (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_OLDEST_EMAILS)):
