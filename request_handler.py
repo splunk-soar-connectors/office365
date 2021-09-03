@@ -46,6 +46,13 @@ class Office365RequestHandler():
         request_url = state['request_url']
         client_secret = base64.b64decode(state['client_secret'])
         client_secret = client_secret.decode('ascii')
+        proxy = {}
+        encoded_proxy = state['proxy']
+        if 'http' in encoded_proxy:
+            proxy['http'] = base64.b64decode(encoded_proxy['http'].encode('utf-8')).decode('utf-8')
+
+        if 'https' in encoded_proxy:
+            proxy['https'] = base64.b64decode(encoded_proxy['https'].encode('utf-8')).decode('utf-8')
 
         body = {
             'grant_type': 'authorization_code',
@@ -55,11 +62,11 @@ class Office365RequestHandler():
             'code': code,
             'client_secret': client_secret
         }
-
         try:
             r = requests.post(
                 request_url + '/token',
-                data=body
+                data=body,
+                proxies=proxy
             )
             r.raise_for_status()
             resp_json = r.json()
