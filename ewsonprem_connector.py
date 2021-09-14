@@ -373,10 +373,10 @@ class EWSOnPremConnector(BaseConnector):
 
         proxy = {}
         if 'HTTP_PROXY' in os.environ:
-            proxy['http'] = base64.b64encode(os.environ['HTTP_PROXY'].encode('utf-8')).decode('utf-8')
+            proxy['http'] = os.environ.get('HTTP_PROXY')
 
         if 'HTTPS_PROXY' in os.environ:
-            proxy['https'] = base64.b64encode(os.environ['HTTPS_PROXY'].encode('utf-8')).decode('utf-8')
+            proxy['https'] = os.environ.get('HTTPS_PROXY')
 
         state['proxy'] = proxy
         state['client_id'] = client_id
