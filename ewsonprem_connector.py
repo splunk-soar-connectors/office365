@@ -135,7 +135,7 @@ class EWSOnPremConnector(BaseConnector):
         self._preprocess_container = lambda x: x
 
         if script:
-            try:  # Try to laod in script to preprocess artifacts
+            try:  # Try to load in script to preprocess artifacts
                 import importlib.util
                 preprocess_methods = importlib.util.spec_from_loader('preprocess_methods', loader=None)
                 self._script_module = importlib.util.module_from_spec(preprocess_methods)
@@ -324,6 +324,8 @@ class EWSOnPremConnector(BaseConnector):
         if (not phantom_base_url):
             return (action_result.set_status(phantom.APP_ERROR, "Phantom Base URL is not configured, please configure it in System Settings"), None)
 
+        phantom_base_url = phantom_base_url.strip("/")
+
         return (phantom.APP_SUCCESS, phantom_base_url)
 
     def _get_asset_name(self, action_result):
@@ -369,6 +371,14 @@ class EWSOnPremConnector(BaseConnector):
 
         request_url = 'https://login.microsoftonline.com/common/oauth2'
 
+        proxy = {}
+        if 'HTTP_PROXY' in os.environ:
+            proxy['http'] = os.environ.get('HTTP_PROXY')
+
+        if 'HTTPS_PROXY' in os.environ:
+            proxy['https'] = os.environ.get('HTTPS_PROXY')
+
+        state['proxy'] = proxy
         state['client_id'] = client_id
         state['redirect_url'] = app_rest_url
         state['request_url'] = request_url
@@ -688,7 +698,7 @@ class EWSOnPremConnector(BaseConnector):
         if (not resp_json):
             return error_details
 
-        error_details['message'] = resp_json.get('m:MessageText', 'Not Speficied')
+        error_details['message'] = resp_json.get('m:MessageText', 'Not Specified')
         error_details['code'] = resp_json.get('m:ResponseCode', 'Not Specified')
 
         return error_details
@@ -1312,7 +1322,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # replace input string with new string because of the issue found in PAPP-9531
         if new_str and new_str_create_count == len(encoded_strings):
-            self.debug_print("Creating a new string entirely from the encoded_strings and assiging to the input_str")
+            self.debug_print("Creating a new string entirely from the encoded_strings and assigning to the input_str")
             input_str = new_str
 
         return input_str
@@ -1633,7 +1643,7 @@ class EWSOnPremConnector(BaseConnector):
         except ValueError as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR, "Validation failed for the given input paramter. {0}".format(error_text))
+            return action_result.set_status(phantom.APP_ERROR, "Validation failed for the given input parameter. {0}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
 
@@ -2222,7 +2232,7 @@ class EWSOnPremConnector(BaseConnector):
                 # that has to be updated
                 curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment', internet_message_id, email_guid)
                 if (curr_attach_meta_info):
-                    # find the attachmetn in the list and update it
+                    # find the attachment in the list and update it
                     matched_meta_info = list([x for x in attach_meta_info_ret if x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2')])
                     if (matched_meta_info):
                         matched_meta_info[0].update(curr_attach_meta_info)
@@ -2614,7 +2624,7 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status()
 
         if not email_infos:
-            return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the restiriction: {}".format(str(restriction)))
+            return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the restriction: {}".format(str(restriction)))
 
         # if the config is for latest emails, then the 0th is the latest in the list returned, else
         # The last email is the latest in the list returned
@@ -2633,7 +2643,7 @@ class EWSOnPremConnector(BaseConnector):
         if (self._state.get('first_run', True)):
             self._state['first_run'] = False
 
-        self._state['last_ingested_epoch'] = utc_now.strftime("%s")
+        self._state['last_ingested_format'] = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
 
         if ((email_ids) and (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_OLDEST_EMAILS)):
