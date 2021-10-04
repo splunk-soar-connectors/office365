@@ -146,7 +146,7 @@ class EWSOnPremConnector(BaseConnector):
 
             try:
                 self._preprocess_container = self._script_module.preprocess_container
-            except:
+            except Exception:
                 self.save_progress("Error loading custom script. Does not contain preprocess_container function")
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
@@ -443,7 +443,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             oauth_token = r.json()
-        except:
+        except Exception:
             return (None, "Error retrieving OAuth Token")
 
         self._state['oauth_token'] = oauth_token
@@ -465,7 +465,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             self._state = rsh._decrypt_state(self._state)
-        except:
+        except Exception:
             return (None, EWS_ASSET_CORRUPTED)
 
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
@@ -578,7 +578,7 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, "Please provide a valid integer value in the '{0}' parameter".format(key)), None
 
             parameter = int(parameter)
-        except:
+        except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Please provide a valid integer value in the '{0}' parameter".format(key)), None
 
         if not allow_zero and parameter <= 0:
@@ -605,7 +605,7 @@ class EWSOnPremConnector(BaseConnector):
             else:
                 error_code = "Error code unavailable"
                 error_msg = "Error message unavailable. Please check the asset configuration and|or action parameters."
-        except:
+        except Exception:
             error_code = "Error code unavailable"
             error_msg = "Error message unavailable. Please check the asset configuration and|or action parameters."
 
@@ -616,7 +616,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             if input_str:
                 input_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
-        except:
+        except Exception:
             self.debug_print("Error occurred while converting to string with specific encoding")
 
         return input_str
@@ -787,7 +787,7 @@ class EWSOnPremConnector(BaseConnector):
 
             try:
                 return resp_json['s:Envelope']['s:Body']['s:Fault']['detail']['e:Message']['#text']
-            except:
+            except Exception:
                 pass
 
         return ""
@@ -827,8 +827,11 @@ class EWSOnPremConnector(BaseConnector):
             detail = self._get_http_error_details(r)
             if r.status_code == 401:
                 detail = "{0}. {1}".format(detail, EWS_MODIFY_CONFIG)
+            if detail:
+                return (result.set_status(phantom.APP_ERROR,
+                    "Call failed with HTTP Code: {0}. Reason: {1}. Details: {2}".format(r.status_code, r.reason, detail)), None)
             return (result.set_status(phantom.APP_ERROR,
-                "Call failed with HTTP Code: {0}. Reason: {1}. Details: {2}".format(r.status_code, r.reason, detail)), None)
+                    "Call failed with HTTP code: {0}. Reason: {1}.".format(r.status_code, r.reason)), None)
 
         # Try a xmltodict parse
         try:
@@ -983,7 +986,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             mini, maxi = (int(x) for x in email_range.split('-'))
-        except:
+        except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Unable to parse the range. Please specify the range as min_offset-max_offset")
 
         if (mini < 0) or (maxi < 0):
@@ -1274,7 +1277,7 @@ class EWSOnPremConnector(BaseConnector):
         # try to find all the decoded strings, we could have multiple decoded strings
         # or a single decoded string between two normal strings separated by \r\n
         # YEAH...it could get that messy
-        encoded_strings = re.findall(r'=\?.*?\?=', input_str, re.I)
+        encoded_strings = re.findall(r'=\?.*\?=', input_str, re.I)
 
         # return input_str as is, no need to do any conversion
         if (not encoded_strings):
@@ -1309,20 +1312,36 @@ class EWSOnPremConnector(BaseConnector):
                 # nothing to replace with
                 continue
 
-            if (encoding != 'utf-8'):
-                value = self._get_string(value, encoding)
-
             try:
-                # make new string instead of replacing in the input string because of the issue found in PAPP-9531
+                # Some non-ascii characters were causing decoding issue with
+                # the UnicodeDammit and working correctly with the decode function.
+                # keeping previous logic in the except block incase of failure.
                 if value:
-                    new_str += self._get_string(value, 'utf-8')
+                    value = value.decode(encoding)
+                    new_str += value
                     new_str_create_count += 1
-            except:
-                pass
+            except Exception:
+                try:
+                    if encoding != 'utf-8':
+                        value = str(value, encoding)
+                except Exception:
+                    pass
+                try:
+                    # commenting the existing approach due to a new approach being deployed below
+                    # substitute the encoded string with the decoded one
+                    # input_str = input_str.replace(encoded_string, value)
 
-        # replace input string with new string because of the issue found in PAPP-9531
+                    # make new string instead of replacing in the input string because issue find in PAPP-9531
+                    if value:
+                        # value = UnicodeDammit(value).unicode_markup
+                        new_str += UnicodeDammit(value).unicode_markup
+                        new_str_create_count += 1
+                except Exception:
+                    pass
+
+        # replace input string with new string because issue find in PAPP-9531
         if new_str and new_str_create_count == len(encoded_strings):
-            self.debug_print("Creating a new string entirely from the encoded_strings and assigning to the input_str")
+            self.debug_print("Creating a new string entirely from the encoded_strings and assigning into input_str")
             input_str = new_str
 
         return input_str
@@ -1380,7 +1399,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             mail = email.message_from_string(email_data)
-        except:
+        except Exception:
             return RetVal2(action_result.set_status(phantom.APP_ERROR, "Unable to create email object from data. Does not seem to be valid email"), None)
 
         headers = mail.__dict__.get('_headers')
@@ -1632,7 +1651,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             change_key = resp_json['m:Items']['t:Message']['t:ItemId']['@ChangeKey']
-        except:
+        except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Unable to get the change key of the email to update")
 
         if (category is not None):
@@ -1913,7 +1932,7 @@ class EWSOnPremConnector(BaseConnector):
         if (move_email):
             try:
                 new_email_id = resp_json['m:MovedItemId']['@Id']
-            except:
+            except Exception:
                 return action_result.set_status(phantom.APP_SUCCESS, "Unable to get moved Email ID")
 
             action_result.add_data({'new_email_id': new_email_id})
@@ -1991,7 +2010,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
-        except:
+        except Exception:
             return action_result.set_status(phantom.APP_SUCCESS, "Email {0} successfully, but its message ID could not be retrieved".format(action_verb))
 
         action_result.add_data({'new_email_id': new_email_id})
@@ -2107,7 +2126,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             mime_content = resp_json['m:Items']['t:Message']['t:MimeContent']['#text']
-        except:
+        except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Email MimeContent missing in response.")
 
         try:
@@ -2126,12 +2145,12 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             attach_meta_info['attachmentId'] = attachment['t:AttachmentId']['@Id']
-        except:
+        except Exception:
             pass
 
         try:
             attach_meta_info['attachmentType'] = curr_key[2:].replace('Attachment', '').lower()
-        except:
+        except Exception:
             pass
 
         attach_meta_info['parentInternetMessageId'] = parent_internet_message_id
@@ -2162,7 +2181,7 @@ class EWSOnPremConnector(BaseConnector):
         # Get the attachments
         try:
             attachments = resp_json['m:Items']['t:Message']['t:Attachments']
-        except:
+        except Exception:
             return RetVal3(phantom.APP_SUCCESS)
 
         attachment_ids = list()
@@ -2170,7 +2189,7 @@ class EWSOnPremConnector(BaseConnector):
         internet_message_id = None
         try:
             internet_message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
-        except:
+        except Exception:
             internet_message_id = None
 
         email_guid = resp_json['emailGuid']
@@ -2286,7 +2305,7 @@ class EWSOnPremConnector(BaseConnector):
         # Get the Extended Properties
         try:
             extended_properties = resp_json['m:Items']['t:Message']['t:ExtendedProperty']
-        except:
+        except Exception:
             pass
 
         if extended_properties:
@@ -2312,12 +2331,12 @@ class EWSOnPremConnector(BaseConnector):
         # now parse the body in the main resp_json
         try:
             body_text = resp_json['m:Items']['t:Message']['t:Body']['#text']
-        except:
+        except Exception:
             body_text = None
 
         try:
             body_type = resp_json['m:Items']['t:Message']['t:Body']['@BodyType']
-        except:
+        except Exception:
             body_type = None
 
         if (body_text is not None):
@@ -2333,7 +2352,7 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
                 headers['Message-ID'] = message_id
-            except:
+            except Exception:
                 pass
 
         if (parent_internet_message_id is not None):
@@ -2350,7 +2369,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             mime_content = resp_json['m:Items']['t:Message']['t:MimeContent']['#text']
-        except:
+        except Exception:
             return (phantom.APP_ERROR, "Email MimeContent missing in response.")
 
         try:
@@ -2522,7 +2541,7 @@ class EWSOnPremConnector(BaseConnector):
             max_emails = int(param[phantom.APP_JSON_CONTAINER_COUNT])
             if max_emails == 0 or (max_emails and (not str(max_emails).isdigit() or max_emails <= 0)):
                 return action_result.set_status(phantom.APP_ERROR, "Please provide a valid non-zero positive integer value in 'container_count' parameter")
-        except:
+        except Exception:
             return self.set_status(phantom.APP_ERROR, "Invalid container count")
 
         self.save_progress("Will be ingesting all possible artifacts (ignoring max artifacts value) for POLL NOW")
