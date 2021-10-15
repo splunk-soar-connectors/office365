@@ -1310,7 +1310,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print('Error occurred in _create_dict_hash. {0}'.format(err))
             return None
 
-        return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
+        return hashlib.sha256(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
 
     def _del_tmp_dirs(self):
         """Remove any tmp_dirs that were created."""
