@@ -1002,6 +1002,8 @@ class ProcessEmail(object):
             )
             if phantom.is_fail(ret_val):
                 return ret_val, message, cid
+            if "duplicate container found" in message.lower():
+                self._base_connector._dup_data += 1
 
         for artifact in artifacts:
             artifact['container_id'] = cid
@@ -1310,7 +1312,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print('Error occurred in _create_dict_hash. {0}'.format(err))
             return None
 
-        return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
+        return hashlib.sha256(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
 
     def _del_tmp_dirs(self):
         """Remove any tmp_dirs that were created."""
