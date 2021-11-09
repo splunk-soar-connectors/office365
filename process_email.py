@@ -1024,6 +1024,8 @@ class ProcessEmail(object):
             )
             if phantom.is_fail(ret_val):
                 return ret_val, message, cid
+            if "duplicate container found" in message.lower():
+                self._base_connector._dup_data += 1
 
         for artifact in artifacts:
             artifact['container_id'] = cid

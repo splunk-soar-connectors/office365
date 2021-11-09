@@ -126,6 +126,8 @@ class EWSOnPremConnector(BaseConnector):
         self._state = {}
 
         self._impersonate = False
+        self._less_data = False
+        self._dup_data = 0
 
     def _handle_preprocess_scipts(self):
 
@@ -2604,6 +2606,33 @@ class EWSOnPremConnector(BaseConnector):
         # format it
         return last_time.strftime(DATETIME_FORMAT)
 
+    def _manage_data_duplication(self, email_infos, email_index, max_emails, total_ingested, limit):
+        # Define current time to store as starting reference for the next run of scheduled | interval polling
+        utc_now = datetime.utcnow()
+        self._state['last_ingested_format'] = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
+        self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
+        self.save_state(self._state)
+
+        if max_emails:
+            if email_index == 0 or self._less_data:
+                return None, None
+            total_ingested += max_emails - self._dup_data
+            self._remaining = limit - total_ingested
+            if total_ingested >= limit:
+                return None, None
+            next_cycle_repeat_data = 0
+            last_modified_time = email_infos[email_index]['last_modified_time']
+            for x in reversed(email_infos):
+                if x["last_modified_time"] == last_modified_time:
+                    next_cycle_repeat_data += 1
+                else:
+                    break
+
+            max_emails = next_cycle_repeat_data + self._remaining
+            return max_emails, total_ingested
+        else:
+            return None, None
+
     def _on_poll(self, param):
 
         # on poll action that is supposed to be scheduled
@@ -2635,49 +2664,40 @@ class EWSOnPremConnector(BaseConnector):
         else:
             max_emails = max_containers
 
-        restriction = self._get_restriction()
+        total_ingested = 0
+        limit = max_emails
+        while True:
+            self._dup_data = 0
+            restriction = self._get_restriction()
 
-        ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction)
+            ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction)
 
-        if (phantom.is_fail(ret_val)) or email_infos is None:
-            return action_result.get_status()
+            if (phantom.is_fail(ret_val)) or email_infos is None:
+                return action_result.get_status()
 
-        if not email_infos:
-            return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the restriction: {}".format(str(restriction)))
+            if not email_infos:
+                return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the restriction: {}".format(str(restriction)))
 
-        # if the config is for latest emails, then the 0th is the latest in the list returned, else
-        # The last email is the latest in the list returned
-        email_index = 0 if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else -1
+            if len(email_infos) < max_emails:
+                self._less_data = True
 
-        # Define current time to store as starting reference for the next run of scheduled | interval polling
-        utc_now = datetime.utcnow()
+            # if the config is for latest emails, then the 0th is the latest in the list returned, else
+            # The last email is the latest in the list returned
+            email_index = 0 if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else -1
 
-        email_ids = [x['id'] for x in email_infos]
-        ret_val = self._process_email_ids(email_ids, action_result)
+            email_ids = [x['id'] for x in email_infos]
+            ret_val = self._process_email_ids(email_ids, action_result)
 
-        if phantom.is_fail(ret_val):
-            return action_result.get_status()
+            if phantom.is_fail(ret_val):
+                return action_result.get_status()
+
+            max_emails, total_ingested = self._manage_data_duplication(email_infos, email_index, max_emails, total_ingested, limit)
+            if not max_emails:
+                break
 
         # Save the state file data only if the ingestion gets successfully completed
         if (self._state.get('first_run', True)):
             self._state['first_run'] = False
-
-        self._state['last_ingested_format'] = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
-        self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
-
-        if ((email_ids) and (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_OLDEST_EMAILS)):
-            email_times = [x['last_modified_time'] for x in email_infos]
-            email_times = set(email_times)
-
-            if (len(email_times) == 1):
-                debug_message = ' '.join([
-                    "Getting all emails with the same LastModifiedTime, down to the second.",
-                    "That means the device is generating max_containers=({0}) per second.".format(max_emails),
-                    "Skipping to the next second to not get stuck."
-                ])
-                self.debug_print(debug_message)
-
-                self._state['last_email_format'] = self._get_next_start_time(self._state['last_email_format'])
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
