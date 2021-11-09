@@ -9,7 +9,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.5.12",
+    "app_version": "2.6.0",
     "utctime_updated": "2021-10-28T23:43:14.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
@@ -18,7 +18,7 @@
     "min_phantom_version": "4.10.0.40961",
     "python_version": "3",
     "latest_tested_versions": [
-        "Cloud 10-01-2021"
+        "Cloud 11-08-2021"
     ],
     "pip_dependencies": {
         "wheel": [
@@ -2254,6 +2254,125 @@
                     "data_type": "numeric",
                     "example_values": [
                         1
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.suggested_attachment_session_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "43d9f8e0-ef4b-d632-00e2-4abed4aa0917"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-processed-by-bccfoldering",
+                    "data_type": "string",
+                    "example_values": [
+                        "15.20.4566.015"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-transport-endtoendlatency",
+                    "data_type": "string",
+                    "example_values": [
+                        "00:00:01.7075969"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-DKIM-Signer",
+                    "data_type": "string",
+                    "example_values": [
+                        "DkimX (v3.20.320)"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Iris-MetaData",
+                    "data_type": "string",
+                    "example_values": [
+                        "{\"Type\":null,\"Fields\":{\"InstanceID\":\"e192f723-f038-4208-a42c-da18e82e8edf\",\"ActivityID\":\"585c19de-7826-40e3-8ae0-4d8d9446s2a4\"}}"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-PublicTrafficType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-TrafficTypeDiagnostic",
+                    "data_type": "string",
+                    "example_values": [
+                        "MW3PR11MB4569:"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Oob-TLC-OOBClassifiers",
+                    "data_type": "string",
+                    "example_values": [
+                        "OLM:6790;"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-AuthAs",
+                    "data_type": "string",
+                    "example_values": [
+                        "Anonymous"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-AuthSource",
+                    "data_type": "string",
+                    "example_values": [
+                        "\r\n CO2NAM12FT063.eop-nam11.prod.protection.outlook.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Processed-By-BccFoldering",
+                    "data_type": "string",
+                    "example_values": [
+                        "15.20.4649.019"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-Network-Message-Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "eea20072-262f-4c77-fea1-08d99e9ee568"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationInterval",
+                    "data_type": "string",
+                    "example_values": [
+                        "1:00:00:00.0000000"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationStartTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "03 Nov 2021 07:52:34.0520\r\n (UTC)"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationIntervalReason",
+                    "data_type": "string",
+                    "example_values": [
+                        "OriginalSubmit"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationStartTimeReason",
+                    "data_type": "string",
+                    "example_values": [
+                        "OriginalSubmit"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentId",
+                    "data_type": "string",
+                    "example_values": [
+                        "d756bc71-43c6-46f2-b820-395a18d7c8e8"
                     ]
                 }
             ],
