@@ -269,3 +269,61 @@ Do note that if you wish to use a single login user to read and modify multiple 
       <h2>compressed_rtf</h2>
       This app uses the compressed_rtf module, which is licensed under the MIT License, Copyright (c) 2016 Dmitry Alimov.
   </p>
+
+  <h3>Preprocessing Containers</h3>
+<p>
+It is possible to upload your own script which has functions to handle preprocessing of containers.
+The artifacts which are going to be added with the container can be accessed through this container as well.
+This function should accept a container and return the updated container. Also note that the name of this function
+must be <b>preprocess_container</b>.
+<pre class="shell">
+<code>
+import urlparse
+
+
+def get_host_from_url(url):
+    return urlparse.urlparse(url).hostname
+
+
+def preprocess_container(container):
+
+    # Match urls like https://secure.contoso.com/link/https://www.google.com
+    # We want to strip 'https://secure.contoso.com/link/', and instead create
+    #  a URL artifact for 'https://www.google.com'
+    url_prepend = 'https://secure.contoso.com/link/'
+    domain_prepend = 'secure.contoso.com'
+
+    new_artifacts = []
+
+    for artifact in container.get('artifacts', []):
+        cef = artifact.get('cef')
+        url = cef.get('requestURL')
+        if url and url.lower().startswith(url_prepend):
+            url = url.replace(url_prepend, '')
+            artifact['cef']['requestURL'] = url
+            # Create a new domain artifact for this URL
+            new_artifacts.append({
+                'name': 'Domain Artifact',
+                'cef': {
+                    'destinationDnsDomain': get_host_from_url(url)
+                }
+            })
+
+        domain = cef.get('destinationDnsDomain')
+        if domain and domain.lower() == domain_prepend:
+            # These are the wrong domains, ignore them
+            continue
+
+        new_artifacts.append(artifact)
+
+    if new_artifacts:
+        new_artifacts[-1]['run_automation'] = True
+
+    container['artifacts'] = new_artifacts
+    return container
+</code>
+</pre>
+In this example, many of the URLs have 'https://secure.contoso.com/link' appended to the start of them.
+These URL artifacts will be tough to use in a playbook without additional processing. On top of that, all
+of the associated domain artifacts will be incorrect as well, since they will all point to 'secure.contoso.com'.
+</p>
