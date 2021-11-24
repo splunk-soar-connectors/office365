@@ -1221,10 +1221,6 @@ class EWSOnPremConnector(BaseConnector):
             return RetVal3(action_result.set_status(phantom.APP_ERROR,
                 "Container does not seem to be created by the same app, raw_email data not found."), None, None)
 
-        if ((not email_id.endswith('=')) and (not ph_utils.is_sha1(email_id))):
-            return RetVal3(action_result.set_status(phantom.APP_ERROR,
-                "Container does not seem to be created by the same app, email id not in proper format."), None, None)
-
         return RetVal3(phantom.APP_SUCCESS, email_data, email_id)
 
     def _get_email_data_from_vault(self, vault_id, action_result):
