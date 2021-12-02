@@ -1,8 +1,0 @@
-[submodule "ntlm_auth"]
-	path = ntlm_auth
-	url = git@cd.splunkdev.com:phantom-external/ntlm_auth.git
-        ignore = dirty
-[submodule "requests_ntlm"]
-	path = requests_ntlm
-	url = git@cd.splunkdev.com:phantom-external/requests_ntlm.git
-        ignore = dirty
