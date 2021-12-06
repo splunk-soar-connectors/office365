@@ -15,9 +15,9 @@
 #
 #
 # http://lxml.de/tutorial.html
-from lxml.builder import ElementMaker
-from lxml import etree
 from bs4 import UnicodeDammit
+from lxml import etree
+from lxml.builder import ElementMaker
 
 # The name spaces
 SOAP_ENVELOPE_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope/"

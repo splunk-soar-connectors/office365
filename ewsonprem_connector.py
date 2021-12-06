@@ -26,47 +26,46 @@
 # Remove-MailboxPermission -Identity Test1 -User Test2 -AccessRights FullAccess -InheritanceType All
 # This example removes user Administrator's full access rights to user Phantom's mailbox.
 # >Remove-MailboxPermission -Identity Phantom -User Administrator -AccessRights FullAccess -InheritanceType All
-# Phantom imports
-import phantom.app as phantom
-from phantom.base_connector import BaseConnector
-from phantom.action_result import ActionResult
-import phantom.rules as ph_rules
-import phantom.utils as ph_utils
 
-# THIS Connector imports
-from ewsonprem_consts import *
-import ews_soap
-
-import requests
 import json
-import xmltodict
 import os
 import uuid
-from requests.auth import AuthBase
-from requests.auth import HTTPBasicAuth
+
+import phantom.app as phantom
+import phantom.rules as ph_rules
+import phantom.utils as ph_utils
+import requests
+import xmltodict
+from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
+from requests.auth import AuthBase, HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
+
+import ews_soap
+from ewsonprem_consts import *
+
 try:
-    from urllib.parse import urlparse, quote_plus
+    from urllib.parse import quote_plus, urlparse
 except ImportError:
     from urllib import quote_plus
     from urlparse import urlparse
 
 import base64
-from datetime import datetime, timedelta
-import re
-from process_email import ProcessEmail
-from email.parser import HeaderParser
-from email.header import decode_header
 import email
 import quopri
-import outlookmsgfile
-from bs4 import UnicodeDammit
-import six
-
+import re
 import time
+from datetime import datetime, timedelta
+from email.header import decode_header
+from email.parser import HeaderParser
 
-from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
+import outlookmsgfile
+import six
+from bs4 import UnicodeDammit, BeautifulSoup
 
+from process_email import ProcessEmail
+from request_handler import RequestStateHandler  # noqa
+from request_handler import _get_dir_name_from_app_name
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
 os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
@@ -113,6 +112,7 @@ class EWSOnPremConnector(BaseConnector):
     ACTION_ID_RESOLVE_NAME = "resolve_name"
     ACTION_ID_ON_POLL = "on_poll"
     ACTION_ID_GET_EMAIL = "get_email"
+    ACTION_ID_TRACE_EMAIL = "trace_email"
     REPLACE_CONST = "C53CEA8298BD401BA695F247633D0542"
 
     def __init__(self):
@@ -2706,6 +2706,117 @@ class EWSOnPremConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
+    def _get_trace_error_details(self, response):
+        if 'json' in response.headers.get('Content-Type', ''):
+            try:
+                r_json = json.loads(response.text)
+                error_code = r_json["error"]["code"] or response.status_code
+                error_msg = r_json["error"]["message"]["value"]
+                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            except Exception:
+                error_text = "API returned an error. Status: {}, Response: {}. Please check your input parameters/configuration." \
+                    .format(response.status_code, response.text)
+                self.save_progress(error_text)
+            return error_text
+
+        try:
+            soup = BeautifulSoup(response.text, "html.parser")
+            # Remove the script, style, footer and navigation part from the HTML message
+            for element in soup(["script", "style", "footer", "nav"]):
+                element.extract()
+            error_text = soup.text
+            split_lines = error_text.split('\n')
+            split_lines = [x.strip() for x in split_lines if x.strip()]
+            error_text = '\n'.join(split_lines)
+            error_text = error_text.replace('{', '{{').replace('}', '}}')
+        except Exception:
+            error_text = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
+                response.status_code, response.text.replace('{', '{{').replace('}', '}}'))
+
+        if len(error_text) > 500:
+            error_text = "Error while connecting to the server"
+        return error_text
+
+    def _trace_email(self, param):
+
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        # Base url that we need to connect to
+        trace_url = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace?$format=Json&"
+        params = {}
+
+        sender_address = param.get('sender_address', '')
+        recipient_address = param.get('recipient_address', '')
+        status = param.get('status', '')
+        start_date = param.get('start_date', '')
+        end_date = param.get('end_date', '')
+        from_ip = param.get('from_ip', '')
+        to_ip = param.get('to_ip', '')
+        message_id = param.get('message_id', '')
+        message_trace_id = param.get('message_trace_id', '')
+        widget_filter = param.get('widget_filter', False)
+
+        if sender_address:
+            params['SenderAddress'] = "'{}'".format(sender_address)
+        if recipient_address:
+            params['RecipientAddress'] = "'{}'".format(recipient_address)
+        if status:
+            params['Status'] = "'{}'".format(status)
+        if start_date:
+            params['StartDate'] = "datetime'{}'".format(start_date)
+        if end_date:
+            params['EndDate'] = "datetime'{}'".format(end_date)
+        if from_ip:
+            params['FromIP'] = "'{}'".format(from_ip)
+        if to_ip:
+            params['ToIP'] = "'{}'".format(to_ip)
+        if message_id:
+            params['MessageId'] = "'{}'".format(message_id)
+        if message_trace_id:
+            params['MessageTraceId'] = "guid'{}'".format(message_trace_id)
+
+        filter_str = ""
+        for key, value in params.items():
+            if not filter_str:
+                filter_str = "{} eq {}".format(key, value)
+            else:
+                filter_str = "{} and {} eq {}".format(filter_str, key, value)
+        parameter = {"$filter": filter_str}
+
+        self.save_progress("Query parameter: {}".format(repr(parameter)))
+
+        response = requests.get(trace_url, auth=self._session.auth, params=parameter)
+        if response.status_code != 200:
+            error_text = self._get_trace_error_details(response)
+            return action_result.set_status(phantom.APP_ERROR, error_text)
+
+        # format as json data
+        try:
+            r_json = json.loads(response.text)
+            r_json = r_json["d"]["results"]
+        except Exception as e:
+            error_code, error_msg = self._get_error_message_from_exception(e)
+            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            self.debug_print("Error while parsing response: {}".format(error_text))
+            if response.status_code == 200:
+                error_text = self._get_trace_error_details(response)
+            return action_result.set_status(phantom.APP_ERROR, error_text)
+
+        # count each email for the summary
+        email_counter = 0
+        for _ in r_json:
+            if widget_filter:
+                r_json[email_counter]['MessageId'] = r_json[email_counter]['MessageId'].replace('>', '').replace('<', '')
+                # .replace('>', '＞').replace('<', '＜')
+            email_counter = email_counter + 1
+
+        action_result.add_data(r_json)
+
+        summary = action_result.update_summary({})
+        summary['emails_found'] = email_counter
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
     def handle_action(self, param):
         """Function that handles all the actions"""
 
@@ -2740,14 +2851,17 @@ class EWSOnPremConnector(BaseConnector):
             ret_val = self._on_poll(param)
         elif (action == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY):
             ret_val = self._test_connectivity(param)
+        elif action == self.ACTION_ID_TRACE_EMAIL:
+            ret_val = self._trace_email(param)
 
         return ret_val
 
 
 if __name__ == '__main__':
 
-    import pudb
     import argparse
+
+    import pudb
 
     pudb.set_trace()
     in_json = None

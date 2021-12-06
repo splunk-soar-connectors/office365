@@ -9,13 +9,13 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.7.4",
+    "app_version": "2.8.0",
     "utctime_updated": "2021-11-30T21:40:01.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
     "product_version_regex": ".*",
-    "min_phantom_version": "4.10.0.40961",
+    "min_phantom_version": "5.0.0",
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
@@ -1518,6 +1518,13 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.X-DKIM-Signer",
+                    "data_type": "string",
+                    "example_values": [
+                        "DkimX (v3.20.320)"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.X-DkimResult-Test",
                     "data_type": "string"
                 },
@@ -1585,12 +1592,33 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-AuthAs",
+                    "data_type": "string",
+                    "example_values": [
+                        "Anonymous"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-AuthSource",
+                    "data_type": "string",
+                    "example_values": [
+                        "\r\n CO2NAM12FT063.eop-nam11.prod.protection.outlook.com"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-FromEntityHeader",
                     "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-Id",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-Network-Message-Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "eea20072-262f-4c77-fea1-08d99e9ee568"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-OriginalArrivalTime",
@@ -1622,6 +1650,34 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationInterval",
+                    "data_type": "string",
+                    "example_values": [
+                        "1:00:00:00.0000000"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationIntervalReason",
+                    "data_type": "string",
+                    "example_values": [
+                        "OriginalSubmit"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationStartTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "03 Nov 2021 07:52:34.0520\r\n (UTC)"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationStartTimeReason",
+                    "data_type": "string",
+                    "example_values": [
+                        "OriginalSubmit"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.X-MS-Exchange-Organization-MessageDirectionality",
                     "data_type": "string"
                 },
@@ -1647,6 +1703,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Processed-By-BccFoldering",
+                    "data_type": "string",
+                    "example_values": [
+                        "15.20.4649.019"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.X-MS-Exchange-Transport-CrossTenantHeadersStamped",
                     "data_type": "string"
                 },
@@ -1659,12 +1722,40 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.X-MS-Iris-MetaData",
+                    "data_type": "string",
+                    "example_values": [
+                        "{\"Type\":null,\"Fields\":{\"InstanceID\":\"e192f723-f038-4208-a42c-da18e82e8edf\",\"ActivityID\":\"585c19de-7826-40e3-8ae0-4d8d9446s2a4\"}}"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.X-MS-Office365-Filtering-Correlation-Id",
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.X-MS-Oob-TLC-OOBClassifiers",
+                    "data_type": "string",
+                    "example_values": [
+                        "OLM:6790;"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-PublicTrafficType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Email"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.X-MS-TNEF-Correlator",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-TrafficTypeDiagnostic",
+                    "data_type": "string",
+                    "example_values": [
+                        "MW3PR11MB4569:"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.X-Mail-Filter-Gateway-From",
@@ -1776,8 +1867,22 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.suggested_attachment_session_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "43d9f8e0-ef4b-d632-00e2-4abed4aa0917"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_AttachmentId.@Id",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentId",
+                    "data_type": "string",
+                    "example_values": [
+                        "d756bc71-43c6-46f2-b820-395a18d7c8e8"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentType",
@@ -2177,8 +2282,22 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.x-ms-exchange-processed-by-bccfoldering",
+                    "data_type": "string",
+                    "example_values": [
+                        "15.20.4566.015"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.x-ms-exchange-transport-crosstenantheadersstamped",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.x-ms-exchange-transport-endtoendlatency",
+                    "data_type": "string",
+                    "example_values": [
+                        "00:00:01.7075969"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.x-ms-office365-filtering-correlation-id",
@@ -2255,125 +2374,6 @@
                     "data_type": "numeric",
                     "example_values": [
                         1
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.suggested_attachment_session_id",
-                    "data_type": "string",
-                    "example_values": [
-                        "43d9f8e0-ef4b-d632-00e2-4abed4aa0917"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.x-ms-exchange-processed-by-bccfoldering",
-                    "data_type": "string",
-                    "example_values": [
-                        "15.20.4566.015"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.x-ms-exchange-transport-endtoendlatency",
-                    "data_type": "string",
-                    "example_values": [
-                        "00:00:01.7075969"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-DKIM-Signer",
-                    "data_type": "string",
-                    "example_values": [
-                        "DkimX (v3.20.320)"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Iris-MetaData",
-                    "data_type": "string",
-                    "example_values": [
-                        "{\"Type\":null,\"Fields\":{\"InstanceID\":\"e192f723-f038-4208-a42c-da18e82e8edf\",\"ActivityID\":\"585c19de-7826-40e3-8ae0-4d8d9446s2a4\"}}"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-PublicTrafficType",
-                    "data_type": "string",
-                    "example_values": [
-                        "Email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-TrafficTypeDiagnostic",
-                    "data_type": "string",
-                    "example_values": [
-                        "MW3PR11MB4569:"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Oob-TLC-OOBClassifiers",
-                    "data_type": "string",
-                    "example_values": [
-                        "OLM:6790;"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-AuthAs",
-                    "data_type": "string",
-                    "example_values": [
-                        "Anonymous"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-AuthSource",
-                    "data_type": "string",
-                    "example_values": [
-                        "\r\n CO2NAM12FT063.eop-nam11.prod.protection.outlook.com"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Processed-By-BccFoldering",
-                    "data_type": "string",
-                    "example_values": [
-                        "15.20.4649.019"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-CrossTenant-Network-Message-Id",
-                    "data_type": "string",
-                    "example_values": [
-                        "eea20072-262f-4c77-fea1-08d99e9ee568"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationInterval",
-                    "data_type": "string",
-                    "example_values": [
-                        "1:00:00:00.0000000"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationStartTime",
-                    "data_type": "string",
-                    "example_values": [
-                        "03 Nov 2021 07:52:34.0520\r\n (UTC)"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationIntervalReason",
-                    "data_type": "string",
-                    "example_values": [
-                        "OriginalSubmit"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-ExpirationStartTimeReason",
-                    "data_type": "string",
-                    "example_values": [
-                        "OriginalSubmit"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentId",
-                    "data_type": "string",
-                    "example_values": [
-                        "d756bc71-43c6-46f2-b820-395a18d7c8e8"
                     ]
                 }
             ],
@@ -3256,6 +3256,375 @@
                     ]
                 }
             ],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "trace email",
+            "identifier": "trace_email",
+            "description": "Get message trace from the server",
+            "verbose": "<b>NOTE:</b> Learn more about message trace api and limitations at <a href='https://docs.microsoft.com/en-us/powershell/module/exchange/get-messagetrace?view=exchange-ps'>get-messagetrace</a>",
+            "type": "investigate",
+            "read_only": true,
+            "parameters": {
+                "sender_address": {
+                    "description": "Filters the results by the sender's email address. You can specify multiple values separated by commas.",
+                    "data_type": "string",
+                    "primary": true,
+                    "contains": [
+                        "email"
+                    ],
+                    "order": 0
+                },
+                "recipient_address": {
+                    "description": "Filters the results by the recipient's email address. You can specify multiple values separated by commas.",
+                    "data_type": "string",
+                    "primary": true,
+                    "contains": [
+                        "email"
+                    ],
+                    "order": 1
+                },
+                "status": {
+                    "description": "Filters the results by the delivery status of the message",
+                    "data_type": "string",
+                    "order": 2
+                },
+                "message_trace_id": {
+                    "description": "Can be used with the recipient address to uniquely identify a message trace",
+                    "data_type": "string",
+                    "primary": true,
+                    "contains": [
+                        "office 365 trace id"
+                    ],
+                    "order": 3
+                },
+                "start_date": {
+                    "description": "Start date of the date range",
+                    "data_type": "string",
+                    "order": 4
+                },
+                "end_date": {
+                    "description": "End date of the date range",
+                    "data_type": "string",
+                    "order": 5
+                },
+                "from_ip": {
+                    "description": "The IP address of the computer that sent the message. For outgoing messages from Exchange Online, the value is blank.",
+                    "data_type": "string",
+                    "primary": true,
+                    "contains": [
+                        "ip"
+                    ],
+                    "order": 6
+                },
+                "to_ip": {
+                    "description": "The IP address or addresses to which the service attempted to deliver the message",
+                    "data_type": "string",
+                    "primary": true,
+                    "contains": [
+                        "ip"
+                    ],
+                    "order": 7
+                },
+                "message_id": {
+                    "description": "The MessageId parameter filters the results by the Message-ID header field of the message. This value is also known as the Client ID.",
+                    "data_type": "string",
+                    "primary": true,
+                    "contains": [
+                        "internet message id"
+                    ],
+                    "order": 8
+                },
+                "widget_filter": {
+                    "description": "Widget Filter to clean certain special character.",
+                    "data_type": "boolean",
+                    "order": 9
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.end_date",
+                    "data_type": "string",
+                    "example_values": [
+                        "2021-12-03T00:00:00Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.from_ip",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "example_values": [
+                        "8.8.8.8"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.message_id",
+                    "data_type": "string",
+                    "contains": [
+                        "internet message id"
+                    ],
+                    "example_values": [
+                        "<5d9f6c67.1c69fb81.f1728.0d54@mx.test.com>"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.message_trace_id",
+                    "data_type": "string",
+                    "contains": [
+                        "office 365 trace id"
+                    ],
+                    "example_values": [
+                        "62a796a1-00df-43ca-3732-08d74da88f70"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.recipient_address",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "example_values": [
+                        "abc@test.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.sender_address",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "example_values": [
+                        "abc@test.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.start_date",
+                    "data_type": "string",
+                    "example_values": [
+                        "2021-12-01T00:00:00Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "Delivered"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.to_ip",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "example_values": [
+                        "8.8.8.8"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.widget_filter",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.EndDate",
+                    "data_type": "string",
+                    "example_values": [
+                        "/Date(1570809448312)/"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.FromIP",
+                    "data_type": "string",
+                    "column_name": "From IP",
+                    "column_order": 0,
+                    "example_values": [
+                        "8.8.8.8"
+                    ],
+                    "contains": [
+                        "ip"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.Index",
+                    "data_type": "numeric",
+                    "example_values": [
+                        0
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.MessageId",
+                    "data_type": "string",
+                    "column_name": "Message ID",
+                    "column_order": 3,
+                    "contains": [
+                        "internet message id"
+                    ],
+                    "example_values": [
+                        "<5d9f6c67.1c69fb81.f1728.0d54@mx.test.com>"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.MessageTraceId",
+                    "data_type": "string",
+                    "column_name": "Message Trace ID",
+                    "column_order": 4,
+                    "contains": [
+                        "office 365 trace id"
+                    ],
+                    "example_values": [
+                        "62a796a1-00df-43ca-3732-08d74da88f70"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.Organization",
+                    "data_type": "string",
+                    "example_values": [
+                        "test.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.Received",
+                    "data_type": "string",
+                    "example_values": [
+                        "/Date(1570729065255)/"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.RecipientAddress",
+                    "data_type": "string",
+                    "column_name": "Recipient Address",
+                    "column_order": 1,
+                    "example_values": [
+                        "abc@test.com"
+                    ],
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.SenderAddress",
+                    "data_type": "string",
+                    "column_name": "Sender Address",
+                    "column_order": 2,
+                    "example_values": [
+                        "xyz@test.com"
+                    ],
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.Size",
+                    "data_type": "numeric",
+                    "example_values": [
+                        13211
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.StartDate",
+                    "data_type": "string",
+                    "example_values": [
+                        "/Date(1570636648312)/"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.Status",
+                    "data_type": "string",
+                    "example_values": [
+                        "Delivered"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.Subject",
+                    "data_type": "string",
+                    "column_name": "Subject",
+                    "column_order": 5,
+                    "example_values": [
+                        "Test SMTP config"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.ToIP",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "example_values": [
+                        "8.8.8.8"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.__metadata.id",
+                    "data_type": "string",
+                    "example_values": [
+                        "https://reports.office365.com/ecp/ReportingWebService/Reporting.svc/MessageTrace(0)"
+                    ],
+                    "contains": [
+                        "url"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.__metadata.type",
+                    "data_type": "string",
+                    "example_values": [
+                        "TenantReporting.MessageTrace"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.*.__metadata.uri",
+                    "data_type": "string",
+                    "example_values": [
+                        "https://reports.office365.com/ecp/ReportingWebService/Reporting.svc/MessageTrace(0)"
+                    ],
+                    "contains": [
+                        "url"
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary.emails_found",
+                    "data_type": "numeric",
+                    "example_values": [
+                        2
+                    ]
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Emails found: 2"
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                }
+            ],
+            "render": {
+                "type": "table"
+            },
             "versions": "EQ(*)"
         },
         {
