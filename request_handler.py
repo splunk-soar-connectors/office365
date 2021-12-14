@@ -67,7 +67,7 @@ class Office365RequestHandler():
                 '{}/token'.format(request_url),
                 data=body,
                 proxies=proxy
-            )
+            )  # nosemgrep
             r.raise_for_status()
             resp_json = r.json()
         except Exception as e:

@@ -26,6 +26,8 @@
 # Remove-MailboxPermission -Identity Test1 -User Test2 -AccessRights FullAccess -InheritanceType All
 # This example removes user Administrator's full access rights to user Phantom's mailbox.
 # >Remove-MailboxPermission -Identity Phantom -User Administrator -AccessRights FullAccess -InheritanceType All
+
+import ipaddress
 import json
 import os
 import uuid
@@ -60,7 +62,7 @@ from email.parser import HeaderParser
 
 import outlookmsgfile
 import six
-from bs4 import UnicodeDammit, BeautifulSoup
+from bs4 import BeautifulSoup, UnicodeDammit
 
 from process_email import ProcessEmail
 from request_handler import RequestStateHandler  # noqa
@@ -619,6 +621,19 @@ class EWSOnPremConnector(BaseConnector):
 
         return input_str
 
+    def _is_ip(self, input_ip_address):
+        """
+        Function that checks given address and return True if address is valid IPv4 or IPV6 address.
+        :param input_ip_address: IP address
+        :return: status (success/failure)
+        """
+
+        try:
+            ipaddress.ip_address(input_ip_address)
+        except Exception:
+            return False
+        return True
+
     def finalize(self):
         self.save_state(self._state)
         return phantom.APP_SUCCESS
@@ -685,6 +700,8 @@ class EWSOnPremConnector(BaseConnector):
         ret = self._handle_preprocess_scipts()
         if phantom.is_fail(ret):
             return ret
+
+        self.set_validator('ipv6', self._is_ip)
 
         return phantom.APP_SUCCESS
 
@@ -937,7 +954,10 @@ class EWSOnPremConnector(BaseConnector):
                 # total_items gives the total items in the view, not just items returned in the current call
                 return action_result.set_status(phantom.APP_ERROR, "Children not found, possibly not present."), None
 
-            folders = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
+            folders = []
+            if resp_json.get('m:RootFolder', {}).get('t:Folders', {}):
+                folders.extend(resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder', []))
+                folders.extend(resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:SearchFolder', []))
 
             if not folders:
                 return action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None
@@ -1059,7 +1079,7 @@ class EWSOnPremConnector(BaseConnector):
             folder_id = folder_info['id']
 
             ar_folder = ActionResult()
-            if (aqs):
+            if aqs:
                 data = ews_soap.get_search_request_aqs([folder_id], aqs, email_range)
             else:
                 data = ews_soap.get_search_request_filter([folder_id], subject=subject, sender=sender,
@@ -1994,7 +2014,7 @@ class EWSOnPremConnector(BaseConnector):
         # Set the user to impersonate (i.e. target_user), by default it is the destination user
         self._target_user = user
 
-        # finally see if impersonation has been enabled/disabled for this action
+        # finally, see if impersonation has been enabled/disabled for this action
         # as of right now copy or move email is the only action that allows over-ride
         impersonate = not(param.get(EWS_JSON_DONT_IMPERSONATE, False))
 
@@ -2317,7 +2337,7 @@ class EWSOnPremConnector(BaseConnector):
             err = "Error occurred while converting the header tuple into a dictionary"
             self.debug_print("{}. {}. {}".format(err, error_code, error_msg))
 
-        # Handle received seperately
+        # Handle received separately
         try:
             received_headers = list()
             received_headers = [self._get_string(x[1], charset) for x in email_headers if x[0].lower() == 'received']
@@ -2748,6 +2768,8 @@ class EWSOnPremConnector(BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_trace_error_details(self, response):
+
+        self.debug_print("Response text: {}".format(response.text))
         if 'json' in response.headers.get('Content-Type', ''):
             try:
                 r_json = json.loads(response.text)
@@ -2778,13 +2800,11 @@ class EWSOnPremConnector(BaseConnector):
             error_text = "Error while connecting to the server"
         return error_text
 
-    def _trace_email(self, param):
-
-        action_result = self.add_action_result(ActionResult(dict(param)))
-
-        # Base url that we need to connect to
-        trace_url = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace?$format=Json&"
-        params = {}
+    def _create_filter_string(self, action_result, param):
+        """ This method is used to generate create filter string from the given parameters.
+        :param param: Parameter dictionary
+        :return: filter_str: Filter string
+        """
 
         sender_address = param.get('sender_address', '')
         recipient_address = param.get('recipient_address', '')
@@ -2795,14 +2815,20 @@ class EWSOnPremConnector(BaseConnector):
         to_ip = param.get('to_ip', '')
         message_id = param.get('message_id', '')
         message_trace_id = param.get('message_trace_id', '')
-        widget_filter = param.get('widget_filter', False)
 
+        if (start_date and not end_date) or (end_date and not start_date):
+            return action_result.set_status(phantom.APP_ERROR, "Please specify both the 'start date' and 'end date' parameters"), {}
+
+        params = {}
         if sender_address:
-            params['SenderAddress'] = "'{}'".format(sender_address)
+            sender_list = list(filter(None, [x.strip() for x in sender_address.split(",")]))
+            params['SenderAddress'] = "'{}'".format(",".join(sender_list))
         if recipient_address:
-            params['RecipientAddress'] = "'{}'".format(recipient_address)
+            recipient_list = list(filter(None, [x.strip() for x in recipient_address.split(",")]))
+            params['RecipientAddress'] = "'{}'".format(",".join(recipient_list))
         if status:
-            params['Status'] = "'{}'".format(status)
+            status_list = list(filter(None, [x.strip() for x in status.split(",")]))
+            params['Status'] = "'{}'".format(",".join(status_list))
         if start_date:
             params['StartDate'] = "datetime'{}'".format(start_date)
         if end_date:
@@ -2822,11 +2848,31 @@ class EWSOnPremConnector(BaseConnector):
                 filter_str = "{} eq {}".format(key, value)
             else:
                 filter_str = "{} and {} eq {}".format(filter_str, key, value)
-        parameter = {"$filter": filter_str}
+        return phantom.APP_SUCCESS, filter_str
 
+    def _trace_email(self, param):
+
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        # Base url that we need to connect to
+        trace_url = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace?$format=Json&"
+
+        ret_val, filter_str = self._create_filter_string(action_result, param)
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        parameter = {"$filter": filter_str}
         self.save_progress("Query parameter: {}".format(repr(parameter)))
 
-        response = requests.get(trace_url, auth=self._session.auth, params=parameter)
+        config = self.get_config()
+        if phantom.APP_JSON_PASSWORD not in config:
+            return action_result.set_status(phantom.APP_ERROR, "Password is required for the 'trace email' action")
+
+        password = config[phantom.APP_JSON_PASSWORD]
+        username = config[phantom.APP_JSON_USERNAME].replace('/', '\\')
+        auth = HTTPBasicAuth(username, password)
+
+        response = requests.get(trace_url, auth=auth, params=parameter)  # nosemgrep
         if response.status_code != 200:
             error_text = self._get_trace_error_details(response)
             return action_result.set_status(phantom.APP_ERROR, error_text)
@@ -2843,18 +2889,14 @@ class EWSOnPremConnector(BaseConnector):
                 error_text = self._get_trace_error_details(response)
             return action_result.set_status(phantom.APP_ERROR, error_text)
 
-        # count each email for the summary
-        email_counter = 0
-        for _ in r_json:
-            if widget_filter:
-                r_json[email_counter]['MessageId'] = r_json[email_counter]['MessageId'].replace('>', '').replace('<', '')
-                # .replace('>', '＞').replace('<', '＜')
-            email_counter = email_counter + 1
+        if param.get('widget_filter', False):
+            for email_dict in r_json:
+                email_dict['MessageId'] = email_dict['MessageId'].replace('>', '').replace('<', '')
 
         action_result.add_data(r_json)
 
         summary = action_result.update_summary({})
-        summary['emails_found'] = email_counter
+        summary['emails_found'] = len(r_json)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -2930,7 +2972,7 @@ if __name__ == '__main__':
         try:
             print("Accessing the Login page")
             phantom_url = "{}login".format(BaseConnector._get_phantom_base_url())
-            r = requests.get(phantom_url, verify=False)
+            r = requests.get(phantom_url, verify=False)  # nosemgrep
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -2943,11 +2985,11 @@ if __name__ == '__main__':
             headers['Referer'] = phantom_url
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(phantom_url, verify=False, data=data, headers=headers)
+            r2 = requests.post(phantom_url, verify=False, data=data, headers=headers)  # nosemgrep
             session_id = r2.cookies['sessionid']
         except Exception as e:
             print("Unable to get session id from the platform. Error: {}".format(str(e)))
-            exit(1)
+            exit(1)  # nosemgrep
 
     with open(args.input_test_json) as f:
 
@@ -2968,7 +3010,7 @@ if __name__ == '__main__':
                 in_json['user_session_token'] = session_id
             result = connector._handle_action(json.dumps(in_json), None)
             print(result)
-            exit(0)
+            exit(0)  # nosemgrep
 
         if data:
             raw_email = data.get('raw_email')
@@ -2986,4 +3028,4 @@ if __name__ == '__main__':
             process_email = ProcessEmail()
             ret_val, message = process_email.process_email(connector, raw_email, "manual_parsing", config, None)
 
-    exit(0)
+    exit(0)  # nosemgrep

@@ -387,7 +387,7 @@ def get_update_email(email_id, change_key, categories=None, subject=None):
         cat_node = T.SetItemField(T.FieldURI({'FieldURI': 'item:Categories'}), T.Message(T.Categories(*category_string_list)))
         update_node.append(cat_node)
 
-    if (subject is not None):
+    if subject is not None:
         sub_node = T.SetItemField(T.FieldURI({'FieldURI': 'item:Subject'}), T.Message(T.Subject(subject)))
         update_node.append(sub_node)
 
@@ -466,7 +466,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
 
     elements.append(folder_shape)
 
-    if (query_range):
+    if query_range:
         mini, maxi = (int(x) for x in query_range.split('-'))
         page = M.IndexedPageFolderView(
                 {'MaxEntriesReturned': str(maxi - mini + 1)},
