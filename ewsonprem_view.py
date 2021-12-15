@@ -12,9 +12,10 @@
 # the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
-from bs4 import BeautifulSoup
 import re
+
 import phantom.utils as ph_utils
+from bs4 import BeautifulSoup
 
 
 def _clean_email_text(email_text):

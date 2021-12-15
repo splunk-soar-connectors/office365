@@ -15,9 +15,9 @@
 #
 #
 # http://lxml.de/tutorial.html
-from lxml.builder import ElementMaker
-from lxml import etree
 from bs4 import UnicodeDammit
+from lxml import etree
+from lxml.builder import ElementMaker
 
 # The name spaces
 SOAP_ENVELOPE_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope/"
@@ -71,7 +71,8 @@ def xml_get_restriction(greater_than_time=None, message_id=None):
         filters.append(greater_than_time)
 
     if (message_id):
-        message_id = T.IsNotEqualTo(T.FieldURI({'FieldURI': 'item:ItemId'}), T.FieldURIOrConstant(T.Constant({'Value': message_id})))
+        message_id = T.IsNotEqualTo(T.FieldURI({'FieldURI': 'item:ItemId'}),
+                T.FieldURIOrConstant(T.Constant({'Value': message_id})))
         filters.append(message_id)
 
     if (not filters):
@@ -138,7 +139,8 @@ def xml_get_resolve_names(email):
     https://msdn.microsoft.com/en-us/library/office/aa563518(v=exchg.150).aspx
     """
 
-    return M.ResolveNames({'ReturnFullContactData': "true"}, M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8')))
+    return M.ResolveNames({'ReturnFullContactData': "true"},
+            M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8')))
 
 
 def get_expand_dl(email):
@@ -228,7 +230,8 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
+            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e',
+                    'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
@@ -269,7 +272,8 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
     return find_item
 
 
-def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, int_msg_id=None, restriction=None, email_range="0-10"):
+def get_search_request_filter(folder_ids, subject=None, sender=None, body=None,
+        int_msg_id=None, restriction=None, email_range="0-10"):
     """
     Link for Restriction node
     https://msdn.microsoft.com/en-us/library/office/aa563791(v=exchg.150).aspx
@@ -290,7 +294,8 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
+            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e',
+                    'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
