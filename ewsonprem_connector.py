@@ -65,8 +65,7 @@ import six
 from bs4 import BeautifulSoup, UnicodeDammit
 
 from process_email import ProcessEmail
-from request_handler import RequestStateHandler  # noqa
-from request_handler import _get_dir_name_from_app_name
+from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
 os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
@@ -114,7 +113,7 @@ class EWSOnPremConnector(BaseConnector):
     ACTION_ID_ON_POLL = "on_poll"
     ACTION_ID_GET_EMAIL = "get_email"
     ACTION_ID_TRACE_EMAIL = "trace_email"
-    REPLACE_CONST = "C53CEA8298BD401BA695F247633D0542"
+    REPLACE_CONST = "C53CEA8298BD401BA695F247633D0542"  # pragma: allowlist secret
 
     def __init__(self):
         """ """
@@ -731,40 +730,52 @@ class EWSOnPremConnector(BaseConnector):
 
     # TODO: Should change these function to be parameterized, instead of one per type of request
     def _check_get_attachment_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
 
     def _check_getitem_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
 
     def _check_find_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:FindItemResponse']['m:ResponseMessages']['m:FindItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:FindItemResponse']['m:ResponseMessages']['m:FindItemResponseMessage']
 
     def _check_delete_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
 
     def _check_update_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
 
     def _check_copy_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
 
     def _check_markasjunk_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:MarkAsJunkResponse']['m:ResponseMessages']['m:MarkAsJunkResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:MarkAsJunkResponse']['m:ResponseMessages']['m:MarkAsJunkResponseMessage']
 
     def _check_move_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
 
     def _check_expand_dl_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
 
     def _check_findfolder_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:FindFolderResponse']['m:ResponseMessages']['m:FindFolderResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:FindFolderResponse']['m:ResponseMessages']['m:FindFolderResponseMessage']
 
     def _check_getfolder_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:GetFolderResponse']['m:ResponseMessages']['m:GetFolderResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:GetFolderResponse']['m:ResponseMessages']['m:GetFolderResponseMessage']
 
     def _check_resolve_names_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:ResolveNamesResponse']['m:ResponseMessages']['m:ResolveNamesResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:ResolveNamesResponse']['m:ResponseMessages']['m:ResolveNamesResponseMessage']
 
     def _parse_fault_node(self, result, fault_node):
 
@@ -775,7 +786,9 @@ class EWSOnPremConnector(BaseConnector):
 
     def _clean_xml(self, input_xml):
 
-        # But before we do that clean up the xml, MS is known to send invalid xml chars, that its own msxml library deems as invalid
+        # But before we do that clean up the xml,
+        # MS is known to send invalid xml chars,
+        # that its own msxml library deems as invalid
         # https://support.microsoft.com/en-us/kb/315580
         replace_regex = r"&#x([0-8]|[b-cB-C]|[e-fE-F]|1[0-9]|1[a-fA-F]);"
         clean_xml, number_of_substitutes = re.subn(replace_regex, '', input_xml)
@@ -1242,10 +1255,6 @@ class EWSOnPremConnector(BaseConnector):
         if not email_data:
             return RetVal3(action_result.set_status(
                 phantom.APP_ERROR, "Container does not seem to be created by the same app, raw_email data not found."), None, None)
-
-        if (not email_id.endswith('=')) and (not ph_utils.is_sha1(email_id)):
-            return RetVal3(action_result.set_status(
-                phantom.APP_ERROR, "Container does not seem to be created by the same app, email id not in proper format."), None, None)
 
         return RetVal3(phantom.APP_SUCCESS, email_data, email_id)
 
@@ -2362,8 +2371,8 @@ class EWSOnPremConnector(BaseConnector):
                 if not property_tag:
                     continue
 
-                if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or \
-                        (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
+                if property_tag.lower() in [ews_soap.EXTENDED_PROPERTY_HEADERS.lower(),
+                        ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()]:
                     email_headers = self._extract_email_headers(value)
                     if email_headers is not None:
                         headers.update(email_headers)
@@ -2570,8 +2579,8 @@ class EWSOnPremConnector(BaseConnector):
                 failed_emails_parsing_list.append(email_id)
 
         if len(failed_emails_parsing_list) == len(email_ids):
-            return action_result.set_status(
-                phantom.APP_ERROR, "ErrorExp in _process_email_id for all the email IDs: {}".format(str(failed_emails_parsing_list)))
+            message = "ErrorExp in _process_email_id for all the email IDs: {}".format(str(failed_emails_parsing_list))
+            return action_result.set_status(phantom.APP_ERROR, message)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
