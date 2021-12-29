@@ -272,8 +272,7 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
     return find_item
 
 
-def get_search_request_filter(folder_ids, subject=None, sender=None, body=None,
-        int_msg_id=None, restriction=None, email_range="0-10"):
+def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, int_msg_id=None, restriction=None, email_range="0-10"):
     """
     Link for Restriction node
     https://msdn.microsoft.com/en-us/library/office/aa563791(v=exchg.150).aspx

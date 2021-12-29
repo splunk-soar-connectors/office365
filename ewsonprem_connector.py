@@ -113,6 +113,7 @@ class EWSOnPremConnector(BaseConnector):
     ACTION_ID_RESOLVE_NAME = "resolve_name"
     ACTION_ID_ON_POLL = "on_poll"
     ACTION_ID_GET_EMAIL = "get_email"
+    ACTION_ID_TRACE_EMAIL = "trace_email"
     REPLACE_CONST = "C53CEA8298BD401BA695F247633D0542"  # pragma: allowlist secret
 
     def __init__(self):
@@ -578,8 +579,7 @@ class EWSOnPremConnector(BaseConnector):
 
             parameter = int(parameter)
         except Exception:
-            return action_result.set_status(phantom.APP_ERROR,
-                    "Please provide a valid integer value in the '{0}' parameter".format(key)), None
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid integer value in the '{0}' parameter".format(key)), None
 
         if not allow_zero and parameter <= 0:
             return action_result.set_status(
@@ -787,7 +787,9 @@ class EWSOnPremConnector(BaseConnector):
 
     def _clean_xml(self, input_xml):
 
-        # But before we do that clean up the xml, MS is known to send invalid xml chars, that its own msxml library deems as invalid
+        # But before we do that clean up the xml,
+        # MS is known to send invalid xml chars,
+        # that its own msxml library deems as invalid
         # https://support.microsoft.com/en-us/kb/315580
         replace_regex = r"&#x([0-8]|[b-cB-C]|[e-fE-F]|1[0-9]|1[a-fA-F]);"
         clean_xml, number_of_substitutes = re.subn(replace_regex, '', input_xml)
@@ -1026,8 +1028,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             mini, maxi = (int(x) for x in email_range.split('-'))
         except Exception:
-            return action_result.set_status(phantom.APP_ERROR,
-                    "Unable to parse the range. Please specify the range as min_offset-max_offset")
+            return action_result.set_status(phantom.APP_ERROR, "Unable to parse the range. Please specify the range as min_offset-max_offset")
 
         if (mini < 0) or (maxi < 0):
             return action_result.set_status(phantom.APP_ERROR, "Invalid min or max offset value specified in range")
@@ -1471,8 +1472,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return phantom.APP_SUCCESS, email_id
 
-    def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email,
-            target_container_id=None, charset=None, user=None):
+    def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email, target_container_id=None, charset=None, user=None):
 
         ret_val, mail = self._get_email_data_from_vault(vault_id, action_result)
         if phantom.is_fail(ret_val):
@@ -1484,8 +1484,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR,
-                    "Unable to get email header string from message. {0}".format(error_text)), None
+            return action_result.set_status(phantom.APP_ERROR, "Unable to get email header string from message. {0}".format(error_text)), None
 
         if not headers:
             return action_result.set_status(phantom.APP_ERROR, "Unable to fetch the headers information from the provided MSG file"), None
@@ -1498,8 +1497,7 @@ class EWSOnPremConnector(BaseConnector):
         int_msg_id = headers.get("Message-ID")
 
         if not int_msg_id:
-            return action_result.set_status(phantom.APP_ERROR,
-                    "Unable to fetch the message_id information from the provided MSG file"), None
+            return action_result.set_status(phantom.APP_ERROR, "Unable to fetch the message_id information from the provided MSG file"), None
 
         params = {
             "int_msg_id": str(int_msg_id)
@@ -1526,8 +1524,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR,
-                    "Parameter validation failed for the ID. {0}".format(error_text)), None
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. {0}".format(error_text)), None
 
         action_result.update_summary({"email_id": email_id})
 
@@ -1711,8 +1708,7 @@ class EWSOnPremConnector(BaseConnector):
         except ValueError as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR,
-                    "Validation failed for the given input parameter. {0}".format(error_text))
+            return action_result.set_status(phantom.APP_ERROR, "Validation failed for the given input parameter. {0}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
 
@@ -1727,8 +1723,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR,
-                    "Parameter validation failed for the ID. Error: {}".format(error_text))
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -2051,8 +2046,7 @@ class EWSOnPremConnector(BaseConnector):
             except Exception as e:
                 error_code, error_msg = self._get_error_message_from_exception(e)
                 error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-                return action_result.set_status(phantom.APP_ERROR,
-                        'Parameter validation failed for the ID. {0}'.format(error_text))
+                return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. {0}'.format(error_text))
             response_checker = self._check_move_response
 
         ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
@@ -2587,8 +2581,7 @@ class EWSOnPremConnector(BaseConnector):
             except Exception as e:
                 error_code, error_msg = self._get_error_message_from_exception(e)
                 error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-                self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. {2}".format(i,
-                        email_id, error_text))
+                self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. {2}".format(i, email_id, error_text))
 
                 failed_emails_parsing_list.append(email_id)
 
@@ -2654,7 +2647,7 @@ class EWSOnPremConnector(BaseConnector):
 
         config = self.get_config()
 
-        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'  # noqa: E501
+        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'
 
         date_time_string = self._state.get(emails_after_key)
 
@@ -2713,15 +2706,13 @@ class EWSOnPremConnector(BaseConnector):
 
         # Fetch first_run_max_emails for asset configuration
         first_run_max_emails = config[EWS_JSON_FIRST_RUN_MAX_EMAILS]
-        ret_val, first_run_max_emails = self._validate_integer(action_result,
-                first_run_max_emails, "Maximum Emails to Poll First Time")
+        ret_val, first_run_max_emails = self._validate_integer(action_result, first_run_max_emails, "Maximum Emails to Poll First Time")
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         # Fetch max_containers for asset configuration
         max_containers = config[EWS_JSON_POLL_MAX_CONTAINERS]
-        ret_val, max_containers = self._validate_integer(action_result,
-                max_containers, "Maximum Containers for Scheduled Polling")
+        ret_val, max_containers = self._validate_integer(action_result, max_containers, "Maximum Containers for Scheduled Polling")
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
@@ -2746,8 +2737,7 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.get_status()
 
             if not email_infos:
-                return action_result.set_status(phantom.APP_SUCCESS,
-                        "No emails found for the restriction: {}".format(str(restriction)))
+                return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the restriction: {}".format(str(restriction)))
 
             if len(email_infos) < max_emails:
                 self._less_data = True
@@ -2762,8 +2752,7 @@ class EWSOnPremConnector(BaseConnector):
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
-            max_emails, total_ingested = self._manage_data_duplication(email_infos,
-                    email_index, max_emails, total_ingested, limit)
+            max_emails, total_ingested = self._manage_data_duplication(email_infos, email_index, max_emails, total_ingested, limit)
             if not max_emails:
                 break
 
