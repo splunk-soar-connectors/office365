@@ -956,14 +956,18 @@ class EWSOnPremConnector(BaseConnector):
 
             folders = []
             if resp_json.get('m:RootFolder', {}).get('t:Folders', {}):
-                folders.extend(resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder', []))
-                folders.extend(resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:SearchFolder', []))
+                folders_list = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder', [])
+                if not isinstance(folders_list, list):
+                    folders_list = [folders_list]
+                folders.extend(folders_list)
+
+                search_folders_list = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:SearchFolder', [])
+                if not isinstance(search_folders_list, list):
+                    search_folders_list = [search_folders_list]
+                folders.extend(search_folders_list)
 
             if not folders:
                 return action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None
-
-            if not isinstance(folders, list):
-                folders = [folders]
 
             folder_infos.extend([{
                 'id': x['t:FolderId']['@Id'],
@@ -986,6 +990,8 @@ class EWSOnPremConnector(BaseConnector):
                 if (ret_val):
                     folder_infos.extend(child_folder_infos)
             '''
+
+        self.debug_print("Saphira: Folder Infos: {}".format(folder_infos))
 
         return phantom.APP_SUCCESS, folder_infos
 
@@ -2828,6 +2834,7 @@ class EWSOnPremConnector(BaseConnector):
             params['RecipientAddress'] = "'{}'".format(",".join(recipient_list))
         if status:
             status_list = list(filter(None, [x.strip() for x in status.split(",")]))
+            status_list = ["" if x.lower() == "none" else x for x in status_list]
             params['Status'] = "'{}'".format(",".join(status_list))
         if start_date:
             params['StartDate'] = "datetime'{}'".format(start_date)
@@ -2855,13 +2862,16 @@ class EWSOnPremConnector(BaseConnector):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         # Base url that we need to connect to
-        trace_url = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace?$format=Json&"
+        trace_url = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace"
 
         ret_val, filter_str = self._create_filter_string(action_result, param)
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        parameter = {"$filter": filter_str}
+        parameter = {
+            "$format": "Json",
+            "$filter": filter_str
+        }
         self.save_progress("Query parameter: {}".format(repr(parameter)))
 
         config = self.get_config()
@@ -2872,31 +2882,38 @@ class EWSOnPremConnector(BaseConnector):
         username = config[phantom.APP_JSON_USERNAME].replace('/', '\\')
         auth = HTTPBasicAuth(username, password)
 
-        response = requests.get(trace_url, auth=auth, params=parameter)  # nosemgrep
-        if response.status_code != 200:
-            error_text = self._get_trace_error_details(response)
-            return action_result.set_status(phantom.APP_ERROR, error_text)
-
-        # format as json data
-        try:
-            r_json = json.loads(response.text)
-            r_json = r_json["d"]["results"]
-        except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            self.debug_print("Error while parsing response: {}".format(error_text))
-            if response.status_code == 200:
+        results = []
+        while True:
+            response = requests.get(trace_url, auth=auth, params=parameter)  # nosemgrep
+            if response.status_code != 200:
                 error_text = self._get_trace_error_details(response)
-            return action_result.set_status(phantom.APP_ERROR, error_text)
+                return action_result.set_status(phantom.APP_ERROR, error_text)
+
+            # format as json data
+            try:
+                r_json = json.loads(response.text)
+                results.extend(r_json["d"]["results"])
+                trace_url = r_json["d"].get("__next")
+                if not trace_url:
+                    break
+            except Exception as e:
+                error_code, error_msg = self._get_error_message_from_exception(e)
+                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+                self.debug_print("Error while parsing response: {}".format(error_text))
+                if response.status_code == 200:
+                    error_text = self._get_trace_error_details(response)
+                return action_result.set_status(phantom.APP_ERROR, error_text)
+
+            parameter = {"$format": "Json"}
 
         if param.get('widget_filter', False):
-            for email_dict in r_json:
+            for email_dict in results:
                 email_dict['MessageId'] = email_dict['MessageId'].replace('>', '').replace('<', '')
 
-        action_result.add_data(r_json)
+        action_result.add_data(results)
 
         summary = action_result.update_summary({})
-        summary['emails_found'] = len(r_json)
+        summary['emails_found'] = len(results)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
