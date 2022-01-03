@@ -2,7 +2,7 @@
     "appid": "a73f6d32-c9d5-4fec-b024-43876700daa6",
     "logo": "logo_microsoftoffice365.svg",
     "logo_dark": "logo_microsoftoffice365_dark.svg",
-    "license": "Copyright (c) 2016-2021 Splunk Inc.",
+    "license": "Copyright (c) 2016-2022 Splunk Inc.",
     "rest_handler": "request_handler.handle_request",
     "name": "EWS for Office 365",
     "description": "This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service",
@@ -19,7 +19,7 @@
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud December 29, 2021"
+        "Cloud January 03, 2022"
     ],
     "pip_dependencies": {
         "wheel": [
