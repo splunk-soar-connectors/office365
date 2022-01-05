@@ -998,8 +998,6 @@ class EWSOnPremConnector(BaseConnector):
                     folder_infos.extend(child_folder_infos)
             '''
 
-        self.debug_print("Saphira: Folder Infos: {}".format(folder_infos))
-
         return phantom.APP_SUCCESS, folder_infos
 
     def _cleanse_key_names(self, input_dict):
@@ -2813,7 +2811,7 @@ class EWSOnPremConnector(BaseConnector):
         end_date = param.get('end_date', '')
         from_ip = param.get('from_ip', '')
         to_ip = param.get('to_ip', '')
-        message_id = param.get('message_id', '')
+        internet_message_id = param.get('internet_message_id', '')
         message_trace_id = param.get('message_trace_id', '')
 
         if (start_date and not end_date) or (end_date and not start_date):
@@ -2822,14 +2820,14 @@ class EWSOnPremConnector(BaseConnector):
         params = {}
         if sender_address:
             sender_list = list(filter(None, [x.strip() for x in sender_address.split(",")]))
-            params['SenderAddress'] = "'{}'".format(",".join(sender_list))
+            params['SenderAddress'] = "'{}'".format(",".join(set(sender_list)))
         if recipient_address:
             recipient_list = list(filter(None, [x.strip() for x in recipient_address.split(",")]))
-            params['RecipientAddress'] = "'{}'".format(",".join(recipient_list))
+            params['RecipientAddress'] = "'{}'".format(",".join(set(recipient_list)))
         if status:
             status_list = list(filter(None, [x.strip() for x in status.split(",")]))
             status_list = ["" if x.lower() == "none" else x for x in status_list]
-            params['Status'] = "'{}'".format(",".join(status_list))
+            params['Status'] = "'{}'".format(",".join(set(status_list)))
         if start_date:
             params['StartDate'] = "datetime'{}'".format(start_date)
         if end_date:
@@ -2838,8 +2836,8 @@ class EWSOnPremConnector(BaseConnector):
             params['FromIP'] = "'{}'".format(from_ip)
         if to_ip:
             params['ToIP'] = "'{}'".format(to_ip)
-        if message_id:
-            params['MessageId'] = "'{}'".format(message_id)
+        if internet_message_id:
+            params['MessageId'] = "'{}'".format(internet_message_id)
         if message_trace_id:
             params['MessageTraceId'] = "guid'{}'".format(message_trace_id)
 
@@ -2868,6 +2866,14 @@ class EWSOnPremConnector(BaseConnector):
         }
         self.save_progress("Query parameter: {}".format(repr(parameter)))
 
+        email_range = param.get("range")
+        mini, maxi = 0, EWSONPREM_MAX_END_OFFSET_VAL
+        if email_range:
+            ret_val = self._validate_range(email_range, action_result)
+            if phantom.is_fail(ret_val):
+                return action_result.get_status()
+            mini, maxi = (int(x) for x in email_range.split('-'))
+
         config = self.get_config()
         if phantom.APP_JSON_PASSWORD not in config:
             return action_result.set_status(phantom.APP_ERROR, "Password is required for the 'trace email' action")
@@ -2888,14 +2894,16 @@ class EWSOnPremConnector(BaseConnector):
                 r_json = json.loads(response.text)
                 results.extend(r_json["d"]["results"])
                 trace_url = r_json["d"].get("__next")
-                if not trace_url:
+                if not trace_url or len(results) >= maxi:
                     break
             except Exception as e:
+                # Log the exception details
                 error_code, error_msg = self._get_error_message_from_exception(e)
                 error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 self.debug_print("Error while parsing response: {}".format(error_text))
-                if response.status_code == 200:
-                    error_text = self._get_trace_error_details(response)
+
+                # Fetch the error message from the API response
+                error_text = self._get_trace_error_details(response)
                 return action_result.set_status(phantom.APP_ERROR, error_text)
 
             parameter = {"$format": "Json"}
@@ -2904,6 +2912,7 @@ class EWSOnPremConnector(BaseConnector):
             for email_dict in results:
                 email_dict['MessageId'] = email_dict['MessageId'].replace('>', '').replace('<', '')
 
+        results = results[mini:maxi+1]
         action_result.add_data(results)
 
         summary = action_result.update_summary({})

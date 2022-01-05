@@ -3262,7 +3262,7 @@
             "action": "trace email",
             "identifier": "trace_email",
             "description": "Get message trace from the server",
-            "verbose": "The trace email action provides summary information about the processing of email messages that have passed through the Office 365 system for the organization in the last 10 days.<br><br>Valid values for the <b>status</b> parameter are:<ul><li><b>None:</b> The message has no delivery status because it was rejected or redirected to a different recipient.</li><li><b>GettingStatus:</b> The message is waiting for status update.</li><li><b>Failed:</b> Message delivery was attempted and it failed or the message was filtered as spam or malware, or by transport rules.</li><li><b>Pending:</b> Message delivery is underway or was deferred and is being retried.</li><li><b>Delivered:</b> The message was delivered to its destination.</li><li><b>Expanded:</b> There was no message delivery because the message was addressed to a distribution group and the membership of the distribution was expanded.</li><li><b>Quarantined:</b> The message was quarantined.</li><li><b>FilteredAsSpam:</b> The message was marked as spam.</li></ul>The 'start date' and 'end date' parameters are considered optional, but if you provide one, you have to provide the other. i. e. If you provide a 'start date' in the parameter option, you must also specify an 'end date' and vice versa. If the pair is not provided in the query, the default reporting time period is the previous two days.<br>If 'widget filter' is set to True, the angular brackets will be removed from the Internet Message ID field. <br><br>Please note that the username and password are required for the 'trace email' action, because it will only use the 'basic auth' for all the cases. The user must have an administrator role for accessing the message trace. For more information about APIs and permissions please visit the <a href='https://docs.microsoft.com/en-us/previous-versions/office/developer/o365-enterprise-developers/jj984335(v=office.15)' target=\"_blank\">official documentation</a>.",
+            "verbose": "The trace email action provides summary information about the processing of email messages that have passed through the Office 365 system for the organization in the last 10 days.<br><br>Valid values for the <b>status</b> parameter are:<ul><li><b>None:</b> The message has no delivery status because it was rejected or redirected to a different recipient.</li><li><b>GettingStatus:</b> The message is waiting for status update.</li><li><b>Failed:</b> Message delivery was attempted and it failed or the message was filtered as spam or malware, or by transport rules.</li><li><b>Pending:</b> Message delivery is underway or was deferred and is being retried.</li><li><b>Delivered:</b> The message was delivered to its destination.</li><li><b>Expanded:</b> There was no message delivery because the message was addressed to a distribution group and the membership of the distribution was expanded.</li><li><b>Quarantined:</b> The message was quarantined.</li><li><b>FilteredAsSpam:</b> The message was marked as spam.</li></ul>The 'start date' and 'end date' parameters are considered optional, but if you provide one, you have to provide the other. i. e. If you provide a 'start date' in the parameter option, you must also specify an 'end date' and vice versa. If the pair is not provided in the query, the default reporting time period is the previous two days.<br>If 'widget filter' is set to True, the angular brackets will be removed from the Internet Message ID field.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. If the range parameter is not specified by default the action will fetch all possible data.<br><br>Please note that the username and password are required for the 'trace email' action, because it will only use the 'basic auth' for all the cases. Azure authentication workflow will be ignored by this action. The user must have an administrator role for accessing the message trace. For more information about APIs and permissions please visit the <a href='https://docs.microsoft.com/en-us/previous-versions/office/developer/o365-enterprise-developers/jj984335(v=office.15)' target=\"_blank\">official documentation</a>.",
             "type": "investigate",
             "read_only": true,
             "parameters": {
@@ -3330,8 +3330,8 @@
                     ],
                     "order": 7
                 },
-                "message_id": {
-                    "description": "This parameter filters the results by the Internet Message ID also known as the Client ID.",
+                "internet_message_id": {
+                    "description": "This parameter filters the results by the Internet Message ID also known as the Client ID",
                     "data_type": "string",
                     "primary": true,
                     "contains": [
@@ -3340,9 +3340,14 @@
                     "order": 8
                 },
                 "widget_filter": {
-                    "description": "Widget Filter to clean certain special character.",
+                    "description": "Widget Filter to clean certain special character",
                     "data_type": "boolean",
                     "order": 9
+                },
+                "range": {
+                    "description": "Email range to return (min_offset-max_offset)",
+                    "data_type": "string",
+                    "order": 10
                 }
             },
             "output": [
@@ -3372,7 +3377,7 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.parameter.message_id",
+                    "data_path": "action_result.parameter.internet_message_id",
                     "data_type": "string",
                     "contains": [
                         "internet message id"
@@ -3389,6 +3394,13 @@
                     ],
                     "example_values": [
                         "62a796a1-00df-43ca-3732-08d74da88f70"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.range",
+                    "data_type": "string",
+                    "example_values": [
+                        "0-10"
                     ]
                 },
                 {
