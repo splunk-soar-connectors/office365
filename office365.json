@@ -9,15 +9,14 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.8.2",
-    "utctime_updated": "2021-12-22T20:08:07.000000Z",
+    "app_version": "2.7.3",
+    "utctime_updated": "2021-11-16T05:20:08.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.0.0",
+    "min_phantom_version": "4.10.0.40961",
     "python_version": "3",
-    "fips_compliant": true,
     "latest_tested_versions": [
         "Cloud 11-08-2021"
     ],
