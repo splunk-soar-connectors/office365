@@ -1,12 +1,19 @@
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2021 Splunk Inc.
+# Copyright (c) 2016-2022 Splunk Inc.
 #
-# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
-# without a valid written license from Splunk Inc. is PROHIBITED.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-
-# ==========================================================
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+#
+#
 # To Grant access to a user's mailbox to another, read the command found at the following location
 # https://technet.microsoft.com/en-us/library/bb124097(v=exchg.160).aspx
 # Basically it's the use of the Add-MailboxPermission cmdlet
@@ -19,49 +26,46 @@
 # Remove-MailboxPermission -Identity Test1 -User Test2 -AccessRights FullAccess -InheritanceType All
 # This example removes user Administrator's full access rights to user Phantom's mailbox.
 # >Remove-MailboxPermission -Identity Phantom -User Administrator -AccessRights FullAccess -InheritanceType All
-# ==========================================================
-
 # Phantom imports
-import phantom.app as phantom
-from phantom.base_connector import BaseConnector
-from phantom.action_result import ActionResult
-import phantom.rules as ph_rules
-import phantom.utils as ph_utils
-
-# THIS Connector imports
-from ewsonprem_consts import *
-import ews_soap
-
-import requests
 import json
-import xmltodict
 import os
 import uuid
-from requests.auth import AuthBase
-from requests.auth import HTTPBasicAuth
+
+import phantom.app as phantom
+import phantom.rules as ph_rules
+import phantom.utils as ph_utils
+import requests
+import xmltodict
+from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
+from requests.auth import AuthBase, HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
+
+import ews_soap
+# THIS Connector imports
+from ewsonprem_consts import *
+
 try:
-    from urllib.parse import urlparse, quote_plus
+    from urllib.parse import quote_plus, urlparse
 except ImportError:
     from urllib import quote_plus
     from urlparse import urlparse
 
 import base64
-from datetime import datetime, timedelta
-import re
-from process_email import ProcessEmail
-from email.parser import HeaderParser
-from email.header import decode_header
 import email
 import quopri
-import outlookmsgfile
-from bs4 import UnicodeDammit
-import six
-
+import re
 import time
+from datetime import datetime, timedelta
+from email.header import decode_header
+from email.parser import HeaderParser
 
+import outlookmsgfile
+import six
+from bs4 import UnicodeDammit
+
+from process_email import ProcessEmail
 from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
-
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
 os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
@@ -108,7 +112,7 @@ class EWSOnPremConnector(BaseConnector):
     ACTION_ID_RESOLVE_NAME = "resolve_name"
     ACTION_ID_ON_POLL = "on_poll"
     ACTION_ID_GET_EMAIL = "get_email"
-    REPLACE_CONST = "C53CEA8298BD401BA695F247633D0542"
+    REPLACE_CONST = "C53CEA8298BD401BA695F247633D0542"  # pragma: allowlist secret
 
     def __init__(self):
         """ """
@@ -161,13 +165,15 @@ class EWSOnPremConnector(BaseConnector):
             ret_val += "xmlns:wsse='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd' "
             ret_val += "xmlns:u='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd'>"
             ret_val += "<s:Header>"
-            ret_val += "<wsse:Action s:mustUnderstand='1'>http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</wsse:Action>"
+            ret_val += "<wsse:Action s:mustUnderstand='1'>"
+            ret_val += "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</wsse:Action>"
             ret_val += "<wsse:messageID>urn:uuid:7f45785a-9691-451e-b3ff-30ab463af64c</wsse:messageID>"
             ret_val += "<wsse:ReplyTo><wsse:Address>http://www.w3.org/2005/08/addressing/anonymous</wsse:Address></wsse:ReplyTo>"
             ret_val += "<wsse:To s:mustUnderstand='1'>"
             ret_val += config[EWS_JSON_FED_PING_URL].split('?')[0]
             ret_val += "</wsse:To>"
-            ret_val += "<o:Security s:mustUnderstand='1' xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>"
+            ret_val += "<o:Security s:mustUnderstand='1' "
+            ret_val += "xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>"
             ret_val += "<u:Timestamp>"
             ret_val += "<u:Created>"
 
@@ -194,9 +200,11 @@ class EWSOnPremConnector(BaseConnector):
             ret_val += "</o:Security>"
             ret_val += "</s:Header>"
             ret_val += "<s:Body>"
-            ret_val += "<trust:RequestSecurityToken xmlns:trust='http://docs.oasis-open.org/ws-sx/ws-trust/200512'>"
+            ret_val += "<trust:RequestSecurityToken "
+            ret_val += "xmlns:trust='http://docs.oasis-open.org/ws-sx/ws-trust/200512'>"
             ret_val += "<wsp:AppliesTo xmlns:wsp='http://schemas.xmlsoap.org/ws/2004/09/policy'>"
-            ret_val += "<wsse:EndpointReference><wsse:Address>urn:federation:MicrosoftOnline</wsse:Address></wsse:EndpointReference>"
+            ret_val += "<wsse:EndpointReference><wsse:Address>"
+            ret_val += "urn:federation:MicrosoftOnline</wsse:Address></wsse:EndpointReference>"
             ret_val += "</wsp:AppliesTo>"
             ret_val += "<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>"
             ret_val += "<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>"
@@ -219,7 +227,8 @@ class EWSOnPremConnector(BaseConnector):
 
         for required_param in required_params:
             if (required_param not in config):
-                return (None, "ERROR: {0} is a required parameter for Azure/Federated Authentication, please specify one.".format(required_param))
+                message = "ERROR: {0} is a required parameter for Azure/Federated Authentication, please specify one."
+                return (None, message.format(required_param))
 
         client_id = config[EWS_JSON_CLIENT_ID]
 
@@ -324,7 +333,8 @@ class EWSOnPremConnector(BaseConnector):
 
         phantom_base_url = resp_json.get('base_url')
         if (not phantom_base_url):
-            return (action_result.set_status(phantom.APP_ERROR, "Phantom Base URL is not configured, please configure it in System Settings"), None)
+            return (action_result.set_status(phantom.APP_ERROR,
+                    "Phantom Base URL is not configured, please configure it in System Settings"), None)
 
         phantom_base_url = phantom_base_url.strip("/")
 
@@ -332,7 +342,8 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_asset_name(self, action_result):
 
-        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, self.get_phantom_base_url() + 'rest/asset/{0}'.format(self.get_asset_id()))
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result,
+                self.get_phantom_base_url() + 'rest/asset/{0}'.format(self.get_asset_id()))
 
         if (phantom.is_fail(ret_val)):
             return (action_result.get_status(), None)
@@ -457,10 +468,12 @@ class EWSOnPremConnector(BaseConnector):
         client_secret = config.get(EWS_JSON_CLIENT_SECRET)
 
         if (not client_id):
-            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
+            return (None,
+                    "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
 
         if (not client_secret):
-            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_SECRET))
+            message = "ERROR: {0} is a required parameter for Azure Authentication, please specify one."
+            return (None, message.format(EWS_JSON_CLIENT_SECRET))
 
         asset_id = self.get_asset_id()
         rsh = RequestStateHandler(asset_id)  # Use the states from the OAuth login
@@ -501,10 +514,12 @@ class EWSOnPremConnector(BaseConnector):
         client_secret = config.get(EWS_JSON_CLIENT_SECRET)
 
         if (not client_id):
-            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
+            message = "ERROR: {0} is a required parameter for Azure Authentication, please specify one."
+            return (None, message.format(EWS_JSON_CLIENT_ID))
 
         if (not client_secret):
-            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_SECRET))
+            message = "ERROR: {0} is a required parameter for Azure Authentication, please specify one."
+            return (None, message.format(EWS_JSON_CLIENT_SECRET))
 
         client_req_id = str(uuid.uuid4())
 
@@ -577,16 +592,20 @@ class EWSOnPremConnector(BaseConnector):
     def _validate_integer(self, action_result, parameter, key, allow_zero=False):
         try:
             if not float(parameter).is_integer():
-                return action_result.set_status(phantom.APP_ERROR, "Please provide a valid integer value in the '{0}' parameter".format(key)), None
+                return action_result.set_status(phantom.APP_ERROR,
+                        "Please provide a valid integer value in the '{0}' parameter".format(key)), None
 
             parameter = int(parameter)
         except Exception:
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid integer value in the '{0}' parameter".format(key)), None
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Please provide a valid integer value in the '{0}' parameter".format(key)), None
 
         if not allow_zero and parameter <= 0:
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a non-zero positive integer in the '{0}' parameter".format(key)), None
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Please provide a non-zero positive integer in the '{0}' parameter".format(key)), None
         elif allow_zero and parameter < 0:
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid non-negative integer value in the '{0}' parameter".format(key)), None
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Please provide a valid non-negative integer value in the '{0}' parameter".format(key)), None
 
         return phantom.APP_SUCCESS, parameter
 
@@ -718,40 +737,52 @@ class EWSOnPremConnector(BaseConnector):
 
     # TODO: Should change these function to be parameterized, instead of one per type of request
     def _check_get_attachment_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
 
     def _check_getitem_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
 
     def _check_find_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:FindItemResponse']['m:ResponseMessages']['m:FindItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:FindItemResponse']['m:ResponseMessages']['m:FindItemResponseMessage']
 
     def _check_delete_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
 
     def _check_update_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
 
     def _check_copy_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
 
     def _check_markasjunk_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:MarkAsJunkResponse']['m:ResponseMessages']['m:MarkAsJunkResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:MarkAsJunkResponse']['m:ResponseMessages']['m:MarkAsJunkResponseMessage']
 
     def _check_move_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
 
     def _check_expand_dl_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
 
     def _check_findfolder_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:FindFolderResponse']['m:ResponseMessages']['m:FindFolderResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:FindFolderResponse']['m:ResponseMessages']['m:FindFolderResponseMessage']
 
     def _check_getfolder_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:GetFolderResponse']['m:ResponseMessages']['m:GetFolderResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:GetFolderResponse']['m:ResponseMessages']['m:GetFolderResponseMessage']
 
     def _check_resolve_names_response(self, resp_json):
-        return resp_json['s:Envelope']['s:Body']['m:ResolveNamesResponse']['m:ResponseMessages']['m:ResolveNamesResponseMessage']
+        resp_body = resp_json['s:Envelope']['s:Body']
+        return resp_body['m:ResolveNamesResponse']['m:ResponseMessages']['m:ResolveNamesResponseMessage']
 
     def _parse_fault_node(self, result, fault_node):
 
@@ -763,7 +794,9 @@ class EWSOnPremConnector(BaseConnector):
 
     def _clean_xml(self, input_xml):
 
-        # But before we do that clean up the xml, MS is known to send invalid xml chars, that it's own msxml library deems as invalid
+        # But before we do that clean up the xml,
+        # MS is known to send invalid xml chars,
+        # that it's own msxml library deems as invalid
         # https://support.microsoft.com/en-us/kb/315580
         replace_regex = r"&#x([0-8]|[b-cB-C]|[e-fE-F]|1[0-9]|1[a-fA-F]);"
         clean_xml, number_of_substitutes = re.subn(replace_regex, '', input_xml)
@@ -802,7 +835,8 @@ class EWSOnPremConnector(BaseConnector):
         resp_json = None
 
         if ((self._impersonate) and (not self._target_user)):
-            return (result.set_status(phantom.APP_ERROR, "Impersonation is required, but target user not set. Cannot continue execution"), None)
+            return (result.set_status(phantom.APP_ERROR,
+                    "Impersonation is required, but target user not set. Cannot continue execution"), None)
 
         if (self._impersonate):
             data = ews_soap.add_to_envelope(data, self._target_user)
@@ -869,7 +903,8 @@ class EWSOnPremConnector(BaseConnector):
         resp_class = resp_message.get('@ResponseClass', '')
 
         if (resp_class == 'Error'):
-            return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message)))), resp_json)
+            return result.set_status(phantom.APP_ERROR,
+                    EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message)))), resp_json
 
         return (phantom.APP_SUCCESS, resp_message)
 
@@ -929,7 +964,8 @@ class EWSOnPremConnector(BaseConnector):
             folders = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
 
             if (not folders):
-                return (action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None)
+                return action_result.set_status(phantom.APP_ERROR,
+                        "Folder information not found in response, possibly not present"), None
 
             if (type(folders) != list):
                 folders = [folders]
@@ -989,7 +1025,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             mini, maxi = (int(x) for x in email_range.split('-'))
         except Exception:
-            return action_result.set_status(phantom.APP_ERROR, "Unable to parse the range. Please specify the range as min_offset-max_offset")
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Unable to parse the range. Please specify the range as min_offset-max_offset")
 
         if (mini < 0) or (maxi < 0):
             return action_result.set_status(phantom.APP_ERROR, "Invalid min or max offset value specified in range")
@@ -998,7 +1035,8 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, "Invalid range value, min_offset greater than max_offset")
 
         if (maxi > EWSONPREM_MAX_END_OFFSET_VAL):
-            return action_result.set_status(phantom.APP_ERROR, "Invalid range value. The max_offset value cannot be greater than {0}".format(EWSONPREM_MAX_END_OFFSET_VAL))
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Invalid range value. The max_offset value cannot be greater than {0}".format(EWSONPREM_MAX_END_OFFSET_VAL))
 
         return (phantom.APP_SUCCESS)
 
@@ -1030,7 +1068,8 @@ class EWSOnPremConnector(BaseConnector):
 
         if (not ignore_subfolders):
             if (int(parent_folder_info['children_count']) != 0):
-                ret_val, child_folder_infos = self._get_child_folder_infos(user, action_result, parent_folder_info=parent_folder_info)
+                ret_val, child_folder_infos = self._get_child_folder_infos(user, action_result,
+                        parent_folder_info=parent_folder_info)
                 if (phantom.is_fail(ret_val)):
                     return action_result.get_status(), None
                 folder_infos.extend(child_folder_infos)
@@ -1171,7 +1210,8 @@ class EWSOnPremConnector(BaseConnector):
 
         email_id = quote_plus(email_id)
 
-        url = self.get_phantom_base_url() + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
+        url = self.get_phantom_base_url() + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(
+                email_id, self.get_asset_id())
 
         try:
             r = requests.get(url, verify=False)
@@ -1206,7 +1246,8 @@ class EWSOnPremConnector(BaseConnector):
         except ValueError as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return RetVal3(action_result.set_status(phantom.APP_ERROR, 'Validation failed for the container_id. {0}'.format(error_text)), email_data, email_id)
+            return RetVal3(action_result.set_status(phantom.APP_ERROR,
+                    'Validation failed for the container_id. {0}'.format(error_text)), email_data, email_id)
 
         if (phantom.is_fail(ret_val)):
             return RetVal3(action_result.set_status(phantom.APP_ERROR, str(resp_data)), email_data, email_id)
@@ -1220,10 +1261,6 @@ class EWSOnPremConnector(BaseConnector):
         if (not email_data):
             return RetVal3(action_result.set_status(phantom.APP_ERROR,
                 "Container does not seem to be created by the same app, raw_email data not found."), None, None)
-
-        if ((not email_id.endswith('=')) and (not ph_utils.is_sha1(email_id))):
-            return RetVal3(action_result.set_status(phantom.APP_ERROR,
-                "Container does not seem to be created by the same app, email id not in proper format."), None, None)
 
         return RetVal3(phantom.APP_SUCCESS, email_data, email_id)
 
@@ -1254,7 +1291,8 @@ class EWSOnPremConnector(BaseConnector):
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self.debug_print("Failed to parse message. {0}".format(error_text))
-            return action_result.set_status(phantom.APP_ERROR, "Failed to parse message. Please check if the provided file is valid msg file."), None
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Failed to parse message. Please check if the provided file is valid msg file."), None
 
         return phantom.APP_SUCCESS, mail
 
@@ -1402,12 +1440,14 @@ class EWSOnPremConnector(BaseConnector):
         try:
             mail = email.message_from_string(email_data)
         except Exception:
-            return RetVal2(action_result.set_status(phantom.APP_ERROR, "Unable to create email object from data. Does not seem to be valid email"), None)
+            return RetVal2(action_result.set_status(phantom.APP_ERROR,
+                    "Unable to create email object from data. Does not seem to be valid email"), None)
 
         headers = mail.__dict__.get('_headers')
 
-        if (not headers):
-            return RetVal2(action_result.set_status(phantom.APP_ERROR, "Could not extract header info from email object data. Does not seem to be valid email"), None)
+        if not headers:
+            return RetVal2(action_result.set_status(phantom.APP_ERROR,
+                    "Could not extract header info from email object data. Does not seem to be valid email"), None)
 
         ret_val = {}
         for header in headers:
@@ -1431,7 +1471,8 @@ class EWSOnPremConnector(BaseConnector):
 
         return phantom.APP_SUCCESS, email_id
 
-    def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email, target_container_id=None, charset=None, user=None):
+    def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email,
+            target_container_id=None, charset=None, user=None):
 
         ret_val, mail = self._get_email_data_from_vault(vault_id, action_result)
         if (phantom.is_fail(ret_val)):
@@ -1443,10 +1484,12 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR, "Unable to get email header string from message. {0}".format(error_text)), None
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Unable to get email header string from message. {0}".format(error_text)), None
 
-        if (not headers):
-            return action_result.set_status(phantom.APP_ERROR, "Unable to fetch the headers information from the provided MSG file"), None
+        if not headers:
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Unable to fetch the headers information from the provided MSG file"), None
 
         action_result.add_data(dict(headers))
 
@@ -1456,7 +1499,8 @@ class EWSOnPremConnector(BaseConnector):
         int_msg_id = headers.get("Message-ID")
 
         if not int_msg_id:
-            return action_result.set_status(phantom.APP_ERROR, "Unable to fetch the message_id information from the provided MSG file"), None
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Unable to fetch the message_id information from the provided MSG file"), None
 
         params = {
             "int_msg_id": str(int_msg_id)
@@ -1467,7 +1511,8 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status(), None
 
         if not item_matched:
-            err_msg = "Unable to ingest the message from the provided MSG file, the MSG file should be associated with the logged in SMTP user to ingest message from vault item."
+            err_msg = "Unable to ingest the message from the provided MSG file, "
+            err_msg += "the MSG file should be associated with the logged in SMTP user to ingest message from vault item."
             return action_result.set_status(phantom.APP_ERROR, err_msg), None
 
         item = item_matched[0]
@@ -1482,7 +1527,8 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. {0}".format(error_text)), None
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Parameter validation failed for the ID. {0}".format(error_text)), None
 
         action_result.update_summary({"email_id": email_id})
 
@@ -1617,7 +1663,7 @@ class EWSOnPremConnector(BaseConnector):
     def _valid_xml_char_ordinal(self, c):
         codepoint = ord(c)
         # conditions ordered by presumed frequency
-        return (0x20 <= codepoint <= 0xD7FF or codepoint in (0x9, 0xA, 0xD) or 0xE000 <= codepoint <= 0xFFFD or 0x10000 <= codepoint <= 0x10FFFF)
+        return (0x20 <= codepoint <= 0xD7FF or codepoint in (0x9, 0xA, 0xD) or 0xE000 <= codepoint <= 0xFFFD or 0x10000 <= codepoint <= 0x10FFFF)  # noqa: E501
 
     def _update_email(self, param):
 
@@ -1664,7 +1710,8 @@ class EWSOnPremConnector(BaseConnector):
         except ValueError as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR, "Validation failed for the given input parameter. {0}".format(error_text))
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Validation failed for the given input parameter. {0}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
 
@@ -1679,7 +1726,8 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. Error: {}".format(error_text))
+            return action_result.set_status(phantom.APP_ERROR,
+                    "Parameter validation failed for the ID. Error: {}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1872,8 +1920,8 @@ class EWSOnPremConnector(BaseConnector):
             folder = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
 
             if (not folder):
-                return (action_result.set_status(phantom.APP_ERROR,
-                            "Information about '{0}' not found in response, possibly not present".format(curr_valid_folder_path)), None)
+                message = "Information about '{0}' not found in response, possibly not present".format(curr_valid_folder_path)
+                return action_result.set_status(phantom.APP_ERROR, message), None
 
             if (type(folder) != list):
                 folder = [folder]
@@ -1884,8 +1932,9 @@ class EWSOnPremConnector(BaseConnector):
                 return (ret_val, None)
 
             if (not folder):
-                return (action_result.set_status(phantom.APP_ERROR,
-                    "Information for folder '{0}' not found in response, possibly not present".format(curr_valid_folder_path)), None)
+                message = "Information for folder '{0}' not found in response, possibly not present".format(
+                        curr_valid_folder_path)
+                return (action_result.set_status(phantom.APP_ERROR, message), None)
 
             folder_id = folder.get('t:FolderId', {}).get('@Id')
 
@@ -1994,7 +2043,8 @@ class EWSOnPremConnector(BaseConnector):
             except Exception as e:
                 error_code, error_msg = self._get_error_message_from_exception(e)
                 error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-                return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. {0}'.format(error_text))
+                return action_result.set_status(phantom.APP_ERROR,
+                        'Parameter validation failed for the ID. {0}'.format(error_text))
             response_checker = self._check_move_response
 
         ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
@@ -2013,7 +2063,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
         except Exception:
-            return action_result.set_status(phantom.APP_SUCCESS, "Email {0} successfully, but its message ID could not be retrieved".format(action_verb))
+            return action_result.set_status(phantom.APP_SUCCESS,
+                    "Email {0} successfully, but its message ID could not be retrieved".format(action_verb))
 
         action_result.add_data({'new_email_id': new_email_id})
 
@@ -2242,7 +2293,8 @@ class EWSOnPremConnector(BaseConnector):
 
             if (data):
                 email_headers_ret.append(data)
-                ret_val, email_headers_info, attach_meta_info = self._extract_ext_properties_from_attachments(curr_attachment_data)
+                ret_val, email_headers_info, attach_meta_info = self._extract_ext_properties_from_attachments(
+                        curr_attachment_data)
                 if (email_headers_info):
                     email_headers_ret.extend(email_headers_info)
                 if (attach_meta_info):
@@ -2251,10 +2303,12 @@ class EWSOnPremConnector(BaseConnector):
                 # This is a file attachment, we most probably already have the info from the resp_json
                 # But update it with the call to the xml_get_attachments_data(..) There might be more info
                 # that has to be updated
-                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment', internet_message_id, email_guid)
+                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'],
+                        't:FileAttachment', internet_message_id, email_guid)
                 if (curr_attach_meta_info):
                     # find the attachment in the list and update it
-                    matched_meta_info = list([x for x in attach_meta_info_ret if x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2')])
+                    matched_meta_info = list([x for x in attach_meta_info_ret if x.get(
+                            'attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2')])
                     if (matched_meta_info):
                         matched_meta_info[0].update(curr_attach_meta_info)
 
@@ -2322,7 +2376,8 @@ class EWSOnPremConnector(BaseConnector):
                 if (not property_tag):
                     continue
 
-                if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
+                if property_tag.lower() in [ews_soap.EXTENDED_PROPERTY_HEADERS.lower(),
+                        ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()]:
                     email_headers = self._extract_email_headers(value)
                     if (email_headers is not None):
                         headers.update(email_headers)
@@ -2413,8 +2468,8 @@ class EWSOnPremConnector(BaseConnector):
                 "extract_urls": True })
 
         process_email = ProcessEmail()
-        return process_email.process_email(self, rfc822_email, email_id, config, epoch, target_container_id, email_headers=email_header_list,
-                attachments_data=attach_meta_info_list)
+        return process_email.process_email(self, rfc822_email, email_id, config, epoch,
+                target_container_id, email_headers=email_header_list, attachments_data=attach_meta_info_list)
 
     def _process_email_id(self, email_id, target_container_id=None, flag=False):
 
@@ -2469,7 +2524,8 @@ class EWSOnPremConnector(BaseConnector):
         if (manner == EWS_INGEST_LATEST_EMAILS):
             order = "Descending"
 
-        data = ews_soap.xml_get_email_ids(poll_user, order=order, offset=offset, max_emails=max_emails, folder_id=folder_id, restriction=restriction)
+        data = ews_soap.xml_get_email_ids(poll_user, order=order, offset=offset,
+                max_emails=max_emails, folder_id=folder_id, restriction=restriction)
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_find_response)
 
@@ -2491,7 +2547,8 @@ class EWSOnPremConnector(BaseConnector):
 
         if (items is None):
             self.debug_print("Items is None")
-            return (action_result.set_status(phantom.APP_SUCCESS, 'Result does not contain items key. Possibly no emails in folder'), None)
+            return action_result.set_status(phantom.APP_SUCCESS,
+                    'Result does not contain items key. Possibly no emails in folder'), None
 
         items = resp_json.get('t:Items', {}).get('t:Message', [])
 
@@ -2522,12 +2579,14 @@ class EWSOnPremConnector(BaseConnector):
             except Exception as e:
                 error_code, error_msg = self._get_error_message_from_exception(e)
                 error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-                self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. {2}".format(i, email_id, error_text))
+                self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. {2}".format(i,
+                        email_id, error_text))
 
                 failed_emails_parsing_list.append(email_id)
 
         if len(failed_emails_parsing_list) == len(email_ids):
-            return action_result.set_status(phantom.APP_ERROR, "ErrorExp in _process_email_id for all the email IDs: {}".format(str(failed_emails_parsing_list)))
+            message = "ErrorExp in _process_email_id for all the email IDs: {}".format(str(failed_emails_parsing_list))
+            return action_result.set_status(phantom.APP_ERROR, message)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -2542,7 +2601,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             max_emails = int(param[phantom.APP_JSON_CONTAINER_COUNT])
             if max_emails == 0 or (max_emails and (not str(max_emails).isdigit() or max_emails <= 0)):
-                return action_result.set_status(phantom.APP_ERROR, "Please provide a valid non-zero positive integer value in 'container_count' parameter")
+                return action_result.set_status(phantom.APP_ERROR,
+                        "Please provide a valid non-zero positive integer value in 'container_count' parameter")
         except Exception:
             return self.set_status(phantom.APP_ERROR, "Invalid container count")
 
@@ -2586,7 +2646,7 @@ class EWSOnPremConnector(BaseConnector):
 
         config = self.get_config()
 
-        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'
+        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'  # noqa: E501
 
         date_time_string = self._state.get(emails_after_key)
 
@@ -2645,13 +2705,15 @@ class EWSOnPremConnector(BaseConnector):
 
         # Fetch first_run_max_emails for asset configuration
         first_run_max_emails = config[EWS_JSON_FIRST_RUN_MAX_EMAILS]
-        ret_val, first_run_max_emails = self._validate_integer(action_result, first_run_max_emails, "Maximum Emails to Poll First Time")
+        ret_val, first_run_max_emails = self._validate_integer(action_result,
+                first_run_max_emails, "Maximum Emails to Poll First Time")
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         # Fetch max_containers for asset configuration
         max_containers = config[EWS_JSON_POLL_MAX_CONTAINERS]
-        ret_val, max_containers = self._validate_integer(action_result, max_containers, "Maximum Containers for Scheduled Polling")
+        ret_val, max_containers = self._validate_integer(action_result,
+                max_containers, "Maximum Containers for Scheduled Polling")
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
@@ -2676,7 +2738,8 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.get_status()
 
             if not email_infos:
-                return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the restriction: {}".format(str(restriction)))
+                return action_result.set_status(phantom.APP_SUCCESS,
+                        "No emails found for the restriction: {}".format(str(restriction)))
 
             if len(email_infos) < max_emails:
                 self._less_data = True
@@ -2691,7 +2754,8 @@ class EWSOnPremConnector(BaseConnector):
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
-            max_emails, total_ingested = self._manage_data_duplication(email_infos, email_index, max_emails, total_ingested, limit)
+            max_emails, total_ingested = self._manage_data_duplication(email_infos,
+                    email_index, max_emails, total_ingested, limit)
             if not max_emails:
                 break
 
@@ -2741,8 +2805,9 @@ class EWSOnPremConnector(BaseConnector):
 
 if __name__ == '__main__':
 
-    import pudb
     import argparse
+
+    import pudb
 
     pudb.set_trace()
     in_json = None
