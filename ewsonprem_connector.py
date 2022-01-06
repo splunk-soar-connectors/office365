@@ -2894,7 +2894,9 @@ class EWSOnPremConnector(BaseConnector):
                 r_json = json.loads(response.text)
                 results.extend(r_json["d"]["results"])
                 trace_url = r_json["d"].get("__next")
-                if not trace_url or len(results) >= maxi:
+
+                # Break if we got all the data we want or if there is no more data to fetch
+                if not trace_url or len(results) > maxi:
                     break
             except Exception as e:
                 # Log the exception details
