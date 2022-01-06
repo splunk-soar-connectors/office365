@@ -2914,7 +2914,7 @@ class EWSOnPremConnector(BaseConnector):
             for email_dict in results:
                 email_dict['MessageId'] = email_dict['MessageId'].replace('>', '').replace('<', '')
 
-        results = results[mini:maxi+1]
+        results = results[mini:maxi + 1]
         action_result.add_data(results)
 
         summary = action_result.update_summary({})
