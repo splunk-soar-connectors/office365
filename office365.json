@@ -3484,7 +3484,7 @@
                 {
                     "data_path": "action_result.data.*.*.MessageId",
                     "data_type": "string",
-                    "column_name": "Message ID",
+                    "column_name": "Internet Message ID",
                     "column_order": 2,
                     "contains": [
                         "internet message id"
