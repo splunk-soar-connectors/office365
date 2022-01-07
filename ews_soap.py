@@ -1,15 +1,23 @@
 # File: ews_soap.py
 #
-# Copyright (c) 2016-2021 Splunk Inc.
+# Copyright (c) 2016-2022 Splunk Inc.
 #
-# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
-# without a valid written license from Splunk Inc. is PROHIBITED.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+#
+#
 # http://lxml.de/tutorial.html
-from lxml.builder import ElementMaker
-from lxml import etree
 from bs4 import UnicodeDammit
+from lxml import etree
+from lxml.builder import ElementMaker
 
 # The name spaces
 SOAP_ENVELOPE_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope/"
@@ -63,7 +71,8 @@ def xml_get_restriction(greater_than_time=None, message_id=None):
         filters.append(greater_than_time)
 
     if (message_id):
-        message_id = T.IsNotEqualTo(T.FieldURI({'FieldURI': 'item:ItemId'}), T.FieldURIOrConstant(T.Constant({'Value': message_id})))
+        message_id = T.IsNotEqualTo(T.FieldURI({'FieldURI': 'item:ItemId'}),
+                T.FieldURIOrConstant(T.Constant({'Value': message_id})))
         filters.append(message_id)
 
     if (not filters):
@@ -130,7 +139,8 @@ def xml_get_resolve_names(email):
     https://msdn.microsoft.com/en-us/library/office/aa563518(v=exchg.150).aspx
     """
 
-    return M.ResolveNames({'ReturnFullContactData': "true"}, M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8')))
+    return M.ResolveNames({'ReturnFullContactData': "true"},
+            M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8')))
 
 
 def get_expand_dl(email):
@@ -220,7 +230,8 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
+            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e',
+                    'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
@@ -261,7 +272,8 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
     return find_item
 
 
-def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, int_msg_id=None, restriction=None, email_range="0-10"):
+def get_search_request_filter(folder_ids, subject=None, sender=None, body=None,
+        int_msg_id=None, restriction=None, email_range="0-10"):
     """
     Link for Restriction node
     https://msdn.microsoft.com/en-us/library/office/aa563791(v=exchg.150).aspx
@@ -282,7 +294,8 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
+            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e',
+                    'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
