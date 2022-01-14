@@ -1300,7 +1300,6 @@ class ProcessEmail(object):
         return (phantom.APP_SUCCESS, ret_val)
 
     def _set_sdi(self, input_dict):
-
         if ('source_data_identifier' in input_dict):
             del input_dict['source_data_identifier']
 
@@ -1342,6 +1341,12 @@ class ProcessEmail(object):
             err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self._base_connector.debug_print('Error occurred in _create_dict_hash. {0}'.format(err))
             return None
+
+        fips_enabled = self._base_connector._get_fips_enabled()
+        # if fips is not enabled, we should continue with our existing md5 usage for generating SDIs
+        # to not impact existing customers
+        if (not fips_enabled):
+            return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
 
         return hashlib.sha256(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
 

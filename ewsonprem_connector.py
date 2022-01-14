@@ -2590,8 +2590,22 @@ class EWSOnPremConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
-    def _poll_now(self, param):
+    def _get_fips_enabled(self, action_result=None):
+        if (not action_result):
+            action_result = ActionResult()
+        temp_base_url = self.get_phantom_base_url()
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/system_settings?sections[\"fips\"]')
+        
+        if (resp_json.get("fips")):
+            is_fips_enabled = resp_json.get("fips").get("enabled")
+            if (is_fips_enabled):
+                self.debug_print('fips is enabled')
+                return True
+        
+        self.debug_print('fips is not enabled')
+        return False
 
+    def _poll_now(self, param):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         # Get the maximum number of emails that we can pull
