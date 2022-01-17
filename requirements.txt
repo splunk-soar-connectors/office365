@@ -3,7 +3,6 @@ compoundfiles==0.3
 compressed_rtf==1.0.6
 Django==3.2.11
 lxml==4.6.3
-ntlm_auth==1.0.5
 outlookmsgfile==0.1.0
 python-magic==0.4.18
 requests==2.25.0
