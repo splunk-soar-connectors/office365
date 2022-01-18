@@ -1342,14 +1342,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print('Error occurred in _create_dict_hash. {0}'.format(err))
             return None
 
-        action_result, fips_enabled = self._base_connector._get_fips_enabled()
-
-        # if the rest/system_settings call fails, we do not know if the platform is in fips mode or not
-        # we should fail to avoid using the wrong hashing algorithm
-        if (not action_result):
-            self._base_connector.debug_print('Error occurred in _create_dict_hash. Failed to retrieve system_settings')
-            return None
-
+        fips_enabled = self._base_connector._get_fips_enabled()
         # if fips is not enabled, we should continue with our existing md5 usage for generating SDIs
         # to not impact existing customers
         if (not fips_enabled):

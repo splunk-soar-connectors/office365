@@ -2590,23 +2590,18 @@ class EWSOnPremConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
-    def _get_fips_enabled(self, action_result=None):
-        if (not action_result):
-            action_result = ActionResult()
-        temp_base_url = self.get_phantom_base_url()
-        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/system_settings?sections[\"fips\"]')
+    def _get_fips_enabled(self):
+        try:
+            from phantom_common.install_info import is_fips_enabled
+        except ImportError:
+            return False
 
-        if (phantom.is_fail(ret_val)):
-            return (False, False)
-
-        if (resp_json.get("fips")):
-            is_fips_enabled = resp_json.get("fips").get("enabled")
-            if (is_fips_enabled):
-                self.debug_print('fips is enabled')
-                return (True, True)
-
-        self.debug_print('fips is not enabled')
-        return (True, False)
+        fips_enabled = is_fips_enabled()
+        if (fips_enabled):
+            self.debug_print('fips is enabled')
+        else:
+            self.debug_print('fips is not enabled')
+        return fips_enabled
 
     def _poll_now(self, param):
         action_result = self.add_action_result(ActionResult(dict(param)))
