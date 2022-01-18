@@ -29,7 +29,7 @@
             },
             {
                 "module": "ntlm_auth",
-                "input_file": "ntlm_auth/ntlm_auth-1.0.5-py2.py3-none-any.whl"
+                "input_file": "ntlm_auth/ntlm_auth-1.5.0-py2.py3-none-any.whl"
             },
             {
                 "module": "outlookmsgfile",
