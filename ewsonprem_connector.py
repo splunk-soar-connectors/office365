@@ -2597,10 +2597,10 @@ class EWSOnPremConnector(BaseConnector):
             return False
 
         fips_enabled = is_fips_enabled()
-        if (fips_enabled):
-            self.debug_print('fips is enabled')
+        if fips_enabled:
+            self.debug_print('FIPS is enabled')
         else:
-            self.debug_print('fips is not enabled')
+            self.debug_print('FIPS is not enabled')
         return fips_enabled
 
     def _poll_now(self, param):
