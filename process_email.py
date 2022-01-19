@@ -33,6 +33,8 @@ import phantom.rules as ph_rules
 import phantom.utils as ph_utils
 from bs4 import BeautifulSoup, UnicodeDammit
 from requests.structures import CaseInsensitiveDict
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added
@@ -273,6 +275,13 @@ class ProcessEmail(object):
         else:
             # Parse it as a text file
             uris = self._find_uris_in_text(file_data)
+
+        for uri in uris:
+            try:
+                validate_url = URLValidator(uri)
+                validate_url(uri)
+            except ValidationError:
+                uris.remove(uri)
 
         if self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
             # add the uris to the urls
