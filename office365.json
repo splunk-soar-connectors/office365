@@ -9,7 +9,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.8.4",
+    "app_version": "2.8.5",
     "utctime_updated": "2022-01-19T04:31:28.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
