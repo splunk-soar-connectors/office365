@@ -4,14 +4,13 @@ Copyright (c) 2016-2022 Splunk Inc.
 Third-party Software Attributions:
 
 Library: Django
-Version: 3.2.5
+Version: 3.2.11
 License: BSD 3
-License: Python 2.0
 0.9.0 thru 1.2              1991-1995   CWI         yes
 1.3 thru 1.5.2  1.2         1995-1999   CNRI        yes
+2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Python Software Foundation;
 Copyright 1991-1995 Stichting Mathematisch Centrum Amsterdam
 Copyright 2001 Python Software Foundation; All Rights Reserved
-Copyright 2012-2020 ,
 Copyright Django Software Foundation and individual contributors
 
 Library: beautifulsoup4
@@ -40,6 +39,11 @@ Library: requests_ntlm
 Version: 1.0.0
 License: ISC
 Unknown copyright
+
+Library: six
+Version: 1.15.0
+License: MIT
+Copyright 2010-2020 Benjamin Peterson
 
 Library: xmltodict
 Version: 0.12.0
