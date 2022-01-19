@@ -1033,7 +1033,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Unable to parse the range. Please specify the range as min_offset-max_offset")
 
-        if (mini < 0) or (maxi < 0):
+        if mini < 0 or maxi < 0:
             return action_result.set_status(phantom.APP_ERROR, "Invalid min or max offset value specified in range")
 
         if mini > maxi:
@@ -1082,7 +1082,7 @@ class EWSOnPremConnector(BaseConnector):
 
         num_folder_ids = len(folder_infos)
 
-        self.save_progress('Will be searching in {0} folder{1}', num_folder_ids, 's' if (num_folder_ids > 1) else '')
+        self.save_progress('Will be searching in {0} folder{1}', num_folder_ids, 's' if num_folder_ids > 1 else '')
 
         for i, folder_info in enumerate(folder_infos):
 
@@ -1678,7 +1678,7 @@ class EWSOnPremConnector(BaseConnector):
         category = param.get('category')
         subject = param.get('subject')
 
-        if (subject is None) and (category is None):
+        if subject is None and category is None:
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
 
         # do a get on the message to get the change id
@@ -1842,7 +1842,7 @@ class EWSOnPremConnector(BaseConnector):
         # things less confusing for users.
         # value = value.replace('\\', '/')
 
-        if (not value):
+        if not value:
             return ''
 
         try:
@@ -2063,7 +2063,7 @@ class EWSOnPremConnector(BaseConnector):
 
         new_email_id = None
 
-        action_verb = 'copied' if (action == "copy") else 'moved'
+        action_verb = 'copied' if action == "copy" else 'moved'
 
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
@@ -2381,8 +2381,8 @@ class EWSOnPremConnector(BaseConnector):
                 if not property_tag:
                     continue
 
-                if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or \
-                        (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
+                if property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower() or \
+                        property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower():
                     email_headers = self._extract_email_headers(value)
                     if email_headers is not None:
                         headers.update(email_headers)
@@ -2572,7 +2572,7 @@ class EWSOnPremConnector(BaseConnector):
         if email_ids is None:
             return action_result.set_status(phantom.APP_ERROR, "Did not get access to email IDs")
 
-        self.save_progress("Got {0} email{1}".format(len(email_ids), '' if (len(email_ids) == 1) else 's'))
+        self.save_progress("Got {0} email{1}".format(len(email_ids), '' if len(email_ids) == 1 else 's'))
 
         failed_emails_parsing_list = []
         for i, email_id in enumerate(email_ids):
@@ -2629,7 +2629,7 @@ class EWSOnPremConnector(BaseConnector):
 
             ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result)
 
-            if (phantom.is_fail(ret_val)) or email_infos is None:
+            if phantom.is_fail(ret_val) or email_infos is None:
                 return action_result.get_status()
 
             if not email_infos:
@@ -2650,7 +2650,7 @@ class EWSOnPremConnector(BaseConnector):
 
         config = self.get_config()
 
-        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'
+        emails_after_key = 'last_ingested_format' if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS else 'last_email_format'
 
         date_time_string = self._state.get(emails_after_key)
 
@@ -2736,7 +2736,7 @@ class EWSOnPremConnector(BaseConnector):
 
             ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction)
 
-            if (phantom.is_fail(ret_val)) or email_infos is None:
+            if phantom.is_fail(ret_val) or email_infos is None:
                 return action_result.get_status()
 
             if not email_infos:
@@ -2747,7 +2747,7 @@ class EWSOnPremConnector(BaseConnector):
 
             # if the config is for latest emails, then the 0th is the latest in the list returned, else
             # The last email is the latest in the list returned
-            email_index = 0 if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else -1
+            email_index = 0 if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS else -1
 
             email_ids = [x['id'] for x in email_infos]
             ret_val = self._process_email_ids(email_ids, action_result)

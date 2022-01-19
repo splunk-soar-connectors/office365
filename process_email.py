@@ -246,7 +246,7 @@ class ProcessEmail(object):
 
     def _extract_urls_domains(self, file_data, urls, domains):
 
-        if (not self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]) and (not self._config[PROC_EMAIL_JSON_EXTRACT_URLS]):
+        if not self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS] and not self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
             return
 
         # try to load the email
@@ -263,7 +263,7 @@ class ProcessEmail(object):
         links = soup.find_all(href=True)
         if links:
             # it's html, so get all the urls
-            uris = [x['href'] for x in links if (not x['href'].startswith('mailto:'))]
+            uris = [x['href'] for x in links if not x['href'].startswith('mailto:')]
             # work on the text part of the link, they might be http links different from the href
             # and were either missed by the uri_regexc while parsing text or there was no text counterpart
             # in the email
@@ -294,7 +294,7 @@ class ProcessEmail(object):
                     domains.add(domain)
             # work on any mailto urls if present
             if links:
-                mailtos = [x['href'] for x in links if (x['href'].startswith('mailto:'))]
+                mailtos = [x['href'] for x in links if x['href'].startswith('mailto:')]
                 for curr_email in mailtos:
                     domain = curr_email[curr_email.find('@') + 1:]
                     if domain and (not self._is_ip(domain)):
@@ -357,7 +357,7 @@ class ProcessEmail(object):
             file_data = f.read()
 
         file_data = self._base_connector._get_string(file_data, 'utf-8')
-        if (file_data is None) or (len(file_data) == 0):
+        if file_data is None or len(file_data) == 0:
             return phantom.APP_ERROR
 
         # base64 decode it if possible
@@ -476,7 +476,7 @@ class ProcessEmail(object):
         encoded_strings = re.findall(r'=\?.*?\?=', input_str, re.I)
 
         # return input_str as is, no need to do any conversion
-        if (not encoded_strings):
+        if not encoded_strings:
             return input_str
 
         # get the decoded strings
@@ -541,7 +541,7 @@ class ProcessEmail(object):
             process_as_body = True
         # if content disposition is inline
         elif content_disp.lower().strip() == 'inline':
-            if ('text/html' in content_type) or ('text/plain' in content_type):
+            if 'text/html' in content_type or 'text/plain' in content_type:
                 process_as_body = True
 
         if not process_as_body:
@@ -657,7 +657,7 @@ class ProcessEmail(object):
             return phantom.APP_SUCCESS
 
         # is this another email as an attachment
-        if (content_type is not None) and (content_type.find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) != -1):
+        if content_type is not None and content_type.find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) != -1:
             return phantom.APP_SUCCESS
 
         # This is an attachment and it's not an email
@@ -752,7 +752,7 @@ class ProcessEmail(object):
 
         # if the header did not contain any email addresses then ignore this artifact
         message_id = headers.get('message-id')
-        if (not cef_artifact) and (message_id is None):
+        if not cef_artifact and message_id is None:
             return 0
 
         cef_types.update({'fromEmail': ['email'], 'toEmail': ['email']})
@@ -956,11 +956,11 @@ class ProcessEmail(object):
 
         email_id = str(email_id)
 
-        if (self._base_connector.get_app_id() == EXCHANGE_ONPREM_APP_ID) and (email_id.endswith('=')):
+        if self._base_connector.get_app_id() == EXCHANGE_ONPREM_APP_ID and email_id.endswith('='):
             self._email_id_contains = ["exchange email id"]
-        elif (self._base_connector.get_app_id() == OFFICE365_APP_ID) and (email_id.endswith('=')):
+        elif self._base_connector.get_app_id() == OFFICE365_APP_ID and email_id.endswith('='):
             self._email_id_contains = ["office 365 email id"]
-        elif (self._base_connector.get_app_id() == IMAP_APP_ID) and (email_id.isdigit()):
+        elif self._base_connector.get_app_id() == IMAP_APP_ID and email_id.isdigit():
             self._email_id_contains = ["imap email id"]
         elif ph_utils.is_sha1(email_id):
             self._email_id_contains = ["vault id"]
@@ -999,7 +999,7 @@ class ProcessEmail(object):
             for curr_header in email_headers:
                 self._headers_from_ews.append(CaseInsensitiveDict(curr_header))
 
-        if (config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]) and (attachments_data is not None):
+        if config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS] and attachments_data is not None:
             self._attachments_from_ews = attachments_data
 
         try:
@@ -1325,7 +1325,7 @@ class ProcessEmail(object):
         curr_email_guid = None
 
         if cef is not None:
-            if ('parentGuid' in cef) or ('emailGuid' in cef):
+            if 'parentGuid' in cef or 'emailGuid' in cef:
                 # make a copy since the dictionary will have to be different
                 input_dict_hash = deepcopy(input_dict)
                 cef = input_dict_hash['cef']
