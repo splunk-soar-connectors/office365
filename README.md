@@ -2,7 +2,7 @@
 # EWS for Office 365
 
 Publisher: Splunk  
-Connector Version: 2\.8\.4  
+Connector Version: 2\.8\.7  
 Product Vendor: Microsoft  
 Product Name: Office 365  
 Product Version Supported (regex): "\.\*"  
