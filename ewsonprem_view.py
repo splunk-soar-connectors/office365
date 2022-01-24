@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 
 def _clean_email_text(email_text):
 
-    if not email_text:
+    if (not email_text):
         return email_text
 
     email_text = re.sub('\r+', '\n', email_text)
@@ -34,19 +34,19 @@ def _process_data(data):
     email_body = data.get('t_Body', {}).get('#text')
     data['email_body'] = email_body
 
-    if not email_body:
+    if (not email_body):
         return
 
     # try to load the email
     try:
         soup = BeautifulSoup(email_body, "html.parser")
         data['email_text'] = _clean_email_text(soup.get_text())
-    except Exception:
+    except:
         data['email_text'] = None
 
     recipients_mailbox = data.get('t_ToRecipients', {}).get('t_Mailbox')
 
-    if recipients_mailbox:
+    if (recipients_mailbox):
         recipients_emails = [x.get('t_EmailAddress') for x in recipients_mailbox]
         data['recipients_emails'] = ', '.join(recipients_emails)
 
@@ -63,18 +63,18 @@ def _get_ctx_result_resolve_names(result):
 
     ctx_result['param']['contains'] = 'exchange alias'
 
-    if ph_utils.is_email(ctx_result['param']['email']):
+    if (ph_utils.is_email(ctx_result['param']['email'])):
         ctx_result['param']['contains'] = 'email'
 
     message = result.get_message()
 
     # if status is failure then add the message
-    if not ctx_result['status']:
+    if (not ctx_result['status']):
         ctx_result['message'] = message
 
     data = result.get_data()
 
-    if not data:
+    if (not data):
         return ctx_result
 
     for curr_data in data:
@@ -99,17 +99,17 @@ def _get_ctx_result(result):
     message = result.get_message()
 
     # if status is failure then add the message
-    if not ctx_result['status']:
+    if (not ctx_result['status']):
         ctx_result['message'] = message
 
     data = result.get_data()
 
-    if not data:
+    if (not data):
         return ctx_result
 
     data = data[0]
 
-    if data:
+    if (data):
         _process_data(data)
 
     ctx_result['data'] = data
@@ -124,7 +124,7 @@ def display_email(provides, all_app_runs, context):
         for result in action_results:
 
             ctx_result = _get_ctx_result(result)
-            if not ctx_result:
+            if (not ctx_result):
                 continue
 
             results.append(ctx_result)
@@ -139,7 +139,7 @@ def display_resolve_names(provides, all_app_runs, context):
         for result in action_results:
 
             ctx_result = _get_ctx_result_resolve_names(result)
-            if not ctx_result:
+            if (not ctx_result):
                 continue
 
             results.append(ctx_result)

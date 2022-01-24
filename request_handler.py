@@ -28,7 +28,7 @@ def handle_request(request, path_parts):
 def _get_dir_name_from_app_name(app_name):
     app_name = ''.join([x for x in app_name if x.isalnum()])
     app_name = app_name.lower()
-    if not app_name:
+    if (not app_name):
         app_name = "app_for_phantom"
     return app_name
 
@@ -63,7 +63,11 @@ class Office365RequestHandler():
             'client_secret': client_secret
         }
         try:
-            r = requests.post('{}/token'.format(request_url), data=body, proxies=proxy)  # nosemgrep
+            r = requests.post(
+                request_url + '/token',
+                data=body,
+                proxies=proxy
+            )
             r.raise_for_status()
             resp_json = r.json()
         except Exception as e:
@@ -74,7 +78,7 @@ class Office365RequestHandler():
         state['oauth_token'] = resp_json
         self._rsh.save_state(state)
 
-        return True, None
+        return (True, None)
 
     def handle_request(self):
         try:
@@ -90,7 +94,7 @@ class Office365RequestHandler():
 
             ret_val, http_object = self._get_oauth_token(code)
 
-            if ret_val is False:
+            if (ret_val is False):
                 return http_object
 
             return HttpResponse("You can now close this page", content_type="text/plain")
@@ -98,7 +102,7 @@ class Office365RequestHandler():
             return self._return_error("Error handling request: {}".format(str(e)), 400)
 
 
-class RequestStateHandler:
+class RequestStateHandler():
     def __init__(self, asset_id):
         asset_id = str(asset_id)
         if asset_id and asset_id.isalnum():
@@ -133,7 +137,7 @@ class RequestStateHandler:
         state_file = self._get_state_file()
         try:
             os.remove(state_file)
-        except Exception:
+        except:
             pass
 
         return True
@@ -144,7 +148,7 @@ class RequestStateHandler:
         try:
             with open(state_file, 'w+') as fp:
                 fp.write(json.dumps(state))
-        except Exception:
+        except:
             pass
 
         return True
@@ -156,7 +160,7 @@ class RequestStateHandler:
             with open(state_file, 'r') as fp:
                 in_json = fp.read()
                 state = json.loads(in_json)
-        except Exception:
+        except:
             pass
 
         state = self._decrypt_state(state)
