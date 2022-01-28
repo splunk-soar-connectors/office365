@@ -166,36 +166,19 @@ class EWSOnPremConnector(BaseConnector):
     def _get_ping_fed_request_xml(self, config):
 
         try:
-            ret_val = "<s:Envelope xmlns:s='http://www.w3.org/2003/05/soap-envelope' " \
-                "xmlns:wsse='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd' "\
-                "xmlns:u='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd'>" \
-                "<s:Header><wsse:Action s:mustUnderstand='1'>http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</wsse:Action>" \
-                "<wsse:messageID>urn:uuid:7f45785a-9691-451e-b3ff-30ab463af64c</wsse:messageID>" \
-                "<wsse:ReplyTo><wsse:Address>http://www.w3.org/2005/08/addressing/anonymous</wsse:Address></wsse:ReplyTo>" \
-                "<wsse:To s:mustUnderstand='1'>{}</wsse:To>" \
-                "<o:Security s:mustUnderstand='1' xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>" \
-                "<u:Timestamp><u:Created>".format(config[EWS_JSON_FED_PING_URL].split('?')[0])
-
             dt_now = datetime.utcnow()
             dt_plus = dt_now + timedelta(minutes=10)
 
             dt_now_str = "{0}Z".format(dt_now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
             dt_plus_str = "{0}Z".format(dt_plus.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
-            ret_val = "{}{}</u:Created>".format(ret_val, dt_now_str)
-            ret_val = "{}<u:Expires>{}</u:Expires></u:Timestamp>".format(ret_val, dt_plus_str)
-
-            ret_val = "{}<o:UsernameToken>".format(ret_val)
-            ret_val = "{}<wsse:Username>{}</wsse:Username>".format(ret_val, config[phantom.APP_JSON_USERNAME])
-            ret_val = "{}<o:Password>{}</o:Password>".format(ret_val, config[phantom.APP_JSON_PASSWORD])
-            ret_val = "{}</o:UsernameToken></o:Security></s:Header>".format(ret_val)
-            ret_val = "{}<s:Body><trust:RequestSecurityToken xmlns:trust='http://docs.oasis-open.org/ws-sx/ws-trust/200512'>" \
-                "<wsp:AppliesTo xmlns:wsp='http://schemas.xmlsoap.org/ws/2004/09/policy'>" \
-                "<wsse:EndpointReference><wsse:Address>urn:federation:MicrosoftOnline</wsse:Address></wsse:EndpointReference>" \
-                "</wsp:AppliesTo>" \
-                "<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>" \
-                "<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>" \
-                "</trust:RequestSecurityToken></s:Body></s:Envelope>".format(ret_val)
+            ret_val = EWS_FED_REQUEST_XML.format(
+                ping_url=config[EWS_JSON_FED_PING_URL].split('?')[0],
+                created_date=dt_now_str,
+                expiry_date=dt_plus_str,
+                username=config[phantom.APP_JSON_USERNAME],
+                password=config[phantom.APP_JSON_PASSWORD]
+            )
         except Exception as e:
             return None, "Unable to create request xml data. Error: {0}".format(str(e))
 
@@ -724,15 +707,8 @@ class EWSOnPremConnector(BaseConnector):
         return error_details
 
     def _create_aqs(self, subject, sender, body):
-        aqs_str = ""
-        if subject:
-            aqs_str = "{}subject:\"{}\" ".format(aqs_str, subject)
-        if sender:
-            aqs_str = "{}from:\"{}\" ".format(aqs_str, sender)
-        if body:
-            aqs_str = "{}body:\"{}\" ".format(aqs_str, body)
-
-        return aqs_str.strip()
+        aqs = {'subject': subject, 'from': sender, 'body': body}
+        return ' '.join('{}:"{}"'.format(key, value) for key, value in aqs.items() if value)
 
     # TODO: Should change these function to be parameterized, instead of one per type of request
     def _check_get_attachment_response(self, resp_json):
@@ -2594,6 +2570,19 @@ class EWSOnPremConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
+    def _get_fips_enabled(self):
+        try:
+            from phantom_common.install_info import is_fips_enabled
+        except ImportError:
+            return False
+
+        fips_enabled = is_fips_enabled()
+        if fips_enabled:
+            self.debug_print('FIPS is enabled')
+        else:
+            self.debug_print('FIPS is not enabled')
+        return fips_enabled
+
     def _poll_now(self, param):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
@@ -2853,9 +2842,6 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        # Base url that we need to connect to
-        trace_url = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace"
-
         ret_val, filter_str = self._create_filter_string(action_result, param)
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -2882,6 +2868,7 @@ class EWSOnPremConnector(BaseConnector):
         username = config[phantom.APP_JSON_USERNAME].replace('/', '\\')
         auth = HTTPBasicAuth(username, password)
 
+        trace_url = EWS_TRACE_URL
         results = []
         while True:
             response = requests.get(trace_url, auth=auth, params=parameter)  # nosemgrep
