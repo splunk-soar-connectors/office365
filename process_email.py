@@ -32,9 +32,9 @@ import phantom.app as phantom
 import phantom.rules as ph_rules
 import phantom.utils as ph_utils
 from bs4 import BeautifulSoup, UnicodeDammit
-from requests.structures import CaseInsensitiveDict
-from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
+from requests.structures import CaseInsensitiveDict
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added
