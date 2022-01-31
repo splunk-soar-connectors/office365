@@ -276,9 +276,9 @@ class ProcessEmail(object):
             # Parse it as a text file
             uris = self._find_uris_in_text(file_data)
 
-        for uri in uris:
+        for uri in uris.copy():
             try:
-                validate_url = URLValidator(uri)
+                validate_url = URLValidator()
                 validate_url(uri)
             except ValidationError:
                 uris.remove(uri)
