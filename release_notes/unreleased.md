@@ -1,2 +1,3 @@
 **Unreleased**
-* Added validation for the extracted URL artifacts [PAPP-23436]
+* Added validation for the extraction of URL artifacts [PAPP-23436]
+* Fixed a bug for the extraction of the URL value from the src attribute

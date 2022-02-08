@@ -70,7 +70,6 @@ from request_handler import _get_dir_name_from_app_name
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
 os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
-from requests_ntlm import HttpNtlmAuth  # noqa
 
 
 class RetVal3(tuple):
@@ -81,10 +80,6 @@ class RetVal3(tuple):
 class RetVal2(tuple):
     def __new__(cls, val1, val2=None):
         return tuple.__new__(RetVal2, (val1, val2))
-
-
-OFFICE365_APP_ID = "a73f6d32-c9d5-4fec-b024-43876700daa6"
-EXCHANGE_ONPREM_APP_ID = "badc5252-4a82-4a6d-bc53-d1e503857124"
 
 
 class OAuth2TokenAuth(AuthBase):
@@ -665,14 +660,7 @@ class EWSOnPremConnector(BaseConnector):
             username = username.replace('/', '\\')
 
             self._session.auth = HTTPBasicAuth(username, password)
-
-            # depending on the app, it's either basic or NTML
-            if self.get_app_id() != OFFICE365_APP_ID:
-                self.save_progress("Using NTLM authentication")
-                # use NTLM (Exchange on Prem)
-                self._session.auth = HttpNtlmAuth(username, password)
-            else:
-                self.save_progress("Using HTTP Basic authentication")
+            self.save_progress("Using HTTP Basic authentication")
 
         if not self._session.auth:
             return self.set_status(phantom.APP_ERROR, message)
