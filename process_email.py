@@ -33,7 +33,6 @@ import phantom.app as phantom
 import phantom.rules as ph_rules
 import phantom.utils as ph_utils
 from bs4 import BeautifulSoup, UnicodeDammit
-from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from requests.structures import CaseInsensitiveDict
 
@@ -299,8 +298,6 @@ class ProcessEmail(object):
             try:
                 validate_url(uri)
                 validated_urls.append(uri)
-            except ValidationError:
-                pass
             except Exception:
                 pass
 
