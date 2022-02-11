@@ -6,6 +6,5 @@ git+https://github.com/phantomcyber/convert-outlook-msg-file.git@0.1.0 #outlookm
 lxml==4.6.3
 python-magic==0.4.18
 requests==2.25.0
-requests_ntlm==1.0.0
 six==1.15.0
 xmltodict==0.12.0
