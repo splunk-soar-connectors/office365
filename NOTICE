@@ -25,10 +25,10 @@ Version: 0.4.18
 License: MIT
 Copyright 2001-2014 Adam Hupp
 
-Library: requests_ntlm
-Version: 1.0.0
-License: ISC
-Unknown copyright
+Library: requests
+Version: 2.25.0
+License: Apache 2.0
+Kenneth Reitz
 
 Library: six
 Version: 1.15.0

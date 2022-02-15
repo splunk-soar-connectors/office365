@@ -52,6 +52,8 @@ EWSONPREM_SUCC_CONNECTIVITY_TEST = "Connectivity test passed"
 EWSONPREM_ERR_SERVER_CONNECTION = "Connection failed"
 EWSONPREM_ERR_FROM_SERVER = "API failed. Status code: {code}. Message: {message}"
 EWSONPREM_ERR_JSON_PARSE = "Unable to parse reply, raw string reply: '{raw_text}'"
+EWSONPREM_STATE_FILE_CORRUPT_ERR = "Error occurred while loading the state file due to its unexpected format. " \
+    "Resetting the state file with the default format. Please try again."
 
 EWSONPREM_MAX_END_OFFSET_VAL = 2147483646
 EWS_O365_RESOURCE = "https://outlook.office365.com"
