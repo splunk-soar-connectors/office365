@@ -609,11 +609,13 @@ class ProcessEmail(object):
                 curr_attach['should_ignore'] = True
 
         part_payload = part.get_payload(decode=True)
-        if not part_payload:
-            return phantom.APP_SUCCESS
         try:
-            with open(file_path, 'wb') as f:
-                f.write(part_payload)
+            if not part_payload:
+                _ = open(file_path, 'wb')
+                self._base_connector.debug_print("Payload not found, hence adding empty file")
+            else:
+                with open(file_path, 'wb') as f:
+                    f.write(part_payload)
         except IOError as e:
             error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
             try:
