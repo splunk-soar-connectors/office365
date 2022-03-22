@@ -1104,7 +1104,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return phantom.APP_SUCCESS, items_matched
 
-    def _run_query_aqs(self, param):
+    def _run_query(self, param):
         """ Action handler for the 'run query' action"""
 
         action_result = self.add_action_result(ActionResult(dict(param)))
@@ -2912,7 +2912,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Bunch if if..elif to process actions
         if action == self.ACTION_ID_RUN_QUERY:
-            ret_val = self._run_query_aqs(param)
+            ret_val = self._run_query(param)
         elif action == self.ACTION_ID_DELETE_EMAIL:
             ret_val = self._delete_email(param)
         elif action == self.ACTION_ID_UPDATE_EMAIL:
