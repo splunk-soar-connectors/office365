@@ -2,7 +2,7 @@
 # EWS for Office 365
 
 Publisher: Splunk  
-Connector Version: 2\.9\.0  
+Connector Version: 2\.10\.0  
 Product Vendor: Microsoft  
 Product Name: Office 365  
 Product Version Supported (regex): "\.\*"  
@@ -81,9 +81,20 @@ application on the Azure AD Admin Portal. Follow the steps outlined below to do 
         -   Mail.Read
         -   Mail.Read.All
         -   User.ReadBasic.All (Only required if the asset is configured to use impersonation)
+        -   After making these changes, click **Add permissions** at the bottom of the screen, then
+            click **Grant admin consent for Phantom** .
 
-    -   After making these changes, click **Add permissions** at the bottom of the screen, then
-        click **Grant admin consent for Phantom** .
+    -   Azure adds **Microsoft Graph's** User.Read permission to the app by default. Please confirm
+        its presence under the Configured permissions list. If not added, you can manually click on
+        **Add a permission** and follow the below steps:
+
+          
+
+        -   Under the **Select an API** section, select **Microsoft APIs** .
+        -   Select **Microsoft Graph** from the list.
+        -   Provide the **User.Read** Delegated permission to the app.
+        -   After making these changes, click **Add permissions** at the bottom of the screen, then
+            click **Grant admin consent for Phantom** .
 
 ### Phantom Asset for Azure
 
