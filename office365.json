@@ -9,7 +9,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.9.0",
+    "app_version": "2.10.0",
     "utctime_updated": "2022-01-19T04:31:28.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
@@ -19,7 +19,7 @@
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud January 21, 2022"
+        "Cloud March 28, 2022"
     ],
     "pip_dependencies": {
         "wheel": [
@@ -69,7 +69,7 @@
             },
             {
                 "module": "pytz",
-                "input_file": "wheels/shared/pytz-2021.3-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/pytz-2022.1-py2.py3-none-any.whl"
             },
             {
                 "module": "requests",
@@ -89,11 +89,11 @@
             },
             {
                 "module": "typing_extensions",
-                "input_file": "wheels/py3/typing_extensions-4.0.1-py3-none-any.whl"
+                "input_file": "wheels/py3/typing_extensions-4.1.1-py3-none-any.whl"
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.8-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
@@ -3787,7 +3787,7 @@
             },
             {
                 "module": "pytz",
-                "input_file": "wheels/shared/pytz-2021.3-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/pytz-2022.1-py2.py3-none-any.whl"
             },
             {
                 "module": "requests",
@@ -3807,7 +3807,7 @@
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.8-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
