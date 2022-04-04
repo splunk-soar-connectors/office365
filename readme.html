@@ -44,8 +44,15 @@ and limitations under the License.
               <li>Mail.Read</li>
               <li>Mail.Read.All</li>
               <li>User.ReadBasic.All (Only required if the asset is configured to use impersonation)</li>
+              <li>After making these changes, click <b>Add permissions</b> at the bottom of the screen, then click <b>Grant admin consent for Phantom</b>.</li>
             </ul>
-          <li>After making these changes, click <b>Add permissions</b> at the bottom of the screen, then click <b>Grant admin consent for Phantom</b>.</li>
+          <li>Azure adds <b>Microsoft Graph's</b> User.Read permission to the app by default. Please confirm its presence under the Configured permissions list. If not added, you can manually click on <b>Add a permission</b> and follow the below steps:</li>
+            <ul>
+              <li>Under the <b>Select an API</b> section, select <b>Microsoft APIs</b>.</li>
+              <li>Select <b>Microsoft Graph</b> from the list.</li>
+              <li>Provide the <b>User.Read</b> Delegated permission to the app.</li>
+              <li>After making these changes, click <b>Add permissions</b> at the bottom of the screen, then click <b>Grant admin consent for Phantom</b>.</li>
+            </ul>
         </ul>
     </ul>
     <h3>Phantom Asset for Azure</h3>
