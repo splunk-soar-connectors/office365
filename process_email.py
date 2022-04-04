@@ -611,8 +611,8 @@ class ProcessEmail(object):
         part_payload = part.get_payload(decode=True)
         try:
             if not part_payload:
-                _ = open(file_path, 'wb')
-                self._base_connector.debug_print("Payload not found, hence adding empty file")
+                with open(file_path, 'wb'):
+                    self._base_connector.debug_print("Payload not found, hence adding empty file")
             else:
                 with open(file_path, 'wb') as f:
                     f.write(part_payload)
