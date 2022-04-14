@@ -207,11 +207,12 @@ class EWSOnPremConnector(BaseConnector):
 
         # POST the request
         try:
-            r = requests.post(  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.post(
                 url,
                 data=fed_request_xml,
                 headers=headers,
-                verify=config[EWS_JSON_FED_VERIFY_CERT]
+                verify=config[EWS_JSON_FED_VERIFY_CERT],
+                timeout=DEFAULT_REQUEST_TIMEOUT
             )
         except Exception as e:
             return None, "Unable to send POST to ping url: {0}, Error: {1}".format(url, str(e))
@@ -231,7 +232,7 @@ class EWSOnPremConnector(BaseConnector):
         saml_assertion = xml_response[start_pos:end_pos]
 
         # base64 encode the assertion
-        saml_assertion_encoded = base64.encodestring(saml_assertion.encode('utf8'))
+        saml_assertion_encoded = base64.encodebytes(saml_assertion.encode('utf8'))
 
         # Now work on sending th assertion, to get the token
         url = '{0}/oauth2/token'.format(config[EWS_JSON_AUTH_URL])
@@ -253,7 +254,7 @@ class EWSOnPremConnector(BaseConnector):
         }
 
         try:
-            r = requests.post(url, data=data, headers=headers)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.post(url, data=data, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return None, "Failed to acquire token. POST request failed for {0}, Error: {1}".format(url, str(e))
 
@@ -278,6 +279,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _make_rest_calls_to_phantom(self, action_result, url):
 
+        # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
         r = requests.get(url, verify=False)  # nosemgrep
         if not r:
             message = 'Status Code: {0}'.format(r.status_code)
@@ -418,7 +420,7 @@ class EWSOnPremConnector(BaseConnector):
             'client_secret': client_secret
         }
         try:
-            r = requests.post(request_url, data=body)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.post(request_url, data=body, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return None, "Error refreshing token: {}".format(str(e))
 
@@ -467,6 +469,37 @@ class EWSOnPremConnector(BaseConnector):
 
         return ret
 
+    def _get_domain(self, username, client_req_id):
+        """ This method is used to obtain domain from the username.
+        :param username: Username
+        :param client_req_id: Request ID
+        :return: status, domain/message
+        """
+        headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
+
+        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, username)
+        params = {'api-version': '1.0'}
+
+        try:
+            r = self._session.get(url, params=params, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
+        except Exception as e:
+            return phantom.APP_ERROR, str(e)
+
+        if r.status_code != 200:
+            return phantom.APP_ERROR, r.text
+
+        resp_json = None
+        try:
+            resp_json = r.json()
+        except Exception as e:
+            return phantom.APP_ERROR, str(e)
+
+        domain = resp_json.get('domain_name')
+        if not domain:
+            return phantom.APP_ERROR, "Did not find domain in response. Cannot continue"
+
+        return phantom.APP_SUCCESS, domain
+
     def _set_azure_auth(self, config):
 
         ret_val, message = self._check_password(config)
@@ -487,27 +520,9 @@ class EWSOnPremConnector(BaseConnector):
 
         client_req_id = str(uuid.uuid4())
 
-        headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
-        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, username)
-        params = {'api-version': '1.0'}
-
-        try:
-            r = self._session.get(url, params=params, headers=headers)
-        except Exception as e:
-            return None, str(e)
-
-        if r.status_code != 200:
-            return None, r.text
-
-        resp_json = None
-        try:
-            resp_json = r.json()
-        except Exception as e:
-            return None, str(e)
-
-        domain = resp_json.get('domain_name')
-        if not domain:
-            return None, "Did not find domain in response. Cannot continue"
+        ret_val, domain = self._get_domain(username, client_req_id)
+        if phantom.is_fail(ret_val):
+            return None, domain
 
         headers = {'client-request-id': client_req_id, 'return-client-request-id': 'True'}
         url = "{0}/{1}/oauth2/token".format(EWS_LOGIN_URL, domain)
@@ -526,7 +541,7 @@ class EWSOnPremConnector(BaseConnector):
         }
 
         try:
-            r = self._session.post(url, params=params, headers=headers, data=data, verify=True)
+            r = self._session.post(url, params=params, headers=headers, data=data, verify=True, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return None, str(e)
 
@@ -617,6 +632,72 @@ class EWSOnPremConnector(BaseConnector):
             return False
         return True
 
+    def _extract_error(self, r):
+        """ This method generates an error message from the error response.
+        :param r: Response object
+        :return: error message
+        """
+        try:
+            error_json = r.json()
+            error = error_json["error"]
+            error_desc = error_json["error_description"]
+            error_text = "An error occurred. Error: {}, description: {}".format(error, error_desc)
+            return error_text
+        except Exception:
+            return r.text
+
+    def _set_client_cred_auth(self, config):
+        """ This method generates OAuth token using the client credentials grant.
+        :param config: Dictionary of asset configuration variables
+        :return: An OAuth2TokenAuth object in case of success otherwise, an error message
+        """
+        oauth_token = self._state.get("oauth_token", {})
+        if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and oauth_token:
+            if oauth_token.get('access_token') and oauth_token.get('token_type'):
+                return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
+
+        client_id = config.get("client_id")
+        client_secret = config.get("client_secret")
+        if not (client_id and client_secret):
+            return self.set_status(phantom.APP_ERROR, MISSING_CLIENT_CREDS)
+
+        client_req_id = str(uuid.uuid4())
+        username = config[phantom.APP_JSON_USERNAME]
+
+        ret_val, domain = self._get_domain(username, client_req_id)
+        if phantom.is_fail(ret_val):
+            return None, domain
+
+        url = "{0}/{1}/oauth2/token".format(EWS_LOGIN_URL, domain)
+
+        parsed_base_url = urlparse(self._base_url)
+        headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}
+
+        data = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "grant_type": "client_credentials",
+            "resource": "{0}://{1}".format(parsed_base_url.scheme, parsed_base_url.netloc),
+        }
+        self.debug_print("Requesting a new token for OAuth client credentials authentication")
+        try:
+            r = self._session.post(url, headers=headers, data=data, verify=True, timeout=DEFAULT_REQUEST_TIMEOUT)
+        except Exception as e:
+            return None, str(e)
+
+        if r.status_code != 200:
+            return None, self._extract_error(r)
+
+        oauth_token = None
+        try:
+            oauth_token = r.json()
+        except Exception as e:
+            return None, str(e)
+
+        self.save_progress("Received access token")
+        self._state['oauth_token'] = oauth_token
+        return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
+
     def finalize(self):
         self.save_state(self._state)
         return phantom.APP_SUCCESS
@@ -637,7 +718,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._session = requests.Session()
 
-        auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
+        auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
 
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
 
@@ -652,6 +733,9 @@ class EWSOnPremConnector(BaseConnector):
         elif auth_type == AUTH_TYPE_FEDERATED:
             self.save_progress("Using Federated authentication")
             self._session.auth, message = self._set_federated_auth(config)
+        elif auth_type == AUTH_TYPE_CLIENT_CRED:
+            self.save_progress("Using Client credentials authentication")
+            self._session.auth, message = self._set_client_cred_auth(config)
         else:
             # Make sure username and password are set
             ret_val, message = self._check_password(config)
@@ -812,7 +896,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Make the call
         try:
-            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=60, verify=True)
+            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
@@ -1186,6 +1270,7 @@ class EWSOnPremConnector(BaseConnector):
             self.get_phantom_base_url(), email_id, self.get_asset_id())
 
         try:
+            # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
             r = requests.get(url, verify=False)  # nosemgrep
             resp_json = r.json()
         except Exception as e:
@@ -2053,7 +2138,7 @@ class EWSOnPremConnector(BaseConnector):
 
         email = param[EWSONPREM_JSON_EMAIL]
 
-        self._impersonate = False
+        self._target_user = param.get(EWS_JSON_IMPERSONATE_EMAIL)
 
         data = ews_soap.xml_get_resolve_names(email)
 
@@ -2106,7 +2191,7 @@ class EWSOnPremConnector(BaseConnector):
 
         group = param[EWSONPREM_JSON_GROUP]
 
-        self._impersonate = False
+        self._target_user = param.get(EWS_JSON_IMPERSONATE_EMAIL)
 
         data = ews_soap.get_expand_dl(group)
 
@@ -2863,7 +2948,7 @@ class EWSOnPremConnector(BaseConnector):
         trace_url = EWS_TRACE_URL
         results = []
         while True:
-            response = requests.get(trace_url, auth=auth, params=parameter)  # nosemgrep
+            response = requests.get(trace_url, auth=auth, params=parameter, timeout=DEFAULT_REQUEST_TIMEOUT)
             if response.status_code != 200:
                 error_text = self._get_trace_error_details(response)
                 return action_result.set_status(phantom.APP_ERROR, error_text)
@@ -2976,7 +3061,7 @@ if __name__ == '__main__':
         try:
             print("Accessing the Login page")
             phantom_url = "{}login".format(BaseConnector._get_phantom_base_url())
-            r = requests.get(phantom_url, verify=verify)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.get(phantom_url, verify=verify, timeout=DEFAULT_REQUEST_TIMEOUT)
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -2989,8 +3074,8 @@ if __name__ == '__main__':
             headers['Referer'] = phantom_url
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(phantom_url, verify=verify,  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
-                               data=data, headers=headers)
+            r2 = requests.post(phantom_url, verify=verify,
+                               data=data, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
             session_id = r2.cookies['sessionid']
         except Exception as e:
             print("Unable to get session id from the platform. Error: {}".format(str(e)))

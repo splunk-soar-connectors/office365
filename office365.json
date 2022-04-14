@@ -9,13 +9,13 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.10.0",
+    "app_version": "2.11.0",
     "utctime_updated": "2022-01-19T04:31:28.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.1.0",
+    "min_phantom_version": "5.2.0",
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
@@ -81,7 +81,7 @@
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.1-py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.3.2-py3-none-any.whl"
             },
             {
                 "module": "sqlparse",
@@ -139,19 +139,20 @@
                 "Basic",
                 "Azure",
                 "Azure (interactive)",
-                "Federated"
+                "Federated",
+                "OAuth (client credentials)"
             ],
-            "default": "Basic"
+            "default": "Azure"
         },
         "client_id": {
             "data_type": "string",
             "order": 6,
-            "description": "Client App ID for Azure/Fed AD Authentication"
+            "description": "Client App ID for Azure/Fed AD/OAuth Authentication"
         },
         "client_secret": {
             "data_type": "password",
             "order": 7,
-            "description": "Client Secret for Azure/Azure(Interactive) Authentication"
+            "description": "Client Secret for Azure/Azure(Interactive)/OAuth Authentication"
         },
         "fed_ping_url": {
             "data_type": "string",
@@ -2458,6 +2459,15 @@
                     "description": "Expand all sub distribution lists",
                     "data_type": "boolean",
                     "order": 1
+                },
+                "impersonate_email": {
+                    "description": "Impersonation email",
+                    "data_type": "string",
+                    "order": 2,
+                    "primary": true,
+                    "contains": [
+                        "email"
+                    ]
                 }
             },
             "render": {
@@ -2492,6 +2502,16 @@
                     "example_values": [
                         true,
                         false
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.impersonate_email",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "example_values": [
+                        "user@example.onmicrosoft.com"
                     ]
                 },
                 {
@@ -2566,6 +2586,15 @@
                         "exchange alias",
                         "email"
                     ]
+                },
+                "impersonate_email": {
+                    "description": "Impersonation email",
+                    "data_type": "string",
+                    "order": 1,
+                    "primary": true,
+                    "contains": [
+                        "email"
+                    ]
                 }
             },
             "render": {
@@ -2589,6 +2618,16 @@
                     "data_type": "string",
                     "contains": [
                         "exchange alias",
+                        "email"
+                    ],
+                    "example_values": [
+                        "user@example.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.impersonate_email",
+                    "data_type": "string",
+                    "contains": [
                         "email"
                     ],
                     "example_values": [
@@ -3799,7 +3838,7 @@
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.1-py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.3.2-py3-none-any.whl"
             },
             {
                 "module": "sqlparse",

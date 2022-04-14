@@ -63,7 +63,7 @@ class Office365RequestHandler():
             'client_secret': client_secret
         }
         try:
-            r = requests.post('{}/token'.format(request_url), data=body, proxies=proxy)  # nosemgrep
+            r = requests.post('{}/token'.format(request_url), data=body, proxies=proxy, timeout=60)
             r.raise_for_status()
             resp_json = r.json()
         except Exception as e:
