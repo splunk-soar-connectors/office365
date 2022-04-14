@@ -25,7 +25,7 @@
         "wheel": [
             {
                 "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.12-py3-none-any.whl"
+                "input_file": "wheels/py3/Django-3.2.13-py3-none-any.whl"
             },
             {
                 "module": "asgiref",
@@ -3782,7 +3782,7 @@
         "wheel": [
             {
                 "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.12-py3-none-any.whl"
+                "input_file": "wheels/py3/Django-3.2.13-py3-none-any.whl"
             },
             {
                 "module": "asgiref",
