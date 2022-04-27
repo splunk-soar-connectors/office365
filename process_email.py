@@ -741,9 +741,24 @@ class ProcessEmail(object):
 
         # handle the subject string, if required add a new key
         subject = headers.get('Subject')
-        if subject:
-            if isinstance(subject, str):
-                headers['decodedSubject'] = self._base_connector._decode_uni_string(subject, subject)
+        if subject and isinstance(subject, str):
+            headers['decodedSubject'] = self._base_connector._decode_uni_string(subject, subject)
+
+        receiver = headers.get('To')
+        if receiver and isinstance(receiver, str):
+            headers['decodedTo'] = self._base_connector._decode_uni_string(receiver, receiver)
+
+        sender = headers.get('From')
+        if sender and isinstance(sender, str):
+            headers['decodedFrom'] = self._base_connector._decode_uni_string(sender, sender)
+
+        cc = headers.get('CC')
+        if cc and isinstance(cc, str):
+            headers['decodedCC'] = self._base_connector._decode_uni_string(cc, cc)
+
+        bcc = headers.get('BCC')
+        if bcc and isinstance(bcc, str):
+            headers['decodedBCC'] = self._base_connector._decode_uni_string(bcc, bcc)
 
         return headers
 
