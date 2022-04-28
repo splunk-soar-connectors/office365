@@ -32,6 +32,7 @@ import json
 import os
 import uuid
 
+import encryption_helper
 import phantom.app as phantom
 import phantom.rules as ph_rules
 import phantom.utils as ph_utils
@@ -132,6 +133,7 @@ class EWSOnPremConnector(BaseConnector):
         self._impersonate = False
         self._less_data = False
         self._dup_data = 0
+        self.auth_type = None
 
     def _handle_preprocess_scipts(self):
 
@@ -651,7 +653,7 @@ class EWSOnPremConnector(BaseConnector):
         :param config: Dictionary of asset configuration variables
         :return: An OAuth2TokenAuth object in case of success otherwise, an error message
         """
-        oauth_token = self._state.get("oauth_token", {})
+        oauth_token = self._state.get("oauth_client_token", {})
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and oauth_token:
             if oauth_token.get('access_token') and oauth_token.get('token_type'):
                 return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
@@ -659,7 +661,7 @@ class EWSOnPremConnector(BaseConnector):
         client_id = config.get("client_id")
         client_secret = config.get("client_secret")
         if not (client_id and client_secret):
-            return self.set_status(phantom.APP_ERROR, MISSING_CLIENT_CREDS)
+            return None, MISSING_CLIENT_CREDS
 
         client_req_id = str(uuid.uuid4())
         username = config[phantom.APP_JSON_USERNAME]
@@ -695,10 +697,19 @@ class EWSOnPremConnector(BaseConnector):
             return None, str(e)
 
         self.save_progress("Received access token")
-        self._state['oauth_token'] = oauth_token
+        self._state['oauth_client_token'] = oauth_token
         return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
 
     def finalize(self):
+        try:
+            if "oauth_client_token" in self._state:
+                self.debug_print("Encrypting the oauth client token")
+                token = json.dumps(self._state["oauth_client_token"])
+                self._state["oauth_client_token"] = encryption_helper.encrypt(token, self.get_asset_id())
+        except Exception as e:
+            self.debug_print("Error occurred while encrypting the token: {}".format(str(e)))
+            return self.set_status(phantom.APP_ERROR, EWS_ENCRYPTION_ERR)
+
         self.save_state(self._state)
         return phantom.APP_SUCCESS
 
@@ -719,6 +730,7 @@ class EWSOnPremConnector(BaseConnector):
         self._session = requests.Session()
 
         auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
+        self.auth_type = auth_type
 
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
 
@@ -734,6 +746,15 @@ class EWSOnPremConnector(BaseConnector):
             self.save_progress("Using Federated authentication")
             self._session.auth, message = self._set_federated_auth(config)
         elif auth_type == AUTH_TYPE_CLIENT_CRED:
+            try:
+                if "oauth_client_token" in self._state:
+                    self.debug_print("Decrypting the oauth client token")
+                    token = encryption_helper.decrypt(self._state["oauth_client_token"], self.get_asset_id())
+                    self._state["oauth_client_token"] = json.loads(token)
+            except Exception as e:
+                self.debug_print("Error occurred while decrypting the token: {}".format(str(e)))
+                return self.set_status(phantom.APP_ERROR, EWS_ASSET_CORRUPTED)
+
             self.save_progress("Using Client credentials authentication")
             self._session.auth, message = self._set_client_cred_auth(config)
         else:
@@ -907,20 +928,29 @@ class EWSOnPremConnector(BaseConnector):
             result.add_debug_data({'r_text': r.text if r else 'r is None'})
             result.add_debug_data({'r_headers': r.headers})
 
+        if r.status_code == 401 and self.auth_type == AUTH_TYPE_CLIENT_CRED:
+            self._state.pop("oauth_client_token", None)
+            self._session.auth, message = self._set_client_cred_auth(self.get_config())
+            if not self._session.auth:
+                return result.set_status(phantom.APP_ERROR, message), None
+            try:
+                r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
+            except Exception as e:
+                error_code, error_msg = self._get_error_message_from_exception(e)
+                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+                return result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, error_text), resp_json
+
         if not (200 <= r.status_code <= 399):
             # error
             detail = self._get_http_error_details(r)
             if r.status_code == 401:
                 detail = "{0}. {1}".format(detail, EWS_MODIFY_CONFIG)
+            message = "Call failed with HTTP Code: {0}".format(r.status_code)
+            if r.reason:
+                message = "{}. Reason: {}".format(message, r.reason)
             if detail:
-                return result.set_status(
-                    phantom.APP_ERROR,
-                    "Call failed with HTTP Code: {0}. Reason: {1}. Details: {2}".format(r.status_code, r.reason, detail)
-                ), None
-            return result.set_status(
-                phantom.APP_ERROR,
-                "Call failed with HTTP code: {0}. Reason: {1}.".format(r.status_code, r.reason)
-            ), None
+                message = "{}. Details: {}".format(message, detail)
+            return result.set_status(phantom.APP_ERROR, message), None
 
         # Try a xmltodict parse
         try:
