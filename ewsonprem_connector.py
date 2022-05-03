@@ -461,7 +461,10 @@ class EWSOnPremConnector(BaseConnector):
             ret = self._azure_int_auth_initial(client_id, rsh, client_secret)
 
         self._state['client_id'] = client_id
-        self._state = rsh._encrypt_state(self._state)
+        try:
+            self._state = rsh._encrypt_state(self._state)
+        except Exception:
+            return None, EWS_ENCRYPTION_ERR
         self.save_state(self._state)
 
         # NOTE: This state is in the app directory, it is
@@ -685,6 +688,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             r = self._session.post(url, headers=headers, data=data, verify=True, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
+            self._state.pop("oauth_client_token", None)
             return None, str(e)
 
         if r.status_code != 200:
@@ -702,13 +706,13 @@ class EWSOnPremConnector(BaseConnector):
 
     def finalize(self):
         try:
-            if "oauth_client_token" in self._state:
+            if "oauth_client_token" in self._state and self.auth_type == AUTH_TYPE_CLIENT_CRED:
                 self.debug_print("Encrypting the oauth client token")
                 token = json.dumps(self._state["oauth_client_token"])
                 self._state["oauth_client_token"] = encryption_helper.encrypt(token, self.get_asset_id())
         except Exception as e:
-            self.debug_print("Error occurred while encrypting the token: {}".format(str(e)))
-            return self.set_status(phantom.APP_ERROR, EWS_ENCRYPTION_ERR)
+            self.debug_print("Error occurred while encrypting the token: {}. Deleting the token".format(str(e)))
+            self._state.pop("oauth_client_token", None)
 
         self.save_state(self._state)
         return phantom.APP_SUCCESS
@@ -752,8 +756,8 @@ class EWSOnPremConnector(BaseConnector):
                     token = encryption_helper.decrypt(self._state["oauth_client_token"], self.get_asset_id())
                     self._state["oauth_client_token"] = json.loads(token)
             except Exception as e:
-                self.debug_print("Error occurred while decrypting the token: {}".format(str(e)))
-                return self.set_status(phantom.APP_ERROR, EWS_ASSET_CORRUPTED)
+                self.debug_print("Error occurred while decrypting the token: {}. Deleting the token".format(str(e)))
+                self._state.pop("oauth_client_token", None)
 
             self.save_progress("Using Client credentials authentication")
             self._session.auth, message = self._set_client_cred_auth(config)
