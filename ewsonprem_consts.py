@@ -53,7 +53,7 @@ EWSONPREM_ERR_SERVER_CONNECTION = "Connection failed"
 EWSONPREM_ERR_FROM_SERVER = "API failed. Status code: {code}. Message: {message}"
 EWSONPREM_ERR_JSON_PARSE = "Unable to parse reply, raw string reply: '{raw_text}'"
 EWSONPREM_STATE_FILE_CORRUPT_ERR = "Error occurred while loading the state file due to its unexpected format. " \
-    "Resetting the state file with the default format. Please try again."
+    "Resetting the state file with the default format. Please test the connectivity"
 MISSING_CLIENT_CREDS = "ERROR: client_id and client_secret are required parameters for OAuth Authentication, please specify them"
 
 DEFAULT_REQUEST_TIMEOUT = 60  # in seconds

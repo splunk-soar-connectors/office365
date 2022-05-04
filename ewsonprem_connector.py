@@ -720,20 +720,21 @@ class EWSOnPremConnector(BaseConnector):
     def initialize(self):
         """ Called once for every action, all member initializations occur here"""
 
+        config = self.get_config()
+        auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
+
         self._state = self.load_state()
         if not isinstance(self._state, dict):
             self.debug_print("Resetting the state file with the default format")
             self._state = {"app_version": self.get_app_json().get("app_version")}
-            return self.set_status(phantom.APP_ERROR, EWSONPREM_STATE_FILE_CORRUPT_ERR)
-
-        config = self.get_config()
+            if auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
+                return self.set_status(phantom.APP_ERROR, EWSONPREM_STATE_FILE_CORRUPT_ERR)
 
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
 
         self._session = requests.Session()
 
-        auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
         self.auth_type = auth_type
 
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
