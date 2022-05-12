@@ -373,7 +373,6 @@ class EWSOnPremConnector(BaseConnector):
         state['client_secret'] = client_secret.decode('ascii')
 
         rsh.save_state(state)
-        self.save_state(state)
         self.save_progress("Redirect URI: {}".format(app_rest_url))
         params = {
             'response_type': 'code',
@@ -465,7 +464,6 @@ class EWSOnPremConnector(BaseConnector):
             self._state = rsh._encrypt_state(self._state)
         except Exception:
             return None, EWS_ENCRYPTION_ERR
-        self.save_state(self._state)
 
         # NOTE: This state is in the app directory, it is
         #  different from the app state (i.e. self._state)
@@ -704,17 +702,23 @@ class EWSOnPremConnector(BaseConnector):
         self._state['oauth_client_token'] = oauth_token
         return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
 
-    def finalize(self):
+    def _encrypt_client_token(self, state):
+        """ This method encrypts the oauth client token.
+        :param config: State dictionary
+        :return: Encrypted state
+        """
         try:
-            if "oauth_client_token" in self._state and self.auth_type == AUTH_TYPE_CLIENT_CRED:
+            if "oauth_client_token" in state and self.auth_type == AUTH_TYPE_CLIENT_CRED:
                 self.debug_print("Encrypting the oauth client token")
-                token = json.dumps(self._state["oauth_client_token"])
-                self._state["oauth_client_token"] = encryption_helper.encrypt(token, self.get_asset_id())
+                token = json.dumps(state["oauth_client_token"])
+                state["oauth_client_token"] = encryption_helper.encrypt(token, self.get_asset_id())
         except Exception as e:
             self.debug_print("Error occurred while encrypting the token: {}. Deleting the token".format(str(e)))
-            self._state.pop("oauth_client_token", None)
+            state.pop("oauth_client_token", None)
+        return state
 
-        self.save_state(self._state)
+    def finalize(self):
+        self.save_state(self._encrypt_client_token(self._state))
         return phantom.APP_SUCCESS
 
     def initialize(self):
@@ -2776,7 +2780,7 @@ class EWSOnPremConnector(BaseConnector):
         utc_now = datetime.utcnow()
         self._state['last_ingested_format'] = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
-        self.save_state(self._state)
+        self.save_state(self._encrypt_client_token(self._state.copy()))
 
         if max_emails:
             if email_index == 0 or self._less_data:
