@@ -231,7 +231,7 @@ class EWSOnPremConnector(BaseConnector):
         saml_assertion = xml_response[start_pos:end_pos]
 
         # base64 encode the assertion
-        saml_assertion_encoded = base64.encodestring(saml_assertion.encode('utf8'))
+        saml_assertion_encoded = base64.encodebytes(saml_assertion.encode('utf8'))
 
         # Now work on sending th assertion, to get the token
         url = '{0}/oauth2/token'.format(config[EWS_JSON_AUTH_URL])
