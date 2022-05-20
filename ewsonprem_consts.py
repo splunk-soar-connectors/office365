@@ -66,8 +66,8 @@ EWS_TRACE_URL = "https://reports.office365.com/ecp/reportingwebservice/reporting
 EWS_MODIFY_CONFIG = "Toggling the impersonation configuration on the asset might help, or login user does not have privileges to the mailbox." \
     " Please check the asset configuration parameters"
 
-EWS_ASSET_CORRUPTED = "ERROR: The state file for this asset might get corrupted. Please delete asset file located at " \
-    "(/opt/phantom/local_data/app_states/a73f6d32-c9d5-4fec-b024-43876700daa6/<asset_id>_state.json) and run the test connectivity again"
+EWS_ASSET_CORRUPTED = "ERROR: The token present in the state file is corrupted. Deleting the token. " \
+    "Please test the connectivity to generate a new token"
 EWS_ENCRYPTION_ERR = "Error occurred while encrypting the state file"
 EWS_INGEST_LATEST_EMAILS = "latest first"
 EWS_INGEST_OLDEST_EMAILS = "oldest first"

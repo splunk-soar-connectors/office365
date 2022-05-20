@@ -450,6 +450,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             self._state = rsh._decrypt_state(self._state)
         except Exception:
+            self._state.pop('oauth_token', None)
             return None, EWS_ASSET_CORRUPTED
 
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
@@ -717,21 +718,46 @@ class EWSOnPremConnector(BaseConnector):
             state.pop("oauth_client_token", None)
         return state
 
+    def _decrypt_client_token(self, state):
+        """ This method decrypts the oauth client token.
+        :param config: State dictionary
+        :return: Decrypted state
+        """
+        try:
+            if "oauth_client_token" in state:
+                self.debug_print("Decrypting the oauth client token")
+                token = encryption_helper.decrypt(state["oauth_client_token"], self.get_asset_id())
+                state["oauth_client_token"] = json.loads(token)
+        except Exception as e:
+            self.debug_print("Error occurred while decrypting the token: {}. Deleting the token".format(str(e)))
+            state.pop("oauth_client_token", None)
+
+        return state
+
     def finalize(self):
         self.save_state(self._encrypt_client_token(self._state))
         return phantom.APP_SUCCESS
+
+    def _clean_the_state(self):
+        """ This method cleans the state. """
+        self.debug_print("Cleaning the state")
+        if self.auth_type != AUTH_TYPE_CLIENT_CRED:
+            self._state.pop("oauth_client_token", None)
+        if self.auth_type != AUTH_TYPE_AZURE_INTERACTIVE:
+            self._state.pop("oauth_token", None)
+            self._state.pop("client_id", None)
 
     def initialize(self):
         """ Called once for every action, all member initializations occur here"""
 
         config = self.get_config()
-        auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
+        self.auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
 
         self._state = self.load_state()
         if not isinstance(self._state, dict):
             self.debug_print("Resetting the state file with the default format")
             self._state = {"app_version": self.get_app_json().get("app_version")}
-            if auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
+            if self.auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_STATE_FILE_CORRUPT_ERR)
 
         # The headers, initialize them here once and use them for all other REST calls
@@ -739,30 +765,23 @@ class EWSOnPremConnector(BaseConnector):
 
         self._session = requests.Session()
 
-        self.auth_type = auth_type
-
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
 
         message = ''
 
-        if auth_type == AUTH_TYPE_AZURE:
+        self._clean_the_state()
+
+        if self.auth_type == AUTH_TYPE_AZURE:
             self.save_progress("Using Azure AD authentication")
             self._session.auth, message = self._set_azure_auth(config)
-        elif auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
+        elif self.auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
             self.save_progress("Using Azure AD authentication (interactive)")
             self._session.auth, message = self._set_azure_int_auth(config)
-        elif auth_type == AUTH_TYPE_FEDERATED:
+        elif self.auth_type == AUTH_TYPE_FEDERATED:
             self.save_progress("Using Federated authentication")
             self._session.auth, message = self._set_federated_auth(config)
-        elif auth_type == AUTH_TYPE_CLIENT_CRED:
-            try:
-                if "oauth_client_token" in self._state:
-                    self.debug_print("Decrypting the oauth client token")
-                    token = encryption_helper.decrypt(self._state["oauth_client_token"], self.get_asset_id())
-                    self._state["oauth_client_token"] = json.loads(token)
-            except Exception as e:
-                self.debug_print("Error occurred while decrypting the token: {}. Deleting the token".format(str(e)))
-                self._state.pop("oauth_client_token", None)
+        elif self.auth_type == AUTH_TYPE_CLIENT_CRED:
+            self._state = self._decrypt_client_token(self._state)
 
             self.save_progress("Using Client credentials authentication")
             self._session.auth, message = self._set_client_cred_auth(config)
