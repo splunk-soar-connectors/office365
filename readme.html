@@ -12,14 +12,14 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 -->
-<h2>Phantom asset setup</h2>
+<h2>SOAR asset setup</h2>
 <p>
   It is not uncommon for enterprises to have a single mailbox configured where users can forward suspicious emails for
   further investigation. The ingestion feature in the Office 365 app is primarily designed to pull emails from such a
-  mailbox and create containers and artifacts in Phantom.
+  mailbox and create containers and artifacts in SOAR.
 </p>
 <p>
-  The first thing to do is create the Office 365 asset in Phantom and fill up the required parameters like <b>url,
+  The first thing to do is create the Office 365 asset in SOAR and fill up the required parameters like <b>url,
     username, password</b>, and <b>poll_user</b>. The other values can be left in the default state for now. The same
   user can be used to log in/authenticate for the connectivity test and polling, just specify the same email address
   in <b>poll_user</b> and <b>username</b>.<br>
@@ -99,7 +99,7 @@ Following are the instructions to setup different types of authentication.
         <li>User.ReadBasic.All (Only required if the asset is configured to use impersonation)</li>
       </ul>
       <li>After making these changes, click <b>Add permissions</b> at the bottom of the screen, then click <b>Grant
-          admin consent for Phantom</b>.</li>
+          admin consent for SOAR</b>.</li>
     </ul>
   </li>
   <li>
@@ -111,7 +111,7 @@ Following are the instructions to setup different types of authentication.
         <b>Web</b>. The <b>Redirect URIs</b> should be filled right here. You will obtain the redirect URI from the
         <b>POST incoming for EWS Office 365 to this location</b> asset configuration parameter.<br> The
         URI should look similar to this:
-        https://&lt;phantom_host&gt;/rest/handler/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/&lt;asset_name&gt;<br>
+        https://&lt;soar_host&gt;/rest/handler/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/&lt;asset_name&gt;<br>
         Once the Redirect URI is filled, click <b>Configure</b>.
       </li>
       <li>Under <b>API Permissions</b> Click on <b>Add a permission</b>.</li>
@@ -126,7 +126,7 @@ Following are the instructions to setup different types of authentication.
         <li>User.ReadBasic.All (Only required if the asset is configured to use impersonation)</li>
       </ul>
       <li>After making these changes, click <b>Add permissions</b> at the bottom of the screen, then click <b>Grant
-          admin consent for Phantom</b>.</li>
+          admin consent for SOAR</b>.</li>
       <li>Azure adds <b>Microsoft Graph's User.Read</b> permission to the app by default. Please confirm its presence
         under the Configured permissions list. If not added, you can manually click on <b>Add a permission</b> and
         follow the below steps:</li>
@@ -135,7 +135,7 @@ Following are the instructions to setup different types of authentication.
         <li>Select <b>Microsoft Graph</b> from the list.</li>
         <li>Provide the <b>User.Read</b> Delegated permission to the app.</li>
         <li>After making these changes, click <b>Add permissions</b> at the bottom of the screen, then click <b>Grant
-            admin consent for Phantom</b>.</li>
+            admin consent for SOAR</b>.</li>
       </ul>
     </ul><br>
     <p>
@@ -144,7 +144,7 @@ Following are the instructions to setup different types of authentication.
     <ul>
       <li>Run <b>TEST CONNECTIVITY.</b></li>
       <li>You will be asked to open a link in a new tab. Open the link in the same browser window so that you are logged
-        into Splunk Phantom for the redirect.</li>
+        into Splunk SOAR for the redirect.</li>
       <li>Proceed to login to the Microsoft site.</li>
       <li>You will be prompted to agree to the permissions requested by the App.</li>
       <li>If all goes well the browser should instruct you to close the tab.</li>
@@ -153,7 +153,7 @@ Following are the instructions to setup different types of authentication.
     </ul>
     </p>
     <p>
-      NOTE: Do make sure the base URL is configured for the phantom instance. You can check it here: Administration > Company Settings > Info.
+      NOTE: Do make sure the base URL is configured for the SOAR instance. You can check it here: Administration > Company Settings > Info.
     </p>
   </li>
   <li>
@@ -167,7 +167,7 @@ Following are the instructions to setup different types of authentication.
         for it.</li>
       <li>Provide the <b>full_access_as_app</b> Application permission to the app.</li>
       <li>After making these changes, click <b>Add permissions</b> at the bottom of the screen, then click <b>Grant
-          admin consent for Phantom</b>.</li>
+          admin consent for SOAR</b>.</li>
     </ul><br>
     <p>NOTE: Make sure the <b>Use Impersonation</b> option is enabled in the asset while using this authentication mechanism. Once it is enabled, you should add email of the impersonating user to the action parameter wherever possible while executing an action.</p>
   </li>
