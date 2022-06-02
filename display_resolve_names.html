@@ -96,10 +96,23 @@ and limitations under the License.
     </a>
   </td>
 </tr>
+{% if result.param.impersonate_email %}
+<tr>
+  <td><b>Impersonation email</b></td>
+  <td>
+    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ result.param.impersonate_email }}' }], 0, {{ container.id }}, null, false);">
+    {{ result.param.impersonate_email }}
+    &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
+    </a>
+  </td>
+</tr>
+{% endif %}
+{% if result.summary.total_entries %}
 <tr>
   <td><b>Total Results</b></td>
   <td>{{ result.summary.total_entries }}</td>
 </tr>
+{% endif %}
 </table>
 
 <br>
