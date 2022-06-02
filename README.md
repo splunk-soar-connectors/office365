@@ -2,11 +2,11 @@
 # EWS for Office 365
 
 Publisher: Splunk  
-Connector Version: 2\.10\.0  
+Connector Version: 2\.11\.0  
 Product Vendor: Microsoft  
 Product Name: Office 365  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.1\.0  
+Minimum Product Version: 5\.2\.0  
 
 This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service
 
@@ -24,47 +24,75 @@ This app ingests emails from a mailbox in addition to supporting various investi
 [comment]: # "either express or implied. See the License for the specific language governing permissions"
 [comment]: # "and limitations under the License."
 [comment]: # ""
+## SOAR asset setup
+
+It is not uncommon for enterprises to have a single mailbox configured where users can forward
+suspicious emails for further investigation. The ingestion feature in the Office 365 app is
+primarily designed to pull emails from such a mailbox and create containers and artifacts in SOAR.
+
+The first thing to do is create the Office 365 asset in SOAR and fill up the required parameters
+like **url, username, password** , and **poll_user** . The other values can be left in the default
+state for now. The same user can be used to log in/authenticate for the connectivity test and
+polling, just specify the same email address in **poll_user** and **username** .  
+  
+[![](img/asset_info.png)](img/asset_info.png)  
+  
+[![](img/asset_settings.png)](img/asset_settings.png)
+
+  
+
+However, it's good practice to set the Label for the objects from this source to a 'NEW ENTRY'
+called **Email** .  
+  
+[![](img/ingest_settings.png)](img/ingest_settings.png)  
+  
+Once the Asset and Ingest parameters are filled, save the asset.
+
 ## Authentication
 
-This apps supports multiple types of authentication mechanisms. Currently, there are four ways to
+This app supports multiple types of authentication mechanisms. Currently, there are five ways to
 authenticate.
 
 -   Basic
 -   Azure
 -   Azure (interactive)
 -   Federated
+-   OAuth (client credentials)
 
-### Basic
+For **Azure** , **Azure (interactive)** and **OAuth (client credentials)** mechanisms, you will
+first need to create an application on the Azure AD Admin Portal. Follow the steps outlined below to
+do this:
 
-Basic is the most simple way to authenticate. All you need to provide to this is a Username and
-Password
+-   Navigate to <https://portal.azure.com> in a browser and log in with a Microsoft account.
+-   Select **Azure Active Directory** from the list of Azure services.
+-   From the left panel, select **App Registrations** .
+-   At the top of the middle section, select **New registration** .
+-   On the next page, give your application a name and click **Register** .
+-   Once the app is created, the **Overview** page opens up. Copy the **Application (client) ID**
+    value shown here. Paste this value in the **Client App ID for the Azure/Fed AD/OAuth
+    Authentication** asset configuration parameter.
+-   Under **Certificates & secrets** select **New client secret** . Note down this key somewhere
+    secure, as it cannot be retrieved after closing the window. Provide this value in the **Client
+    Secret for the Azure/Fed AD/OAuth Authentication** asset configuration parameter.
 
-### Azure
+  
+Following are the instructions to setup different types of authentication.
 
-Azure authentication comes in two flavors. To use either of these, you will first need to create an
-application on the Azure AD Admin Portal. Follow the steps outlined below to do this:
+1.  ### Basic
 
--   Navigate to <https://portal.azure.com> in a browser and log in with a Microsoft account
+    Basic is the most simple way to authenticate. All you need to provide to this is Username and
+    Password.  
+    **NOTE:** Microsoft is going to permanently disable Basic Authentication for EWS. Hence, we
+    recommend the customers to switch from Basic to Azure Authentication mechanism. The default
+    value of **Authentication Mechanism to Use** asset configuration parameter is therefore changed
+    to **Azure** . We will be maintaining the **Basic** option for backward compatibility and for
+    any legacy users. As the 'trace email' action uses Basic authentication, it will not be
+    functional after Microsoft disables Basic authentication.
 
--   Select **Azure Active Directory** from the left side menu
+2.  ### Azure
 
--   From the left panel, select **App Registrations**
-
--   At the top of the middle section, select **New registration**
-
--   On the next page, give your application a name and click **Register**
-
--   Once the app is created, the below steps need to be taken on the next page:
-
-      
-
-    -   Under **Certificates & secrets** select **New client secret** . Note down this key somewhere
-        secure, as it cannot be retrieved after closing the window.
-
-    -   Under **Authentication** , select **Add a platform** . In the **Add a platform** window,
-        select **Web** . The **Redirect URLs** should be filled right here. We will get **Redirect
-        URLs** from the Phantom asset we create below in the section titled "Phantom asset for
-        Azure".
+    To use this authentication mechanism, you will have to add some permissions to the app you
+    created earlier. Follow the steps outlined below to do this:
 
     -   Under **API Permissions** Click on **Add a permission** .
 
@@ -81,10 +109,43 @@ application on the Azure AD Admin Portal. Follow the steps outlined below to do 
         -   Mail.Read
         -   Mail.Read.All
         -   User.ReadBasic.All (Only required if the asset is configured to use impersonation)
-        -   After making these changes, click **Add permissions** at the bottom of the screen, then
-            click **Grant admin consent for Phantom** .
 
-    -   Azure adds **Microsoft Graph's** User.Read permission to the app by default. Please confirm
+    -   After making these changes, click **Add permissions** at the bottom of the screen, then
+        click **Grant admin consent for SOAR** .
+
+3.  ### Azure (interactive)
+
+    To use this authentication mechanism, you will have to add some permissions to the app you
+    created earlier. Follow the steps outlined below to do this:
+
+    -   Under **Authentication** , select **Add a platform** . In the **Add a platform** window,
+        select **Web** . The **Redirect URIs** should be filled right here. You will obtain the
+        redirect URI from the **POST incoming for EWS Office 365 to this location** asset
+        configuration parameter.  
+        The URI should look similar to this:
+        https://\<soar_host>/rest/handler/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/\<asset_name>  
+        Once the Redirect URI is filled, click **Configure** .
+
+    -   Under **API Permissions** Click on **Add a permission** .
+
+    -   Under the **Select an API** section, select **APIs my organization uses** .
+
+    -   Search for the **Office 365 Exchange Online** keyword in the search box and click on the
+        displayed option for it.
+
+    -   Provide the following Delegated permissions to the app.
+
+          
+
+        -   EWS.AccessAsUser.All
+        -   Mail.Read
+        -   Mail.Read.All
+        -   User.ReadBasic.All (Only required if the asset is configured to use impersonation)
+
+    -   After making these changes, click **Add permissions** at the bottom of the screen, then
+        click **Grant admin consent for SOAR** .
+
+    -   Azure adds **Microsoft Graph's User.Read** permission to the app by default. Please confirm
         its presence under the Configured permissions list. If not added, you can manually click on
         **Add a permission** and follow the below steps:
 
@@ -94,80 +155,59 @@ application on the Azure AD Admin Portal. Follow the steps outlined below to do 
         -   Select **Microsoft Graph** from the list.
         -   Provide the **User.Read** Delegated permission to the app.
         -   After making these changes, click **Add permissions** at the bottom of the screen, then
-            click **Grant admin consent for Phantom** .
+            click **Grant admin consent for SOAR** .
 
-### Phantom Asset for Azure
+      
 
-When creating an asset for the **EWS for Office 365** app, place the **Application ID** of the app
-created during the previous step in the **Client App ID for the Azure/Fed AD Authentication** field.
-Then, after filling in other values, click **SAVE** .  
-  
-After saving, a new field will appear in the **Asset Settings** tab. Take the URL found in the
-**POST incoming for EWS Office 365 to this location** field and place it in the **Redirect URIs**
-field mentioned above. After doing so the URL should look something like this:  
-  
-https://\<phantom_host>/rest/handler/ewsforoffice365_a73f6d32-c9d5-4fec-b024-43876700daa6/\<asset_name>  
-  
-Additionally, updating the Base URL in the Phantom Company Settings is also required. Navigate to
-**Administration \> Company Settings \> Info** to configure the Base URL For Phantom Appliance.
-Then, select **Save Changes** .  
-  
-**Azure Interactive** is different because it will prompt the user to log in through Microsoft's
-portal during Test Connectivity, meaning you do not need to enter your password in the asset
-configuration. Instead:
+    **Azure Interactive** is different because it will prompt the user to log in through Microsoft's
+    portal during Test Connectivity, meaning you do not need to enter your password in the asset
+    configuration. Instead:
 
--   Run **TEST CONNECTIVITY**
--   You will be asked to open a link in a new tab. Open the link in the same browser so that you are
-    logged into Splunk Phantom for the redirect
--   Proceed to login to the Microsoft site
--   You will be prompted to agree to the permissions requested by the App
--   If all goes well the browser should instruct you to close the tab
--   Now go back and check the message on the Test Connectivity dialog box, it should say
-    Connectivity test passed
+    -   Run **TEST CONNECTIVITY.**
+    -   You will be asked to open a link in a new tab. Open the link in the same browser window so
+        that you are logged into Splunk SOAR for the redirect.
+    -   Proceed to login to the Microsoft site.
+    -   You will be prompted to agree to the permissions requested by the App.
+    -   If all goes well the browser should instruct you to close the tab.
+    -   Now go back and check the message on the Test Connectivity dialog box, it should say
+        Connectivity test passed.
 
-Do note that if you wish to use a single login user to read and modify multiple mailboxes (of
-multiple users), proper permissions to allow impersonation must be enabled on the login user
+    NOTE: Do make sure the base URL is configured for the SOAR instance. You can check it here:
+    Administration \> Company Settings \> Info.
 
-### Federated
+4.  ### OAuth (client credentials)
 
-Federated Authentication setup is quite complicated and its documentation is out of the scope of
-this section.  
-NOTE: Federated Authentication has been tested in a limited fashion.
+    To use this authentication mechanism, you will have to add some permissions to the app you
+    created earlier. Follow the steps outlined below to do this:
 
-  
-  
+    -   Under **API Permissions** Click on **Add a permission** .
+    -   Under the **Select an API** section, select **APIs my organization uses** .
+    -   Search for the **Office 365 Exchange Online** keyword in the search box and click on the
+        displayed option for it.
+    -   Provide the **full_access_as_app** Application permission to the app.
+    -   After making these changes, click **Add permissions** at the bottom of the screen, then
+        click **Grant admin consent for SOAR** .
 
-It is not uncommon for enterprises to have a single mailbox configured where users can forward
-suspicious emails for further investigation. The ingestion feature in the Office 365 app is
-primarily designed to pull emails from such a mailbox and create containers and artifacts in
-Phantom.
+      
 
-The first thing to do is create the Office 365 asset in Phantom and fill up the required various
-parameters like **url, username, password** , and **poll_user** . The other values can be left in
-the default state for now. The same user can be used to log in/authenticate and for polling, just
-specify the same email address in **poll_user** and **username** .  
-  
-[![](img/asset_settings.png)](img/asset_settings.png)
+    NOTE: Make sure the **Use Impersonation** option is enabled in the asset while using this
+    authentication mechanism. Once it is enabled, you should add email of the impersonating user to
+    the action parameter wherever possible while executing an action.
 
-  
-However, it's good practice to set the Label of the objects from this source to a 'NEW ENTRY' called
-**Email** .  
-[![](img/ingest_settings.png)](img/ingest_settings.png)  
+5.  ### Federated
 
-Once the asset is saved, run Test Connectivity and make sure it passes. The Test Connectivity action
-attempts to read some information about the configured user's mailbox to validate the Auth
-parameters. Exchange Web Services API is used for all the actions. Impersonation is also used if
-configured.  
-[![](img/testing_connectivity.png)](img/testing_connectivity.png)
+    The Federated Authentication setup is quite complicated and its documentation is out of the
+    scope of this section.  
+    NOTE: Federated Authentication has been tested in a limited fashion.
 
-  
-Now that the config is out of the way, let's delve into the two modes that ingestion can occur and
-the differences between them. One thing to note is that for every email that is ingested, a single
-container is created containing multiple artifacts.
+NOTE: The user must test the connectivity every time they switch between different authentication
+mechanisms.
 
 ## Impersonation
 
-If impersonation is not working, you may need to enable it by configuring the roles for the user.
+If you wish to use a single login user to read and modify multiple mailboxes (of multiple users),
+proper permissions to allow impersonation must be enabled on the login user. If impersonation is not
+enabled/working, you may need to enable it by configuring the roles for the user.
 
 -   First, log in to <https://outlook.office365.com/ecp/> as an admin user
 
@@ -182,16 +222,29 @@ If impersonation is not working, you may need to enable it by configuring the ro
     -   Assign the user to the members of this group
 
 -   Click save, and wait. These changes will take a while to affect. You may need to wait up to an
-    hour for impersonation to start working in the App
+    hour for impersonation to start working in the App.
+
+## Connectivity test
+
+Once the asset is saved, run Test Connectivity and make sure it passes. The Test Connectivity action
+attempts to read some information about the configured user's mailbox to validate the Auth
+parameters. Exchange Web Services API is used for all the actions. Impersonation is also used if
+configured.  
+  
+[![](img/testing_connectivity.png)](img/testing_connectivity.png)
+
+Now that the config is out of the way, let's delve into the two modes that ingestion can occur and
+the differences between them. One thing to note is that for every email that is ingested, a single
+container is created containing multiple artifacts.
 
 ## POLL NOW
 
 POLL NOW should be used to get a sense of the containers and artifacts that are created by the app.
 The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this
 instance. Since a single container is created for each email, this value equates to the maximum
-emails that are ingested by the app. The app will either get the oldest email first or the latest,
-depending upon the configuration parameter *How to ingest* . The date used to determine the oldest
-or latest is what EWS calls **item:LastModifiedTime** . This value is different than the mail
+number of emails that are ingested by the app. The app will either get the oldest email first or the
+latest, depending upon the configuration parameter *How to ingest* . The date used to determine the
+oldest or latest is what EWS calls **item:LastModifiedTime** . This value is different than the mail
 creation time. For example, if an email that arrived a week ago, is moved from one folder to the
 folder being ingested, its LastModifiedTime will be set to the time that it was moved.
 
@@ -220,7 +273,7 @@ configuration parameters (among others):
 In the case of Scheduled Polling, on every poll, the app remembers the last email that it has
 ingested and will pick up from the next one in the next scheduled poll.
 
-### How to ingest
+## How to ingest
 
 The app allows the user to configure how it should ingest emails on every scheduled poll either in
 the *oldest first* or the *latest first* order. Depending upon the scheduled interval and how busy
@@ -242,11 +295,6 @@ the folder is, one of the following could potentially happen
 For best results, keep the poll interval and *Maximum emails to poll* values close to the number of
 emails you would get within a time interval. This way, every poll will end up ingesting all the new
 emails.  
-
-In case the asset is configured to poll **oldest first** , it becomes important that the *Maximum
-number of emails to poll* configured should be greater than the maximum number of emails generated
-**per second** . If the app detects it got the maximum configured emails and all occurred in the
-same second, it will start polling from the next second in the next polling cycle.
 
 ## Containers created
 
@@ -286,17 +334,7 @@ The app will create the following type of artifacts:
     Any attached email will also be scanned and the address present in the attached email will be
     added as a separate artifact. The emails are added as custom strings in the cef structure in the
     following manner.  
-
-    | **Artifact Field** | **Value Details**                                                                 |
-    |--------------------|-----------------------------------------------------------------------------------|
-    | fromEmail          | The email address of the sender                                                   |
-    | fromName           | The username of the sender of the email.                                          |
-    | toEmail            | The email address of the receiver of the email                                    |
-    | toName             | The user name of the receiver of the email                                        |
-    | headers            | A dictionary containing each email header as a key and its value as the key-value |
-
-      
-    [![](img/email_artifact.png)](img/email_artifact.png)
+    [![](img/email_artifact.png)](img/email_artifact.png)  
 
 -   IP Artifact
     -   If **extract_ips** is enabled, any IPv4 or IPv6 found in the email body will be added, with
@@ -343,15 +381,11 @@ The app will create the following type of artifacts:
         still be the same. However, there will be multiple artifacts created.
     -   Do note that the system does *not* duplicate the file bytes, only the metadata in the
         database.
-        | **Artifact Field** | **Value Details**                   |
-        |--------------------|-------------------------------------|
-        | Source ID          | Email ID set on the server          |
-        | cef.vaultId        | Vault ID of the attachment          |
-        | cef.fileName       | Attached filename used in the email |
     -   You will notice additional CEF fields **cs6** (value is the Vault ID) and **cs6Label** .
         These are added for backward compatibility only and will be deprecated in future releases.
         Please don't use these keys in playbooks.
 
+      
       
     [![](img/vault_artifact.png)](img/vault_artifact.png)
 
@@ -380,7 +414,7 @@ Dave Jones.
 This app uses the compressed_rtf module, which is licensed under the MIT License, Copyright (c) 2016
 Dmitry Alimov.
 
-### Preprocessing Containers
+## Preprocessing Containers
 
 It is possible to upload your own script which has functions to handle preprocessing of containers.
 The artifacts which are going to be added with the container can be accessed through this container
@@ -460,8 +494,8 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **poll\_user** |  optional  | string | User Email Mailbox \(Test Connectivity and Poll\)
 **use\_impersonation** |  optional  | boolean | Use Impersonation
 **auth\_type** |  optional  | string | Authentication Mechanism to Use
-**client\_id** |  optional  | string | Client App ID for Azure/Fed AD Authentication
-**client\_secret** |  optional  | password | Client Secret for Azure/Azure\(Interactive\) Authentication
+**client\_id** |  optional  | string | Client App ID for Azure/Fed AD/OAuth Authentication
+**client\_secret** |  optional  | password | Client Secret for Azure/Azure\(Interactive\)/OAuth Authentication
 **fed\_ping\_url** |  optional  | string | Federated Auth Ping URL
 **fed\_verify\_server\_cert** |  optional  | boolean | Verify Federated Server Certificate
 **authority\_url** |  optional  | string | Office 365 Authority URL \(For Federated Auth\)
@@ -716,7 +750,7 @@ Get an email from the server
 Type: **investigate**  
 Read only: **True**
 
-Every container that is created by the app has the following values\:<ul><li>The container ID that is generated by the Phantom platform\.</li><li>The Source ID that the app equates to the email ID on the server if known or the vault ID if asked to parse from the vault\.</li><li>The raw\_email data in the container's data field is set to the RFC822 format of the email\.</li></ul>This action parses email data and if specified create containers and artifacts\. The email data to parse is either extracted from the remote server if an email ID is specified, from a Phantom container, if the <b>container\_id</b> is specified or from the vault item if the <b>vault\_id</b> is specified\.<br>If all three parameters are specified, the action will use the <b>container\_id</b>\.<br>The data paths differ depending on where the email data is parsed from\.<br><br><p>If parsed from the server\:<br><ul><li>The data path <b>action\_result\.data\.\*\.t\_MimeContent\.\#text</b> contains the email in RFC822 format but base64 encoded\.</li><li>The data path <b>action\_result\.data\.\*\.t\_Body\.\#text</b> contains the email body\.</li><li>The widget for this action will render a text version of the email body if possible\.</li><li>If impersonation is enabled on the asset, the <b>email</b> parameter is required, else <b>email</b> will be ignored\.</li></ul></p><p>If parsed from the container or vault\:<br><ul><li>The widget does not render the email body\.</li><li>The email headers are listed in a table\.</li></ul></p><p>If <b>ingest\_email</b> is set to </b>True</b>\:<br><ul><li>The ID of the container created or updated will be set in the <b>action\_result\.summary\.container\_id</b> data path</li><li>The widget will display this ID as <b>Ingested Container ID</b></li></ul></p>Do note that any containers and artifacts created will use the label configured in the asset\.<br>The action will fail if the vault item asked to parse and ingest is not a valid MSG file\.
+Every container that is created by the app has the following values\:<ul><li>The container ID that is generated by the SOAR platform\.</li><li>The Source ID that the app equates to the email ID on the server if known or the vault ID if asked to parse from the vault\.</li><li>The raw\_email data in the container's data field is set to the RFC822 format of the email\.</li></ul>This action parses email data and if specified create containers and artifacts\. The email data to parse is either extracted from the remote server if an email ID is specified, from a SOAR container, if the <b>container\_id</b> is specified or from the vault item if the <b>vault\_id</b> is specified\.<br>If all three parameters are specified, the action will use the <b>container\_id</b>\.<br>The data paths differ depending on where the email data is parsed from\.<br><br><p>If parsed from the server\:<br><ul><li>The data path <b>action\_result\.data\.\*\.t\_MimeContent\.\#text</b> contains the email in RFC822 format but base64 encoded\.</li><li>The data path <b>action\_result\.data\.\*\.t\_Body\.\#text</b> contains the email body\.</li><li>The widget for this action will render a text version of the email body if possible\.</li><li>If impersonation is enabled on the asset, the <b>email</b> parameter is required, else <b>email</b> will be ignored\.</li></ul></p><p>If parsed from the container or vault\:<br><ul><li>The widget does not render the email body\.</li><li>The email headers are listed in a table\.</li></ul></p><p>If <b>ingest\_email</b> is set to </b>True</b>\:<br><ul><li>The ID of the container created or updated will be set in the <b>action\_result\.summary\.container\_id</b> data path</li><li>The widget will display this ID as <b>Ingested Container ID</b></li></ul></p>Do note that any containers and artifacts created will use the label configured in the asset\.<br>The action will fail if the vault item asked to parse and ingest is not a valid MSG file\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
@@ -949,6 +983,7 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **group** |  required  | Distribution List to expand | string |  `email`  `exchange distribution list` 
 **recursive** |  optional  | Expand all sub distribution lists | boolean | 
+**impersonate\_email** |  optional  | Impersonation email | string |  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
@@ -956,6 +991,7 @@ DATA PATH | TYPE | CONTAINS
 action\_result\.status | string | 
 action\_result\.parameter\.group | string |  `email`  `exchange distribution list` 
 action\_result\.parameter\.recursive | boolean | 
+action\_result\.parameter\.impersonate\_email | string |  `email` 
 action\_result\.data\.\*\.t\_EmailAddress | string |  `email` 
 action\_result\.data\.\*\.t\_MailboxType | string | 
 action\_result\.data\.\*\.t\_Name | string | 
@@ -975,12 +1011,14 @@ Read only: **True**
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **email** |  required  | Name to resolve | string |  `exchange alias`  `email` 
+**impersonate\_email** |  optional  | Impersonation email | string |  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
 action\_result\.parameter\.email | string |  `exchange alias`  `email` 
+action\_result\.parameter\.impersonate\_email | string |  `email` 
 action\_result\.data\.\*\.t\_Contact\.t\_AssistantName | string | 
 action\_result\.data\.\*\.t\_Contact\.t\_CompanyName | string | 
 action\_result\.data\.\*\.t\_Contact\.t\_ContactSource | string | 
