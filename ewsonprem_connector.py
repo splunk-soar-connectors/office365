@@ -32,6 +32,7 @@ import json
 import os
 import uuid
 
+import encryption_helper
 import phantom.app as phantom
 import phantom.rules as ph_rules
 import phantom.utils as ph_utils
@@ -132,6 +133,7 @@ class EWSOnPremConnector(BaseConnector):
         self._impersonate = False
         self._less_data = False
         self._dup_data = 0
+        self.auth_type = None
 
     def _handle_preprocess_scipts(self):
 
@@ -207,11 +209,12 @@ class EWSOnPremConnector(BaseConnector):
 
         # POST the request
         try:
-            r = requests.post(  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.post(
                 url,
                 data=fed_request_xml,
                 headers=headers,
-                verify=config[EWS_JSON_FED_VERIFY_CERT]
+                verify=config[EWS_JSON_FED_VERIFY_CERT],
+                timeout=DEFAULT_REQUEST_TIMEOUT
             )
         except Exception as e:
             return None, "Unable to send POST to ping url: {0}, Error: {1}".format(url, str(e))
@@ -231,7 +234,7 @@ class EWSOnPremConnector(BaseConnector):
         saml_assertion = xml_response[start_pos:end_pos]
 
         # base64 encode the assertion
-        saml_assertion_encoded = base64.encodestring(saml_assertion.encode('utf8'))
+        saml_assertion_encoded = base64.encodebytes(saml_assertion.encode('utf8'))
 
         # Now work on sending th assertion, to get the token
         url = '{0}/oauth2/token'.format(config[EWS_JSON_AUTH_URL])
@@ -253,7 +256,7 @@ class EWSOnPremConnector(BaseConnector):
         }
 
         try:
-            r = requests.post(url, data=data, headers=headers)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.post(url, data=data, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return None, "Failed to acquire token. POST request failed for {0}, Error: {1}".format(url, str(e))
 
@@ -278,6 +281,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _make_rest_calls_to_phantom(self, action_result, url):
 
+        # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
         r = requests.get(url, verify=False)  # nosemgrep
         if not r:
             message = 'Status Code: {0}'.format(r.status_code)
@@ -369,7 +373,6 @@ class EWSOnPremConnector(BaseConnector):
         state['client_secret'] = client_secret.decode('ascii')
 
         rsh.save_state(state)
-        self.save_state(state)
         self.save_progress("Redirect URI: {}".format(app_rest_url))
         params = {
             'response_type': 'code',
@@ -418,7 +421,7 @@ class EWSOnPremConnector(BaseConnector):
             'client_secret': client_secret
         }
         try:
-            r = requests.post(request_url, data=body)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.post(request_url, data=body, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return None, "Error refreshing token: {}".format(str(e))
 
@@ -447,6 +450,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             self._state = rsh._decrypt_state(self._state)
         except Exception:
+            self._state.pop('oauth_token', None)
             return None, EWS_ASSET_CORRUPTED
 
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
@@ -457,8 +461,10 @@ class EWSOnPremConnector(BaseConnector):
             ret = self._azure_int_auth_initial(client_id, rsh, client_secret)
 
         self._state['client_id'] = client_id
-        self._state = rsh._encrypt_state(self._state)
-        self.save_state(self._state)
+        try:
+            self._state = rsh._encrypt_state(self._state)
+        except Exception:
+            return None, EWS_ENCRYPTION_ERR
 
         # NOTE: This state is in the app directory, it is
         #  different from the app state (i.e. self._state)
@@ -466,6 +472,37 @@ class EWSOnPremConnector(BaseConnector):
         rsh.delete_state()
 
         return ret
+
+    def _get_domain(self, username, client_req_id):
+        """ This method is used to obtain domain from the username.
+        :param username: Username
+        :param client_req_id: Request ID
+        :return: status, domain/message
+        """
+        headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
+
+        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, username)
+        params = {'api-version': '1.0'}
+
+        try:
+            r = self._session.get(url, params=params, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
+        except Exception as e:
+            return phantom.APP_ERROR, str(e)
+
+        if r.status_code != 200:
+            return phantom.APP_ERROR, r.text
+
+        resp_json = None
+        try:
+            resp_json = r.json()
+        except Exception as e:
+            return phantom.APP_ERROR, str(e)
+
+        domain = resp_json.get('domain_name')
+        if not domain:
+            return phantom.APP_ERROR, "Did not find domain in response. Cannot continue"
+
+        return phantom.APP_SUCCESS, domain
 
     def _set_azure_auth(self, config):
 
@@ -487,27 +524,9 @@ class EWSOnPremConnector(BaseConnector):
 
         client_req_id = str(uuid.uuid4())
 
-        headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
-        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, username)
-        params = {'api-version': '1.0'}
-
-        try:
-            r = self._session.get(url, params=params, headers=headers)
-        except Exception as e:
-            return None, str(e)
-
-        if r.status_code != 200:
-            return None, r.text
-
-        resp_json = None
-        try:
-            resp_json = r.json()
-        except Exception as e:
-            return None, str(e)
-
-        domain = resp_json.get('domain_name')
-        if not domain:
-            return None, "Did not find domain in response. Cannot continue"
+        ret_val, domain = self._get_domain(username, client_req_id)
+        if phantom.is_fail(ret_val):
+            return None, domain
 
         headers = {'client-request-id': client_req_id, 'return-client-request-id': 'True'}
         url = "{0}/{1}/oauth2/token".format(EWS_LOGIN_URL, domain)
@@ -526,7 +545,7 @@ class EWSOnPremConnector(BaseConnector):
         }
 
         try:
-            r = self._session.post(url, params=params, headers=headers, data=data, verify=True)
+            r = self._session.post(url, params=params, headers=headers, data=data, verify=True, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return None, str(e)
 
@@ -617,41 +636,155 @@ class EWSOnPremConnector(BaseConnector):
             return False
         return True
 
+    def _extract_error(self, r):
+        """ This method generates an error message from the error response.
+        :param r: Response object
+        :return: error message
+        """
+        try:
+            error_json = r.json()
+            error = error_json["error"]
+            error_desc = error_json["error_description"]
+            error_text = "An error occurred. Error: {}, description: {}".format(error, error_desc)
+            return error_text
+        except Exception:
+            return r.text
+
+    def _set_client_cred_auth(self, config):
+        """ This method generates OAuth token using the client credentials grant.
+        :param config: Dictionary of asset configuration variables
+        :return: An OAuth2TokenAuth object in case of success otherwise, an error message
+        """
+        oauth_token = self._state.get("oauth_client_token", {})
+        if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and oauth_token:
+            if oauth_token.get('access_token') and oauth_token.get('token_type'):
+                return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
+
+        client_id = config.get("client_id")
+        client_secret = config.get("client_secret")
+        if not (client_id and client_secret):
+            return None, MISSING_CLIENT_CREDS
+
+        client_req_id = str(uuid.uuid4())
+        username = config[phantom.APP_JSON_USERNAME]
+
+        ret_val, domain = self._get_domain(username, client_req_id)
+        if phantom.is_fail(ret_val):
+            return None, domain
+
+        url = "{0}/{1}/oauth2/token".format(EWS_LOGIN_URL, domain)
+
+        parsed_base_url = urlparse(self._base_url)
+        headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}
+
+        data = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "grant_type": "client_credentials",
+            "resource": "{0}://{1}".format(parsed_base_url.scheme, parsed_base_url.netloc),
+        }
+        self.debug_print("Requesting a new token for OAuth client credentials authentication")
+        try:
+            r = self._session.post(url, headers=headers, data=data, verify=True, timeout=DEFAULT_REQUEST_TIMEOUT)
+        except Exception as e:
+            self._state.pop("oauth_client_token", None)
+            return None, str(e)
+
+        if r.status_code != 200:
+            return None, self._extract_error(r)
+
+        oauth_token = None
+        try:
+            oauth_token = r.json()
+        except Exception as e:
+            return None, str(e)
+
+        self.save_progress("Received access token")
+        self._state['oauth_client_token'] = oauth_token
+        return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
+
+    def _encrypt_client_token(self, state):
+        """ This method encrypts the oauth client token.
+        :param config: State dictionary
+        :return: Encrypted state
+        """
+        try:
+            if "oauth_client_token" in state and self.auth_type == AUTH_TYPE_CLIENT_CRED:
+                self.debug_print("Encrypting the oauth client token")
+                token = json.dumps(state["oauth_client_token"])
+                state["oauth_client_token"] = encryption_helper.encrypt(token, self.get_asset_id())
+        except Exception as e:
+            self.debug_print("Error occurred while encrypting the token: {}. Deleting the token".format(str(e)))
+            state.pop("oauth_client_token", None)
+        return state
+
+    def _decrypt_client_token(self, state):
+        """ This method decrypts the oauth client token.
+        :param config: State dictionary
+        :return: Decrypted state
+        """
+        try:
+            if "oauth_client_token" in state:
+                self.debug_print("Decrypting the oauth client token")
+                token = encryption_helper.decrypt(state["oauth_client_token"], self.get_asset_id())
+                state["oauth_client_token"] = json.loads(token)
+        except Exception as e:
+            self.debug_print("Error occurred while decrypting the token: {}. Deleting the token".format(str(e)))
+            state.pop("oauth_client_token", None)
+
+        return state
+
     def finalize(self):
-        self.save_state(self._state)
+        self.save_state(self._encrypt_client_token(self._state))
         return phantom.APP_SUCCESS
+
+    def _clean_the_state(self):
+        """ This method cleans the state. """
+        self.debug_print("Cleaning the state")
+        if self.auth_type != AUTH_TYPE_CLIENT_CRED:
+            self._state.pop("oauth_client_token", None)
+        if self.auth_type != AUTH_TYPE_AZURE_INTERACTIVE:
+            self._state.pop("oauth_token", None)
+            self._state.pop("client_id", None)
 
     def initialize(self):
         """ Called once for every action, all member initializations occur here"""
+
+        config = self.get_config()
+        self.auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
 
         self._state = self.load_state()
         if not isinstance(self._state, dict):
             self.debug_print("Resetting the state file with the default format")
             self._state = {"app_version": self.get_app_json().get("app_version")}
-            return self.set_status(phantom.APP_ERROR, EWSONPREM_STATE_FILE_CORRUPT_ERR)
-
-        config = self.get_config()
+            if self.auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
+                return self.set_status(phantom.APP_ERROR, EWSONPREM_STATE_FILE_CORRUPT_ERR)
 
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
 
         self._session = requests.Session()
 
-        auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
-
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
 
         message = ''
 
-        if auth_type == AUTH_TYPE_AZURE:
+        self._clean_the_state()
+
+        if self.auth_type == AUTH_TYPE_AZURE:
             self.save_progress("Using Azure AD authentication")
             self._session.auth, message = self._set_azure_auth(config)
-        elif auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
+        elif self.auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
             self.save_progress("Using Azure AD authentication (interactive)")
             self._session.auth, message = self._set_azure_int_auth(config)
-        elif auth_type == AUTH_TYPE_FEDERATED:
+        elif self.auth_type == AUTH_TYPE_FEDERATED:
             self.save_progress("Using Federated authentication")
             self._session.auth, message = self._set_federated_auth(config)
+        elif self.auth_type == AUTH_TYPE_CLIENT_CRED:
+            self._state = self._decrypt_client_token(self._state)
+
+            self.save_progress("Using Client credentials authentication")
+            self._session.auth, message = self._set_client_cred_auth(config)
         else:
             # Make sure username and password are set
             ret_val, message = self._check_password(config)
@@ -812,7 +945,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Make the call
         try:
-            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=60, verify=True)
+            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
@@ -823,20 +956,29 @@ class EWSOnPremConnector(BaseConnector):
             result.add_debug_data({'r_text': r.text if r else 'r is None'})
             result.add_debug_data({'r_headers': r.headers})
 
+        if r.status_code == 401 and self.auth_type == AUTH_TYPE_CLIENT_CRED:
+            self._state.pop("oauth_client_token", None)
+            self._session.auth, message = self._set_client_cred_auth(self.get_config())
+            if not self._session.auth:
+                return result.set_status(phantom.APP_ERROR, message), None
+            try:
+                r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
+            except Exception as e:
+                error_code, error_msg = self._get_error_message_from_exception(e)
+                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+                return result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, error_text), resp_json
+
         if not (200 <= r.status_code <= 399):
             # error
             detail = self._get_http_error_details(r)
             if r.status_code == 401:
                 detail = "{0}. {1}".format(detail, EWS_MODIFY_CONFIG)
+            message = "Call failed with HTTP Code: {0}".format(r.status_code)
+            if r.reason:
+                message = "{}. Reason: {}".format(message, r.reason)
             if detail:
-                return result.set_status(
-                    phantom.APP_ERROR,
-                    "Call failed with HTTP Code: {0}. Reason: {1}. Details: {2}".format(r.status_code, r.reason, detail)
-                ), None
-            return result.set_status(
-                phantom.APP_ERROR,
-                "Call failed with HTTP code: {0}. Reason: {1}.".format(r.status_code, r.reason)
-            ), None
+                message = "{}. Details: {}".format(message, detail)
+            return result.set_status(phantom.APP_ERROR, message), None
 
         # Try a xmltodict parse
         try:
@@ -1186,6 +1328,7 @@ class EWSOnPremConnector(BaseConnector):
             self.get_phantom_base_url(), email_id, self.get_asset_id())
 
         try:
+            # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
             r = requests.get(url, verify=False)  # nosemgrep
             resp_json = r.json()
         except Exception as e:
@@ -2053,7 +2196,7 @@ class EWSOnPremConnector(BaseConnector):
 
         email = param[EWSONPREM_JSON_EMAIL]
 
-        self._impersonate = False
+        self._target_user = param.get(EWS_JSON_IMPERSONATE_EMAIL)
 
         data = ews_soap.xml_get_resolve_names(email)
 
@@ -2106,7 +2249,7 @@ class EWSOnPremConnector(BaseConnector):
 
         group = param[EWSONPREM_JSON_GROUP]
 
-        self._impersonate = False
+        self._target_user = param.get(EWS_JSON_IMPERSONATE_EMAIL)
 
         data = ews_soap.get_expand_dl(group)
 
@@ -2656,7 +2799,7 @@ class EWSOnPremConnector(BaseConnector):
         utc_now = datetime.utcnow()
         self._state['last_ingested_format'] = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
-        self.save_state(self._state)
+        self.save_state(self._encrypt_client_token(self._state.copy()))
 
         if max_emails:
             if email_index == 0 or self._less_data:
@@ -2863,7 +3006,7 @@ class EWSOnPremConnector(BaseConnector):
         trace_url = EWS_TRACE_URL
         results = []
         while True:
-            response = requests.get(trace_url, auth=auth, params=parameter)  # nosemgrep
+            response = requests.get(trace_url, auth=auth, params=parameter, timeout=DEFAULT_REQUEST_TIMEOUT)
             if response.status_code != 200:
                 error_text = self._get_trace_error_details(response)
                 return action_result.set_status(phantom.APP_ERROR, error_text)
@@ -2976,7 +3119,7 @@ if __name__ == '__main__':
         try:
             print("Accessing the Login page")
             phantom_url = "{}login".format(BaseConnector._get_phantom_base_url())
-            r = requests.get(phantom_url, verify=verify)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.get(phantom_url, verify=verify, timeout=DEFAULT_REQUEST_TIMEOUT)
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -2989,8 +3132,8 @@ if __name__ == '__main__':
             headers['Referer'] = phantom_url
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(phantom_url, verify=verify,  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
-                               data=data, headers=headers)
+            r2 = requests.post(phantom_url, verify=verify,
+                               data=data, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
             session_id = r2.cookies['sessionid']
         except Exception as e:
             print("Unable to get session id from the platform. Error: {}".format(str(e)))

@@ -63,7 +63,8 @@ class Office365RequestHandler():
             'client_secret': client_secret
         }
         try:
-            r = requests.post('{}/token'.format(request_url), data=body, proxies=proxy)  # nosemgrep
+            # Ignoring request-sensitive-data semgrep check as it is a false positive
+            r = requests.post('{}/token'.format(request_url), data=body, proxies=proxy, timeout=60)  # nosemgrep
             r.raise_for_status()
             resp_json = r.json()
         except Exception as e:

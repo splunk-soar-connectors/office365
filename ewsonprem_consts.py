@@ -53,7 +53,10 @@ EWSONPREM_ERR_SERVER_CONNECTION = "Connection failed"
 EWSONPREM_ERR_FROM_SERVER = "API failed. Status code: {code}. Message: {message}"
 EWSONPREM_ERR_JSON_PARSE = "Unable to parse reply, raw string reply: '{raw_text}'"
 EWSONPREM_STATE_FILE_CORRUPT_ERR = "Error occurred while loading the state file due to its unexpected format. " \
-    "Resetting the state file with the default format. Please try again."
+    "Resetting the state file with the default format. Please test the connectivity"
+MISSING_CLIENT_CREDS = "ERROR: client_id and client_secret are required parameters for OAuth Authentication, please specify them"
+
+DEFAULT_REQUEST_TIMEOUT = 60  # in seconds
 
 EWSONPREM_MAX_END_OFFSET_VAL = 2147483646
 EWS_O365_RESOURCE = "https://outlook.office365.com"
@@ -63,8 +66,9 @@ EWS_TRACE_URL = "https://reports.office365.com/ecp/reportingwebservice/reporting
 EWS_MODIFY_CONFIG = "Toggling the impersonation configuration on the asset might help, or login user does not have privileges to the mailbox." \
     " Please check the asset configuration parameters"
 
-EWS_ASSET_CORRUPTED = "ERROR: The state file for this asset might get corrupted. Please delete asset file located at " \
-    "(/opt/phantom/local_data/app_states/a73f6d32-c9d5-4fec-b024-43876700daa6/<asset_id>_state.json) and run the test connectivity again"
+EWS_ASSET_CORRUPTED = "ERROR: The token present in the state file is corrupted. Deleting the token. " \
+    "Please test the connectivity to generate a new token"
+EWS_ENCRYPTION_ERR = "Error occurred while encrypting the state file"
 EWS_INGEST_LATEST_EMAILS = "latest first"
 EWS_INGEST_OLDEST_EMAILS = "oldest first"
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -74,6 +78,7 @@ AUTH_TYPE_AZURE = "Azure"
 AUTH_TYPE_AZURE_INTERACTIVE = "Azure (interactive)"
 AUTH_TYPE_FEDERATED = "Federated"
 AUTH_TYPE_BASIC = "Basic"
+AUTH_TYPE_CLIENT_CRED = "OAuth (client credentials)"
 
 EWS_FED_REQUEST_XML = "<s:Envelope xmlns:s='http://www.w3.org/2003/05/soap-envelope' " \
     "xmlns:wsse='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd' "\
