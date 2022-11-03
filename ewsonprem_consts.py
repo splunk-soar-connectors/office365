@@ -68,7 +68,7 @@ EWS_MODIFY_CONFIG = "Toggling the impersonation configuration on the asset might
 
 EWS_ASSET_CORRUPTED = "ERROR: The token present in the state file is corrupted. Deleting the token. " \
     "Please test the connectivity to generate a new token"
-EWS_ENCRYPTION_ERR = "Error occurred while encrypting the state file"
+EWS_ENCRYPTION_ERROR = "Error occurred while encrypting the state file"
 EWS_INGEST_LATEST_EMAILS = "latest first"
 EWS_INGEST_OLDEST_EMAILS = "oldest first"
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
