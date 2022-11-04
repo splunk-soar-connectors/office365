@@ -150,13 +150,13 @@ class EWSOnPremConnector(BaseConnector):
                 exec(script, self._script_module.__dict__)
             except Exception as e:
                 self.save_progress("Error loading custom script. Error: {}".format(str(e)))
-                return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
+                return self.set_status(phantom.APP_ERROR, EWSONPREM_CONNECTIVITY_TEST_ERROR)
 
             try:
                 self._preprocess_container = self._script_module.preprocess_container
             except Exception:
                 self.save_progress("Error loading custom script. Does not contain preprocess_container function")
-                return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
+                return self.set_status(phantom.APP_ERROR, EWSONPREM_CONNECTIVITY_TEST_ERROR)
 
         return phantom.APP_SUCCESS
 
@@ -770,7 +770,7 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print("Resetting the state file with the default format")
             self._state = {"app_version": self.get_app_json().get("app_version")}
             if self.auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
-                return self.set_status(phantom.APP_ERROR, EWSONPREM_STATE_FILE_CORRUPT_ERR)
+                return self.set_status(phantom.APP_ERROR, EWSONPREM_STATE_FILE_CORRUPT_ERROR)
 
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
@@ -959,7 +959,7 @@ class EWSOnPremConnector(BaseConnector):
             r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
         except Exception as e:
             error_text = self._get_error_message_from_exception(e)
-            return result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, error_text), resp_json
+            return result.set_status(phantom.APP_ERROR, EWSONPREM_SERVER_CONNECTIVITY_ERROR, error_text), resp_json
 
         if hasattr(result, 'add_debug_data'):
             result.add_debug_data({'r_status_code': r.status_code})
@@ -975,7 +975,7 @@ class EWSOnPremConnector(BaseConnector):
                 r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
             except Exception as e:
                 error_text = self._get_error_message_from_exception(e)
-                return result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, error_text), resp_json
+                return result.set_status(phantom.APP_ERROR, EWSONPREM_SERVER_CONNECTIVITY_ERROR, error_text), resp_json
 
         if not (200 <= r.status_code <= 399):
             # error
@@ -997,7 +997,7 @@ class EWSOnPremConnector(BaseConnector):
             resp_json = json.loads(json.dumps(resp_json))
         except Exception as e:
             # r.text is guaranteed to be NON None, it will be empty, but not None
-            msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=r.text)
+            msg_string = EWSONPREM_JSON_PARSE_ERROR.format(raw_text=r.text)
             error_text = self._get_error_message_from_exception(e)
             return result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json
 
@@ -1011,7 +1011,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             resp_message = check_response(resp_json)
         except Exception as e:
-            msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=r.text)
+            msg_string = EWSONPREM_JSON_PARSE_ERROR.format(raw_text=r.text)
             error_text = self._get_error_message_from_exception(e)
             return result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json
 
@@ -1021,7 +1021,7 @@ class EWSOnPremConnector(BaseConnector):
         resp_class = resp_message.get('@ResponseClass', '')
 
         if resp_class == 'Error':
-            return result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message)))), resp_json
+            return result.set_status(phantom.APP_ERROR, EWSONPREM_FROM_SERVER_ERROR.format(**(self._get_error_details(resp_message)))), resp_json
 
         return phantom.APP_SUCCESS, resp_message
 
@@ -1047,13 +1047,13 @@ class EWSOnPremConnector(BaseConnector):
             action_result.set_status(phantom.APP_ERROR, action_result.get_message())
 
             # Append the message to display
-            self.save_progress(EWSONPREM_ERR_CONNECTIVITY_TEST)
+            self.save_progress(EWSONPREM_CONNECTIVITY_TEST_ERROR)
 
             # return error
             return phantom.APP_ERROR
 
         # Set the status of the connector result
-        self.save_progress(EWSONPREM_SUCC_CONNECTIVITY_TEST)
+        self.save_progress(EWSONPREM_CONNECTIVITY_TEST_SUCCESS)
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_child_folder_infos(self, user, action_result, parent_folder_info):
@@ -1907,7 +1907,7 @@ class EWSOnPremConnector(BaseConnector):
             resp_class = resp_message.get('@ResponseClass', '')
 
             if resp_class == 'Error':
-                curr_ar.set_status(phantom.APP_ERROR, EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message))))
+                curr_ar.set_status(phantom.APP_ERROR, EWSONPREM_FROM_SERVER_ERROR.format(**(self._get_error_details(resp_message))))
                 continue
             curr_ar.set_status(phantom.APP_SUCCESS, "Email deleted successfully")
 
