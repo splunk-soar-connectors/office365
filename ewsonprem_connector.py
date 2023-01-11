@@ -629,8 +629,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             if input_str:
                 input_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
-        except Exception as e:
-            self.debug_print("Error occurred while converting to string with specific encoding...{}".format(problem))
+        except Exception:
+            self.debug_print("Error occurred while converting to string with specific encoding")
 
         return input_str
 
