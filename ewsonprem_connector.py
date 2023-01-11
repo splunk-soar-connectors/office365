@@ -1446,8 +1446,8 @@ class EWSOnPremConnector(BaseConnector):
             decoded_strings = [decode_header(x)[0] for x in encoded_strings]
             decoded_strings = [{'value': x[0], 'encoding': x[1]} for x in decoded_strings]
         except Exception as e:
-            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            error_code, error_message = self._base_connector._get_error_message_from_exception(e)
+            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_message)
             self._debug_print("Decoding: {0}. {1}".format(encoded_strings, err))
             return def_name
 
