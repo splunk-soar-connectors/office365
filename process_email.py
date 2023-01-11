@@ -1,6 +1,6 @@
 # File: process_email.py
 #
-# Copyright (c) 2016-2022 Splunk Inc.
+# Copyright (c) 2016-2023 Splunk Inc
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -359,11 +359,22 @@ class ProcessEmail(object):
 
         return file_data
 
+    def _sanitize_dict(self, obj):
+
+        if isinstance(obj, str):
+            return obj.replace('\x00', '')
+        if isinstance(obj, list):
+            return [self._sanitize_dict(item) for item in obj]
+        if isinstance(obj, dict):
+            return {k: self._sanitize_dict(v) for k, v in obj.items()}
+        return obj
+
     def _handle_body(self, body, parsed_mail, body_index, email_id):
 
         local_file_path = body['file_path']
-        charset = body.get('charset')
-
+        charset = body.get('charset', 'utf-8')
+        if not charset:
+            charset = 'utf-8'
         ips = parsed_mail[PROC_EMAIL_JSON_IPS]
         hashes = parsed_mail[PROC_EMAIL_JSON_HASHES]
         urls = parsed_mail[PROC_EMAIL_JSON_URLS]
@@ -373,12 +384,14 @@ class ProcessEmail(object):
         with open(local_file_path, 'rb') as f:
             file_data = f.read()
 
-        file_data = self._base_connector._get_string(file_data, 'utf-8')
+        file_data = self._base_connector._get_string(file_data, charset)
         if file_data is None or len(file_data) == 0:
             return phantom.APP_ERROR
 
         # base64 decode it if possible
+        self._debug_print("before_filedata: {}".format(type(file_data)))
         file_data = self._decode_if_base64(file_data)
+        self._debug_print("after_filedata: {}".format(type(file_data)))
 
         self._parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
 
@@ -419,6 +432,8 @@ class ProcessEmail(object):
             artifact['cef'] = {cef_key: entry}
             artifact['name'] = artifact_name
             self._debug_print('Artifact:', artifact)
+            if artifact:
+                artifact = self._sanitize_dict(artifact)
             artifacts.append(artifact)
             added_artifacts += 1
 
@@ -446,6 +461,8 @@ class ProcessEmail(object):
         for artifact in email_header_artifacts:
 
             artifact['source_data_identifier'] = start_index + added_artifacts
+            if artifact:
+                artifact = self._sanitize_dict(artifact)
             artifacts.append(artifact)
             added_artifacts += 1
 
@@ -688,19 +705,20 @@ class ProcessEmail(object):
         # compare the various values of the passed header (param: headers)
         # to the header that the class got self._headers_from_ews
         if not self._headers_from_ews:
-            return phantom.APP_SUCCESS
+            return headers
 
         if not headers:
-            return phantom.APP_SUCCESS
+            return headers
 
         headers_ci = CaseInsensitiveDict(headers)
 
         for curr_header_lower in self._headers_from_ews:
             if headers_ci.get('message-id', 'default_value1').strip() == curr_header_lower.get('message-id', 'default_value2').strip():
                 # the headers match with the one that we got from the ews API, so update it
-                headers.update(curr_header_lower)
+                curr_header_lower.update(headers)
+                headers = curr_header_lower
 
-        return phantom.APP_SUCCESS
+        return headers
 
     def _get_email_headers_from_part(self, part, charset=None):
 
@@ -789,7 +807,7 @@ class ProcessEmail(object):
         cef_types.update({'fromEmail': ['email'], 'toEmail': ['email']})
 
         if headers:
-            self._update_headers(headers)
+            headers = self._update_headers(headers)
             cef_artifact['emailHeaders'] = dict(headers)
 
         for curr_key in list(cef_artifact['emailHeaders'].keys()):
@@ -1072,6 +1090,7 @@ class ProcessEmail(object):
                 )
             )
             if phantom.is_fail(ret_val):
+                container['artifacts'] = artifacts
                 return ret_val, message, cid
             if "duplicate container found" in message.lower():
                 self._base_connector._dup_data += 1

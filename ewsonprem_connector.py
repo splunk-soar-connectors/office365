@@ -1,6 +1,6 @@
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2022 Splunk Inc.
+# Copyright (c) 2016-2023 Splunk Inc
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -133,6 +133,7 @@ class EWSOnPremConnector(BaseConnector):
         self._impersonate = False
         self._less_data = False
         self._dup_data = 0
+        self._timeout = None
         self.auth_type = None
 
     def _handle_preprocess_scipts(self):
@@ -214,7 +215,7 @@ class EWSOnPremConnector(BaseConnector):
                 data=fed_request_xml,
                 headers=headers,
                 verify=config[EWS_JSON_FED_VERIFY_CERT],
-                timeout=DEFAULT_REQUEST_TIMEOUT
+                timeout=self._timeout
             )
         except Exception as e:
             return None, "Unable to send POST to ping url: {0}, Error: {1}".format(url, self._get_error_message_from_exception(e))
@@ -256,7 +257,7 @@ class EWSOnPremConnector(BaseConnector):
         }
 
         try:
-            r = requests.post(url, data=data, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
+            r = requests.post(url, data=data, headers=headers, timeout=self._timeout)
         except Exception as e:
             return None, "Failed to acquire token. POST request failed for {0}, Error: {1}".format(
                 url, self._get_error_message_from_exception(e))
@@ -422,7 +423,7 @@ class EWSOnPremConnector(BaseConnector):
             'client_secret': client_secret
         }
         try:
-            r = requests.post(request_url, data=body, timeout=DEFAULT_REQUEST_TIMEOUT)
+            r = requests.post(request_url, data=body, timeout=self._timeout)
         except Exception as e:
             return None, "Error refreshing token: {}".format(str(e))
 
@@ -486,7 +487,7 @@ class EWSOnPremConnector(BaseConnector):
         params = {'api-version': '1.0'}
 
         try:
-            r = self._session.get(url, params=params, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
+            r = self._session.get(url, params=params, headers=headers, timeout=self._timeout)
         except Exception as e:
             return phantom.APP_ERROR, str(e)
 
@@ -546,7 +547,7 @@ class EWSOnPremConnector(BaseConnector):
         }
 
         try:
-            r = self._session.post(url, params=params, headers=headers, data=data, verify=True, timeout=DEFAULT_REQUEST_TIMEOUT)
+            r = self._session.post(url, params=params, headers=headers, data=data, verify=True, timeout=self._timeout)
         except Exception as e:
             return None, str(e)
 
@@ -628,8 +629,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             if input_str:
                 input_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
-        except Exception:
-            self.debug_print("Error occurred while converting to string with specific encoding")
+        except Exception as e:
+            self.debug_print("Error occurred while converting to string with specific encoding...{}".format(problem))
 
         return input_str
 
@@ -695,7 +696,7 @@ class EWSOnPremConnector(BaseConnector):
         }
         self.debug_print("Requesting a new token for OAuth client credentials authentication")
         try:
-            r = self._session.post(url, headers=headers, data=data, verify=True, timeout=DEFAULT_REQUEST_TIMEOUT)
+            r = self._session.post(url, headers=headers, data=data, verify=True, timeout=self._timeout)
         except Exception as e:
             self._state.pop("oauth_client_token", None)
             return None, str(e)
@@ -827,6 +828,7 @@ class EWSOnPremConnector(BaseConnector):
             return ret
 
         self.set_validator('ipv6', self._is_ip)
+        self._timeout = config.get("timeout", DEFAULT_REQUEST_TIMEOUT)
 
         return phantom.APP_SUCCESS
 
@@ -956,7 +958,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Make the call
         try:
-            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
+            r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=self._timeout, verify=True)
         except Exception as e:
             error_text = self._get_error_message_from_exception(e)
             return result.set_status(phantom.APP_ERROR, EWSONPREM_SERVER_CONNECTIVITY_ERROR, error_text), resp_json
@@ -972,7 +974,7 @@ class EWSOnPremConnector(BaseConnector):
             if not self._session.auth:
                 return result.set_status(phantom.APP_ERROR, message), None
             try:
-                r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
+                r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=self._timeout, verify=True)
             except Exception as e:
                 error_text = self._get_error_message_from_exception(e)
                 return result.set_status(phantom.APP_ERROR, EWSONPREM_SERVER_CONNECTIVITY_ERROR, error_text), resp_json
@@ -1432,7 +1434,8 @@ class EWSOnPremConnector(BaseConnector):
         # try to find all the decoded strings, we could have multiple decoded strings
         # or a single decoded string between two normal strings separated by \r\n
         # YEAH...it could get that messy
-        encoded_strings = re.findall(r"=\?.*\?=", input_str, re.I)
+        input_str = input_str.replace('\r\n', '')
+        encoded_strings = re.findall(r'=\?.*\?=', input_str, re.I)
 
         # return input_str as is, no need to do any conversion
         if not encoded_strings:
@@ -1443,15 +1446,14 @@ class EWSOnPremConnector(BaseConnector):
             decoded_strings = [decode_header(x)[0] for x in encoded_strings]
             decoded_strings = [{'value': x[0], 'encoding': x[1]} for x in decoded_strings]
         except Exception as e:
-            error_text = self._get_error_message_from_exception(e)
-            self.debug_print("Decoding: {}. {}".format(encoded_strings, error_text))
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            self._debug_print("Decoding: {0}. {1}".format(encoded_strings, err))
             return def_name
 
         # convert to dict for safe access, if it's an empty list, the dict will be empty
         decoded_strings = dict(enumerate(decoded_strings))
 
-        new_str = ''
-        new_str_create_count = 0
         for i, encoded_string in enumerate(encoded_strings):
 
             decoded_string = decoded_strings.get(i)
@@ -1470,34 +1472,22 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 # Some non-ascii characters were causing decoding issue with
                 # the UnicodeDammit and working correctly with the decode function.
-                # keeping previous logic in the except block in case of failure.
-                if value:
-                    value = value.decode(encoding)
-                    new_str = "{}{}".format(new_str, value)
-                    new_str_create_count += 1
+                # keeping previous logic in the except block incase of failure.
+                value = value.decode(encoding)
+                input_str = input_str.replace(encoded_string, value)
             except Exception:
                 try:
                     if encoding != 'utf-8':
                         value = str(value, encoding)
                 except Exception:
                     pass
-                try:
-                    # commenting the existing approach due to a new approach being deployed below
-                    # substitute the encoded string with the decoded one
-                    # input_str = input_str.replace(encoded_string, value)
 
-                    # make new string instead of replacing in the input string because issue find in PAPP-9531
+                try:
                     if value:
-                        # value = UnicodeDammit(value).unicode_markup
-                        new_str = "{}{}".format(new_str, UnicodeDammit(value).unicode_markup)
-                        new_str_create_count += 1
+                        value = UnicodeDammit(value).unicode_markup
+                        input_str = input_str.replace(encoded_string, value)
                 except Exception:
                     pass
-
-        # replace input string with new string because issue find in PAPP-9531
-        if new_str and new_str_create_count == len(encoded_strings):
-            self.debug_print("Creating a new string entirely from the encoded_strings and assigning into input_str")
-            input_str = new_str
 
         return input_str
 
@@ -2992,7 +2982,7 @@ class EWSOnPremConnector(BaseConnector):
         trace_url = EWS_TRACE_URL
         results = []
         while True:
-            response = requests.get(trace_url, auth=auth, params=parameter, timeout=DEFAULT_REQUEST_TIMEOUT)
+            response = requests.get(trace_url, auth=auth, params=parameter, timeout=self._timeout)
             if response.status_code != 200:
                 error_text = self._get_trace_error_details(response)
                 return action_result.set_status(phantom.APP_ERROR, error_text)

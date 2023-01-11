@@ -2,7 +2,7 @@
     "appid": "a73f6d32-c9d5-4fec-b024-43876700daa6",
     "logo": "logo_microsoftoffice365.svg",
     "logo_dark": "logo_microsoftoffice365_dark.svg",
-    "license": "Copyright (c) 2016-2022 Splunk Inc.",
+    "license": "Copyright (c) 2016-2023 Splunk Inc",
     "rest_handler": "request_handler.handle_request",
     "name": "EWS for Office 365",
     "description": "This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service",
@@ -15,7 +15,7 @@
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.3.5",
+    "min_phantom_version": "5.3.4",
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
@@ -205,52 +205,58 @@
             "default": 100,
             "required": true
         },
+        "timeout": {
+            "data_type": "numeric",
+            "description": "Request Timeout (Default: 60 seconds)",
+            "order": 15,
+            "default": 60
+        },
         "extract_attachments": {
             "data_type": "boolean",
             "description": "Extract Attachments",
-            "order": 15,
+            "order": 16,
             "default": true
         },
         "extract_urls": {
             "data_type": "boolean",
             "description": "Extract URLs",
-            "order": 16,
+            "order": 17,
             "default": true
         },
         "extract_ips": {
             "data_type": "boolean",
             "description": "Extract IPs",
-            "order": 17,
+            "order": 18,
             "default": true
         },
         "extract_domains": {
             "data_type": "boolean",
             "description": "Extract Domain Names",
-            "order": 18,
+            "order": 19,
             "default": true
         },
         "extract_hashes": {
             "data_type": "boolean",
             "description": "Extract Hashes",
-            "order": 19,
+            "order": 20,
             "default": true
         },
         "extract_eml": {
             "data_type": "boolean",
             "description": "Extract EML",
-            "order": 20,
+            "order": 21,
             "default": true
         },
         "add_body_to_header_artifacts": {
             "data_type": "boolean",
             "description": "Add Email Body to the Email Artifact",
-            "order": 21,
+            "order": 22,
             "default": false
         },
         "preprocess_script": {
             "data_type": "file",
             "description": "Script with Functions to Preprocess Containers and Artifacts",
-            "order": 22
+            "order": 23
         }
     },
     "actions": [
@@ -2799,7 +2805,7 @@
         {
             "action": "update email",
             "description": "Update an email on the server",
-            "verbose": "Currently, this action only updates the category and subject of an email. To set multiple categories, please pass a comma-separated list to the <b>category</b> parameter.",
+            "verbose": "Currently, this action only updates the category and subject of an email. To set multiple categories, please pass a comma-separated list to the <b>category</b> parameter.<br>NOTE: If the user tries to update the categories, then the existing categories of the email will be replaced with the new categories provided as input.",
             "type": "generic",
             "identifier": "update_email",
             "read_only": false,
