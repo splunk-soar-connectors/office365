@@ -600,7 +600,7 @@ class EWSOnPremConnector(BaseConnector):
         :return: error message
         """
 
-        error_code = "Error code unavailable"
+        error_code = None
         error_message = "Error message unavailable. Please check the asset configuration and|or action parameters."
 
         self.error_print("Error occurred.", e)
@@ -611,7 +611,6 @@ class EWSOnPremConnector(BaseConnector):
                     error_code = e.args[0]
                     error_message = e.args[1]
                 elif len(e.args) == 1:
-                    error_code = "Error code unavailable"
                     error_message = e.args[0]
         except Exception as e:
             self.error_print("Error occurred while fetching exception information. Details: {}".format(

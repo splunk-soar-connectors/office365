@@ -187,7 +187,7 @@ class ProcessEmail(object):
         if '>' in url:
             url = url[:url.find('>')]
 
-        return url.strip()
+        return url.strip(r'\'|\"')
 
     def _find_uris_in_text(self, file_data):
         """ Because of the possibility of a soft break, we need to find the uris _and_ the position

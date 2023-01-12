@@ -19,7 +19,7 @@
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud November 3, 2022"
+        "Cloud January 12, 2023"
     ],
     "pip_dependencies": {
         "wheel": [
