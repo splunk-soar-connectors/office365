@@ -135,6 +135,7 @@ class EWSOnPremConnector(BaseConnector):
         self._dup_data = 0
         self._timeout = None
         self.auth_type = None
+        self._skipped_emails = 0
 
     def _handle_preprocess_scipts(self):
 
@@ -2581,6 +2582,7 @@ class EWSOnPremConnector(BaseConnector):
             message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
+            self._skipped_emails += 1
             return phantom.APP_ERROR
 
         ret_val, message = self._parse_email(resp_json, email_id, target_container_id, flag)
@@ -2677,6 +2679,9 @@ class EWSOnPremConnector(BaseConnector):
         if len(failed_emails_parsing_list) == len(email_ids):
             return action_result.set_status(
                 phantom.APP_ERROR, "ErrorExp in _process_email_id for all the email IDs: {}".format(str(failed_emails_parsing_list)))
+
+        if self._skipped_emails > 0:
+            self.save_progress("Skipped emails: {}. (For more details, check the logs)".format(self._skipped_emails))
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -2779,7 +2784,7 @@ class EWSOnPremConnector(BaseConnector):
         if max_emails:
             if email_index == 0 or self._less_data:
                 return None, None
-            total_ingested += max_emails - self._dup_data
+            total_ingested += max_emails - (self._dup_data + self._skipped_emails)
             self._remaining = limit - total_ingested
             if total_ingested >= limit:
                 return None, None
@@ -2831,6 +2836,7 @@ class EWSOnPremConnector(BaseConnector):
         limit = max_emails
         while True:
             self._dup_data = 0
+            self._skipped_emails = 0
             restriction = self._get_restriction()
 
             ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction)
