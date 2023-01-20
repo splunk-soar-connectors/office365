@@ -389,9 +389,7 @@ class ProcessEmail(object):
             return phantom.APP_ERROR
 
         # base64 decode it if possible
-        self._debug_print("before_filedata: {}".format(type(file_data)))
         file_data = self._decode_if_base64(file_data)
-        self._debug_print("after_filedata: {}".format(type(file_data)))
 
         self._parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
 

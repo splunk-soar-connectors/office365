@@ -829,6 +829,9 @@ class EWSOnPremConnector(BaseConnector):
 
         self.set_validator('ipv6', self._is_ip)
         self._timeout = config.get("timeout", DEFAULT_REQUEST_TIMEOUT)
+        ret_val, self._timeout = self._validate_integer(self, self._timeout, "Request Timeout")
+        if phantom.is_fail(ret_val):
+            return self.get_status()
 
         return phantom.APP_SUCCESS
 
