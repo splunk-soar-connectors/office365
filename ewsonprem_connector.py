@@ -453,10 +453,11 @@ class EWSOnPremConnector(BaseConnector):
             self._state.pop('oauth_token', None)
             return None, EWS_ASSET_CORRUPTED
 
-        if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
-            self.debug_print("Try to generate token from refresh token")
-            ret = self._azure_int_auth_refresh(client_id, client_secret)
-        else:
+        self.debug_print("Try to generate token from refresh token")
+        ret = self._azure_int_auth_refresh(client_id, client_secret)
+        
+        if ret[0] is None:
+            self.debug_print(ret[1])
             self.debug_print("Try to generate token from authorization code")
             ret = self._azure_int_auth_initial(client_id, rsh, client_secret)
 
