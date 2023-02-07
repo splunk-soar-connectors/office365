@@ -1,6 +1,6 @@
 # File: ews_soap.py
 #
-# Copyright (c) 2016-2022 Splunk Inc.
+# Copyright (c) 2016-2023 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -538,7 +538,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
 
 def add_to_envelope(lxml_obj, target_user=None):
 
-    header = S.Header(T.RequestServerVersion({'Version': 'Exchange2010'}))
+    header = S.Header(T.RequestServerVersion({'Version': 'Exchange2013'}))
 
     if target_user:
         impersonation = T.ExchangeImpersonation(
