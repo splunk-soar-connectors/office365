@@ -1,5 +1,5 @@
 <!--File: readme.html
-Copyright (c) 2016-2022 Splunk Inc.
+Copyright (c) 2016-2023 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -412,6 +412,16 @@ These URL artifacts will be tough to use in a playbook without additional proces
 of the associated domain artifacts will be incorrect as well, since they will all point to 'secure.contoso.com'.
 </p>
 
+<h2>Increase the maximum limit for ingestion</h2>
+<p>
+  The steps are as follows:
+  <ol>
+    <li>Open the <b>/opt/phantom/usr/nginx/conf/conf.d/phantom-nginx-server.conf</b> file on the SOAR instance.</li>
+    <li>Change that value of the <b>client_max_body_size</b> variable as per your needs.</li>
+    <li>Save the configuration file.</li>
+    <li>Reload nginx service using <b>service nginx reload</b> or try restarting the nginx server from SOAR platform: Go to <b>Administrator->System Health-> System Health</b> then restart the nginx server.</li>
+  </ol>
+</p>
 <h2>Port Information</h2>
 <p>
   The app uses HTTP/ HTTPS protocol for communicating with the Office365 server. Below are the default ports used by
