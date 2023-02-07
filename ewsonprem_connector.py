@@ -458,7 +458,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self.debug_print("Try to generate token from refresh token")
         ret = self._azure_int_auth_refresh(client_id, client_secret)
-        
+
         if ret[0] is None:
             self.debug_print(ret[1])
             self.debug_print("Try to generate token from authorization code")
