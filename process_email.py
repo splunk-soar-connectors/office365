@@ -1404,7 +1404,7 @@ class ProcessEmail(object):
         # if fips is not enabled, we should continue with our existing md5 usage for generating SDIs
         # to not impact existing customers
         if not fips_enabled:
-            return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
+            return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()   # nosemgrep
 
         return hashlib.sha256(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
 
