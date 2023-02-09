@@ -401,6 +401,12 @@ class EWSOnPremConnector(BaseConnector):
             return None, "Timed out waiting for login"
 
         self._state['oauth_token'] = oauth_token
+
+        # NOTE: This state is in the app directory, it is
+        #  different from the app state (i.e. self._state)
+
+        rsh.delete_state()
+
         return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
 
     def _azure_int_auth_refresh(self, client_id, client_secret):
@@ -468,11 +474,6 @@ class EWSOnPremConnector(BaseConnector):
             self._state = rsh._encrypt_state(self._state)
         except Exception:
             return None, EWS_ENCRYPTION_ERROR
-
-        # NOTE: This state is in the app directory, it is
-        #  different from the app state (i.e. self._state)
-
-        rsh.delete_state()
 
         return ret
 
