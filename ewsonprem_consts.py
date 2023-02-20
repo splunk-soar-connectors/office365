@@ -1,6 +1,6 @@
 # File: ewsonprem_consts.py
 #
-# Copyright (c) 2016-2022 Splunk Inc.
+# Copyright (c) 2016-2023 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,12 +47,12 @@ EWS_JSON_FED_VERIFY_CERT = "fed_verify_server_cert"
 EWS_JSON_IS_PUBLIC_FOLDER = "is_public_folder"
 
 # Success and error messages constants
-EWSONPREM_ERR_CONNECTIVITY_TEST = "Connectivity test failed"
-EWSONPREM_SUCC_CONNECTIVITY_TEST = "Connectivity test passed"
-EWSONPREM_ERR_SERVER_CONNECTION = "Connection failed"
-EWSONPREM_ERR_FROM_SERVER = "API failed. Status code: {code}. Message: {message}"
-EWSONPREM_ERR_JSON_PARSE = "Unable to parse reply, raw string reply: '{raw_text}'"
-EWSONPREM_STATE_FILE_CORRUPT_ERR = "Error occurred while loading the state file due to its unexpected format. " \
+EWSONPREM_CONNECTIVITY_TEST_ERROR = "Connectivity test failed"
+EWSONPREM_CONNECTIVITY_TEST_SUCCESS = "Connectivity test passed"
+EWSONPREM_SERVER_CONNECTIVITY_ERROR = "Connection failed"
+EWSONPREM_FROM_SERVER_ERROR = "API failed. Status code: {code}. Message: {message}"
+EWSONPREM_JSON_PARSE_ERROR = "Unable to parse reply, raw string reply: '{raw_text}'"
+EWSONPREM_STATE_FILE_CORRUPT_ERROR = "Error occurred while loading the state file due to its unexpected format. " \
     "Resetting the state file with the default format. Please test the connectivity"
 MISSING_CLIENT_CREDS = "ERROR: client_id and client_secret are required parameters for OAuth Authentication, please specify them"
 
@@ -68,7 +68,7 @@ EWS_MODIFY_CONFIG = "Toggling the impersonation configuration on the asset might
 
 EWS_ASSET_CORRUPTED = "ERROR: The token present in the state file is corrupted. Deleting the token. " \
     "Please test the connectivity to generate a new token"
-EWS_ENCRYPTION_ERR = "Error occurred while encrypting the state file"
+EWS_ENCRYPTION_ERROR = "Error occurred while encrypting the state file"
 EWS_INGEST_LATEST_EMAILS = "latest first"
 EWS_INGEST_OLDEST_EMAILS = "oldest first"
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
