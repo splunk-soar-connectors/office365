@@ -426,7 +426,7 @@ class EWSOnPremConnector(BaseConnector):
         asset_id = self.get_asset_id()
         action = self.get_action_identifier()
 
-        #lock check
+        # lock check
         if not self._needs_auth_refreshing():
             self.save_progress("_azure_int_auth_refresh asset {}, action {}: not needs refresh token...".format(asset_id, action))
             oauth_token = self._state.get('oauth_token')
