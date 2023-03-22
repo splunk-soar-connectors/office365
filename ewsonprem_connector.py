@@ -409,7 +409,33 @@ class EWSOnPremConnector(BaseConnector):
 
         return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
 
+    def _needs_auth_refreshing(self):
+
+        utcnow = datetime.utcnow().timestamp()
+        self.debug_print("My_data: {}".format(( utcnow - self._state.get('auth_refresh_last_time', utcnow) ) > 5*60))
+        if ( utcnow - self._state.get('auth_refresh_last_time', utcnow) ) > 5*60:
+            self._state['auth_refresh_last_time'] = utcnow
+            return True
+        else:
+            if 'auth_refresh_last_time' not in self._state:
+                self._state['auth_refresh_last_time'] = utcnow
+                return False
+
     def _azure_int_auth_refresh(self, client_id, client_secret):
+
+        asset_id = self.get_asset_id()
+        action = self.get_action_identifier()
+
+        #lock check
+        if not self._needs_auth_refreshing():
+            self.save_progress("_azure_int_auth_refresh asset {}, action {}: not needs refresh token...".format(asset_id, action))
+            oauth_token = self._state.get('oauth_token')
+            return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
+        else:
+            self.save_progress("_azure_int_auth_refresh asset {}, action {}: needs refreshing...".format(asset_id, action))
+            return self._do_azure_int_auth_refresh(client_id, client_secret)
+
+    def _do_azure_int_auth_refresh(self, client_id, client_secret):
 
         oauth_token = self._state.get('oauth_token')
 
