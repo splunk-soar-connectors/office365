@@ -397,7 +397,7 @@ def get_update_email(email_id, change_key, categories=None, subject=None):
     return update_item
 
 
-def get_delete_email(message_ids):
+def get_delete_email(message_ids, is_hard_delete=None):
 
     if not isinstance(message_ids, list):
         message_ids = [message_ids]
@@ -405,8 +405,10 @@ def get_delete_email(message_ids):
     item_ids = [T.ItemId({'Id': x}) for x in message_ids]
     item_ids_m = M.ItemIds(*item_ids)
 
+    delete_type = 'HardDelete' if is_hard_delete else 'SoftDelete'
+
     del_item = M.DeleteItem(
-            {'DeleteType': 'HardDelete'},
+            {'DeleteType': delete_type},
             item_ids_m)
 
     return del_item
