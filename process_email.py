@@ -874,8 +874,8 @@ class ProcessEmail(object):
         tmp_dir = tmp_dir
         if not os.path.exists(tmp_dir):
             os.makedirs(tmp_dir)
-        extract_attach = self._config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]
-        extract_eml = self._config[PROC_EMAIL_JSON_EXTRACT_EML]
+        extract_attach = self._config.get(PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS, True)
+        extract_eml = self._config.get(PROC_EMAIL_JSON_EXTRACT_EML, True)
         charset = mail.get_content_charset()
 
         if not charset:
