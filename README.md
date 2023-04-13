@@ -2,11 +2,11 @@
 # EWS for Office 365
 
 Publisher: Splunk  
-Connector Version: 2\.13\.0  
+Connector Version: 2.14.0  
 Product Vendor: Microsoft  
 Product Name: Office 365  
-Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.4\.0  
+Product Version Supported (regex): ".\*"  
+Minimum Product Version: 5.4.0  
 
 This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service
 
@@ -502,27 +502,27 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **url** |  required  | string | EWS URL
 **username** |  required  | string | Username
 **password** |  optional  | password | Password
-**poll\_user** |  optional  | string | User Email Mailbox \(Test Connectivity and Poll\)
-**use\_impersonation** |  optional  | boolean | Use Impersonation
-**auth\_type** |  optional  | string | Authentication Mechanism to Use
-**client\_id** |  optional  | string | Client App ID for Azure/Fed AD/OAuth Authentication
-**client\_secret** |  optional  | password | Client Secret for Azure/Azure\(Interactive\)/OAuth Authentication
-**fed\_ping\_url** |  optional  | string | Federated Auth Ping URL
-**fed\_verify\_server\_cert** |  optional  | boolean | Verify Federated Server Certificate
-**authority\_url** |  optional  | string | Office 365 Authority URL \(For Federated Auth\)
-**poll\_folder** |  required  | string | Mailbox Folder to be Polled
-**ingest\_manner** |  required  | string | How to Ingest
-**first\_run\_max\_emails** |  required  | numeric | Maximum Emails to Poll First Time for Scheduled Polling
-**max\_containers** |  required  | numeric | Maximum Containers for Scheduled Polling
-**timeout** |  optional  | numeric | Request Timeout \(Default\: 60 seconds\)
-**extract\_attachments** |  optional  | boolean | Extract Attachments
-**extract\_urls** |  optional  | boolean | Extract URLs
-**extract\_ips** |  optional  | boolean | Extract IPs
-**extract\_domains** |  optional  | boolean | Extract Domain Names
-**extract\_hashes** |  optional  | boolean | Extract Hashes
-**extract\_eml** |  optional  | boolean | Extract root \(primary\) email as Vault
-**add\_body\_to\_header\_artifacts** |  optional  | boolean | Add Email Body to the Email Artifact
-**preprocess\_script** |  optional  | file | Script with Functions to Preprocess Containers and Artifacts
+**poll_user** |  optional  | string | User Email Mailbox (Test Connectivity and Poll)
+**use_impersonation** |  optional  | boolean | Use Impersonation
+**auth_type** |  optional  | string | Authentication Mechanism to Use
+**client_id** |  optional  | string | Client App ID for Azure/Fed AD/OAuth Authentication
+**client_secret** |  optional  | password | Client Secret for Azure/Azure(Interactive)/OAuth Authentication
+**fed_ping_url** |  optional  | string | Federated Auth Ping URL
+**fed_verify_server_cert** |  optional  | boolean | Verify Federated Server Certificate
+**authority_url** |  optional  | string | Office 365 Authority URL (For Federated Auth)
+**poll_folder** |  required  | string | Mailbox Folder to be Polled
+**ingest_manner** |  required  | string | How to Ingest
+**first_run_max_emails** |  required  | numeric | Maximum Emails to Poll First Time for Scheduled Polling
+**max_containers** |  required  | numeric | Maximum Containers for Scheduled Polling
+**timeout** |  optional  | numeric | Request Timeout (Default: 60 seconds)
+**extract_attachments** |  optional  | boolean | Extract Attachments
+**extract_urls** |  optional  | boolean | Extract URLs
+**extract_ips** |  optional  | boolean | Extract IPs
+**extract_domains** |  optional  | boolean | Extract Domain Names
+**extract_hashes** |  optional  | boolean | Extract Hashes
+**extract_eml** |  optional  | boolean | Extract root (primary) email as Vault
+**add_body_to_header_artifacts** |  optional  | boolean | Add Email Body to the Email Artifact
+**preprocess_script** |  optional  | file | Script with Functions to Preprocess Containers and Artifacts
 
 ### Supported Actions  
 [test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity  
@@ -545,7 +545,7 @@ Validate the asset configuration for connectivity
 Type: **test**  
 Read only: **True**
 
-To check the connection and credentials, this action tries to list the email ids of the configured <b>poll\_user</b>\.
+To check the connection and credentials, this action tries to list the email ids of the configured <b>poll_user</b>.
 
 #### Action Parameters
 No parameters are required for this action
@@ -559,53 +559,53 @@ Search emails
 Type: **investigate**  
 Read only: **True**
 
-The <b>run query</b> action provides more than one method to search a user's mailbox\:<br><ul><li>Simple Search<br>Use the <b>subject</b> and <b>body</b> parameters to search for substring matches\. The <b>sender</b> parameter can be used to search for emails from a specific address\. However, it has been noticed that a match with the <b>sender</b> email address fails for emails that have been never sent or received, but instead have been created manually as a draft and copied to the searched mailbox\. In such cases, an AQS is a better option\. If more than one parameter is specified, the search is an <b>And</b> of the given values including the <b>internet\_message\_id</b>\.<br> <b>Simple Search</b> implements search filters\. More details regarding search filters can be found on this <a href="https\://msdn\.microsoft\.com/en\-us/library/office/dn579422\(v=exchg\.150\)\.aspx" target="\_blank">MSDN Link</a>\.<br></li><li>Query Search<br>For a more fine\-grained email search, the use of the <b>query</b> parameter is recommended\. If this parameter is specified, the <b>subject</b>, <b>internet\_message\_id</b>, and <b>body</b> parameters are ignored\.<br>This parameter supports AQS queries to search in a Mailbox\. More details regarding AQS keywords supported by Exchange can be found on this <a href="https\://msdn\.microsoft\.com/en\-us/library/office/dn579420\(v=exchg\.150\)\.aspx" target="\_blank">MSDN Link\.</a><br>Searching with AQS strings does have one notable restriction, however\. The AQS search string will only match substrings from the start of a word\. If a substring needs to be found in the middle of a word, use a <b>Simple Search</b>\.<br>Some examples\:<br><ul><li>All emails from user1\@contoso\.com or user2\@contoso\.com<br>from\:user1\@contoso\.com OR from\:user2\@contoso\.com</li><li>All emails containing the string <i>free vacations</i><br>body\: free vacations</li><li>This will match an email with subject containing the word <i>Details</i> but not <i>Cadet</i><br>subject\:det</li></li></ul></ul>If the <b>folder</b> parameter is not specified, each email based folder such as Inbox, Sent, etc\. will be searched, including the children \(nested\) folders\.<br>The action supports searching for a folder that is nested within another\.<br>To search in such a folder, specify the complete path using the <b>'/'</b> \(forward slash\) as the separator\.<br>For e\.g\. to search in a folder named <i>phishing</i> which is nested within \(is a child of\) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>\. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate\.<br>NOTE\: In some cases, search results may return more emails than are visible in an email client\. This is due to emails that have been just deleted, but not yet completely cleaned by the server\.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter\. The input should be of the form <i>min\_offset</i>\-<i>max\_offset</i>\. The results are always sorted in <i>descending</i> order to place the latest emails at the top\. For example to get the latest 10 emails that matched the filter, specify the range as 0\-9\. If multiple folders are searched for, then the range will be applied for each folder\.<br>So if the folder being searched for example <i>Inbox</i> has a child \(nested\) folder called <i>phishing</i> and the range specified is 2\-10, then the action will return 9 max emails for each folder\. If the range parameter is not specified by default the action will use <b>0\-10</b>\.<br><br>NOTE\: The <b>email</b> parameter is required\.<br><br>Many actions such as <b>delete email</b> and <b>copy email</b> require the <b>Office 365 email ID</b> as input\. Many times this value is not easily available, since not many email clients display it\. However, every email header has a value called <b>Message\-ID</b> assigned to it\. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV\+dguQ\+jd7RwiFgmZsLN\@contoso\.com&gt;\. Use this as the value \(including the &lt; and &gt; chars if present\) of <b>internet\_message\_id</b> parameter and execute the action\. The results will contain the <b>Office 365 email ID</b> of an email, which can be used as input for other actions\.
+The <b>run query</b> action provides more than one method to search a user's mailbox:<br><ul><li>Simple Search<br>Use the <b>subject</b> and <b>body</b> parameters to search for substring matches. The <b>sender</b> parameter can be used to search for emails from a specific address. However, it has been noticed that a match with the <b>sender</b> email address fails for emails that have been never sent or received, but instead have been created manually as a draft and copied to the searched mailbox. In such cases, an AQS is a better option. If more than one parameter is specified, the search is an <b>And</b> of the given values including the <b>internet_message_id</b>.<br> <b>Simple Search</b> implements search filters. More details regarding search filters can be found on this <a href="https://msdn.microsoft.com/en-us/library/office/dn579422(v=exchg.150).aspx" target="_blank">MSDN Link</a>.<br></li><li>Query Search<br>For a more fine-grained email search, the use of the <b>query</b> parameter is recommended. If this parameter is specified, the <b>subject</b>, <b>internet_message_id</b>, and <b>body</b> parameters are ignored.<br>This parameter supports AQS queries to search in a Mailbox. More details regarding AQS keywords supported by Exchange can be found on this <a href="https://msdn.microsoft.com/en-us/library/office/dn579420(v=exchg.150).aspx" target="_blank">MSDN Link.</a><br>Searching with AQS strings does have one notable restriction, however. The AQS search string will only match substrings from the start of a word. If a substring needs to be found in the middle of a word, use a <b>Simple Search</b>.<br>Some examples:<br><ul><li>All emails from user1@contoso.com or user2@contoso.com<br>from:user1@contoso.com OR from:user2@contoso.com</li><li>All emails containing the string <i>free vacations</i><br>body: free vacations</li><li>This will match an email with subject containing the word <i>Details</i> but not <i>Cadet</i><br>subject:det</li></li></ul></ul>If the <b>folder</b> parameter is not specified, each email based folder such as Inbox, Sent, etc. will be searched, including the children (nested) folders.<br>The action supports searching for a folder that is nested within another.<br>To search in such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to search in a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>NOTE: In some cases, search results may return more emails than are visible in an email client. This is due to emails that have been just deleted, but not yet completely cleaned by the server.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. The results are always sorted in <i>descending</i> order to place the latest emails at the top. For example to get the latest 10 emails that matched the filter, specify the range as 0-9. If multiple folders are searched for, then the range will be applied for each folder.<br>So if the folder being searched for example <i>Inbox</i> has a child (nested) folder called <i>phishing</i> and the range specified is 2-10, then the action will return 9 max emails for each folder. If the range parameter is not specified by default the action will use <b>0-10</b>.<br><br>NOTE: The <b>email</b> parameter is required.<br><br>Many actions such as <b>delete email</b> and <b>copy email</b> require the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However, every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this as the value (including the &lt; and &gt; chars if present) of <b>internet_message_id</b> parameter and execute the action. The results will contain the <b>Office 365 email ID</b> of an email, which can be used as input for other actions.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**email** |  required  | User's email \(Mailbox to search in\) | string |  `email` 
-**folder** |  optional  | Folder name/path \(to search in\) | string |  `mail folder`  `mail folder path` 
+**email** |  required  | User's email (Mailbox to search in) | string |  `email` 
+**folder** |  optional  | Folder name/path (to search in) | string |  `mail folder`  `mail folder path` 
 **subject** |  optional  | Substring to search in subject | string | 
 **sender** |  optional  | Sender email address to match | string |  `email` 
 **body** |  optional  | Substring to search in body | string | 
-**internet\_message\_id** |  optional  | Internet message ID | string |  `internet message id` 
+**internet_message_id** |  optional  | Internet message ID | string |  `internet message id` 
 **query** |  optional  | AQS string | string | 
-**range** |  optional  | Email range to return \(min\_offset\-max\_offset\) | string | 
-**ignore\_subfolders** |  optional  | Ignore subfolders | boolean | 
+**range** |  optional  | Email range to return (min_offset-max_offset) | string | 
+**ignore_subfolders** |  optional  | Ignore subfolders | boolean | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.body | string |  |   Text body 
-action\_result\.parameter\.email | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.parameter\.folder | string |  `mail folder`  `mail folder path`  |   Archive 
-action\_result\.parameter\.ignore\_subfolders | boolean |  |   True  False 
-action\_result\.parameter\.internet\_message\_id | string |  `internet message id`  |   CAOj3gTm\-8BRJ\_v\+=UPGqCcBFRbUPFn9cspjZJs=P4PPWL34\-2Q\@mail\.gmail\.com 
-action\_result\.parameter\.query | string |  |   subject\:test AND from\:"User Name" 
-action\_result\.parameter\.range | string |  |   0\-10 
-action\_result\.parameter\.sender | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.parameter\.subject | string |  |   Task Update 
-action\_result\.data\.\*\.folder | string |  `mail folder`  |  
-action\_result\.data\.\*\.folder\_path | string |  `mail folder path`  |  
-action\_result\.data\.\*\.t\_DateTimeReceived | string |  |  
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_EmailAddress | string |  `email`  |  
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_MailboxType | string |  |  
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_RoutingType | string |  |  
-action\_result\.data\.\*\.t\_InternetMessageId | string |  `internet message id`  |  
-action\_result\.data\.\*\.t\_ItemId\.\@ChangeKey | string |  |  
-action\_result\.data\.\*\.t\_ItemId\.\@Id | string |  `exchange email id`  `office 365 email id`  |  
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_EmailAddress | string |  `email`  |  
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_MailboxType | string |  |  
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_RoutingType | string |  |  
-action\_result\.data\.\*\.t\_Subject | string |  |  
-action\_result\.summary\.emails\_matched | numeric |  |  
-action\_result\.message | string |  |   Emails matched\: 7 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.body | string |  |   Text body 
+action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.folder | string |  `mail folder`  `mail folder path`  |   Archive 
+action_result.parameter.ignore_subfolders | boolean |  |   True  False 
+action_result.parameter.internet_message_id | string |  `internet message id`  |   CAOj3gTm-8BRJ_v+=UPGqCcBFRbUPFn9cspjZJs=P4PPWL34-2Q@mail.gmail.com 
+action_result.parameter.query | string |  |   subject:test AND from:"User Name" 
+action_result.parameter.range | string |  |   0-10 
+action_result.parameter.sender | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.subject | string |  |   Task Update 
+action_result.data.\*.folder | string |  `mail folder`  |  
+action_result.data.\*.folder_path | string |  `mail folder path`  |  
+action_result.data.\*.t_DateTimeReceived | string |  |  
+action_result.data.\*.t_From.t_Mailbox.t_EmailAddress | string |  `email`  |  
+action_result.data.\*.t_From.t_Mailbox.t_MailboxType | string |  |  
+action_result.data.\*.t_From.t_Mailbox.t_Name | string |  |  
+action_result.data.\*.t_From.t_Mailbox.t_RoutingType | string |  |  
+action_result.data.\*.t_InternetMessageId | string |  `internet message id`  |  
+action_result.data.\*.t_ItemId.@ChangeKey | string |  |  
+action_result.data.\*.t_ItemId.@Id | string |  `exchange email id`  `office 365 email id`  |  
+action_result.data.\*.t_Sender.t_Mailbox.t_EmailAddress | string |  `email`  |  
+action_result.data.\*.t_Sender.t_Mailbox.t_MailboxType | string |  |  
+action_result.data.\*.t_Sender.t_Mailbox.t_Name | string |  |  
+action_result.data.\*.t_Sender.t_Mailbox.t_RoutingType | string |  |  
+action_result.data.\*.t_Subject | string |  |  
+action_result.summary.emails_matched | numeric |  |  
+action_result.message | string |  |   Emails matched: 7 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'delete email'
 Delete emails
@@ -613,25 +613,25 @@ Delete emails
 Type: **contain**  
 Read only: **False**
 
-This action supports a comma\-separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server\. The deleted emails are moved to the Deleted Items \(trash\) folder\.
+This action supports a comma-separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server. The deleted emails are moved to the Deleted Items (trash) folder.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**id** |  required  | Message IDs to delete \(comma\-separated values supported\) | string |  `exchange email id`  `office 365 email id` 
-**email** |  optional  | Email of the mailbox owner \(used during impersonation\) | string |  `email` 
+**id** |  required  | Message IDs to delete (comma-separated values supported) | string |  `exchange email id`  `office 365 email id` 
+**email** |  optional  | Email of the mailbox owner (used during impersonation) | string |  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.email | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.parameter\.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0\_MMHKonvdoWQcAQSl1b8BFiEmbqZql\_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql\_JiUtwABS2DpdwAAAA== 
-action\_result\.data | string |  |  
-action\_result\.summary | string |  |  
-action\_result\.message | string |  |   Successfully deleted email 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA== 
+action_result.data | string |  |  
+action_result.summary | string |  |  
+action_result.message | string |  |   Successfully deleted email 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'copy email'
 Copy an email to a folder
@@ -639,33 +639,33 @@ Copy an email to a folder
 Type: **generic**  
 Read only: **False**
 
-The action supports copying to a folder that is nested within another\.<br>To copy to such a folder, specify the complete path using the <b>'/'</b> \(forward slash\) as the separator\.<br>For e\.g\. to copy email to a folder named <i>phishing</i> which is nested within \(is a child of\) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>\. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate\.<br>The action requires the <b>Office 365 email ID</b> as input\. Many times this value is not easily available, since not many email clients display it\. However, every email header has a value called <b>Message\-ID</b> assigned to it\. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV\+dguQ\+jd7RwiFgmZsLN\@contoso\.com&gt;\. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>Office 365 email ID</b> of an email\.<br>The action will return the ID of the newly copied email in the data path <b>action\_result\.data\.\*\.new\_email\_id</b>, however, this value is not available for cross\-mailbox or mailbox to public folder <b>copy email</b> actions \(please see the documentation of the <a href="https\://msdn\.microsoft\.com/en\-us/library/office/aa565012\(v=exchg\.150\)\.aspx" target="\_blank">CopyItem operation on MSDN</a>\)\. However, in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Office 365 email ID</b>\.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>copy email</b> action, for reasons explained in this section, <b>copy email</b> is the only action that overrides the asset config parameter <b>use\_impersonation</b>\. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled \(by setting the <b>dont\_impersonate</b> action parameter to False or Unchecked\)\.<br>However, depending on the server configuration, this action might fail with an <i>Access Denied</i> error\. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however, if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes\. In this case, the action might require to impersonate a user other than the one specified in the <b>email</b> parameter\. In such a scenario use the <b>impersonate\_email</b> to specify an alternate email to <i>impersonate</i>\.<br>Set the <b>dont\_impersonate</b> parameter to <b>True</b> to disable impersonation all together\. This value will override the one configured on the asset\. The default value of this param is <b>False</b>\.</p>
+The action supports copying to a folder that is nested within another.<br>To copy to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to copy email to a folder named <i>phishing</i> which is nested within (is a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>. If a folder name has a literal forward slash in the name escape it with a backslash to differentiate.<br>The action requires the <b>Office 365 email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However, every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>Office 365 email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.\*.new_email_id</b>, however, this value is not available for cross-mailbox or mailbox to public folder <b>copy email</b> actions (please see the documentation of the <a href="https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx" target="_blank">CopyItem operation on MSDN</a>). However, in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Office 365 email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>copy email</b> action, for reasons explained in this section, <b>copy email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However, depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however, if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case, the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **id** |  required  | Message ID to copy | string |  `exchange email id`  `office 365 email id` 
-**email** |  required  | Destination mailbox \(Email\) | string |  `email` 
+**email** |  required  | Destination mailbox (Email) | string |  `email` 
 **folder** |  required  | Destination mail folder name/path | string |  `mail folder`  `mail folder path` 
-**impersonate\_email** |  optional  | Impersonation email | string |  `email` 
-**dont\_impersonate** |  optional  | Don't use impersonation | boolean | 
-**is\_public\_folder** |  optional  | Mailbox folder is a public folder | boolean | 
+**impersonate_email** |  optional  | Impersonation email | string |  `email` 
+**dont_impersonate** |  optional  | Don't use impersonation | boolean | 
+**is_public_folder** |  optional  | Mailbox folder is a public folder | boolean | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.dont\_impersonate | boolean |  |   True  False 
-action\_result\.parameter\.email | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.parameter\.folder | string |  `mail folder`  `mail folder path`  |   Inbox/myfolder 
-action\_result\.parameter\.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0\_MMHKonvdoWQcAQSl1b8BFiEmbqZql\_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql\_JiUtwABS2DpdwAAAA== 
-action\_result\.parameter\.impersonate\_email | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.parameter\.is\_public\_folder | boolean |  |   True  False 
-action\_result\.data\.\*\.new\_email\_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq\+QSJSiCN540EaIAAAAAAEbAAC63sxpeq\+QSJSiCN540EaIAAHWGokmAAA= 
-action\_result\.summary | string |  |  
-action\_result\.message | string |  |   Successfully copied email 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.dont_impersonate | boolean |  |   True  False 
+action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.folder | string |  `mail folder`  `mail folder path`  |   Inbox/myfolder 
+action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA== 
+action_result.parameter.impersonate_email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.is_public_folder | boolean |  |   True  False 
+action_result.data.\*.new_email_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA= 
+action_result.summary | string |  |  
+action_result.message | string |  |   Successfully copied email 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'move email'
 Move an email to a folder
@@ -673,33 +673,33 @@ Move an email to a folder
 Type: **generic**  
 Read only: **False**
 
-The action supports moving an email to a folder that is nested within another\.<br>To move to such a folder, specify the complete path using the <b>'/'</b> \(forward slash\) as the separator\.<br>For example, to move an email to a folder named <i>phishing</i> which is nested within <i>Inbox</i>, set the value as <b>Inbox/phishing</b>\.<br>The action requires the exchange email ID as input\. Many times this value is not easily available, since not many email clients display it\. However, every email header has a value called <b>Message\-ID</b> assigned to it\. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV\+dguQ\+jd7RwiFgmZsLN\@contoso\.com&gt;\. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>exchange email ID</b> of an email\.<br>The action will return the ID of the newly copied email in the data path <b>action\_result\.data\.\*\.new\_email\_id</b>, however, this value is not available for cross\-mailbox or mailbox to public folder <b>move email</b> actions \(please see the documentation of the <a href="https\://msdn\.microsoft\.com/en\-us/library/office/aa565012\(v=exchg\.150\)\.aspx" target="\_blank">MoveItem operation on MSDN</a>\)\. However, in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Exchange email ID</b>\.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>move email</b> action, for reasons explained in this section, <b>move email</b> is the only action that overrides the asset config parameter <b>use\_impersonation</b>\. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled \(by setting the <b>dont\_impersonate</b> action parameter to False or Unchecked\)\.<br>However, depending on the server configuration, this action might fail with an <i>Access Denied</i> error\. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however, if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes\. In this case, the action might require to impersonate a user other than the one specified in the <b>email</b> parameter\. In such a scenario use the <b>impersonate\_email</b> to specify an alternate email to <i>impersonate</i>\.<br>Set the <b>dont\_impersonate</b> parameter to <b>True</b> to disable impersonation all together\. This value will override the one configured on the asset\. The default value of this param is <b>False</b>\.</p>
+The action supports moving an email to a folder that is nested within another.<br>To move to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For example, to move an email to a folder named <i>phishing</i> which is nested within <i>Inbox</i>, set the value as <b>Inbox/phishing</b>.<br>The action requires the exchange email ID as input. Many times this value is not easily available, since not many email clients display it. However, every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>exchange email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.\*.new_email_id</b>, however, this value is not available for cross-mailbox or mailbox to public folder <b>move email</b> actions (please see the documentation of the <a href="https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx" target="_blank">MoveItem operation on MSDN</a>). However, in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Exchange email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>move email</b> action, for reasons explained in this section, <b>move email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However, depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however, if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case, the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **id** |  required  | Message ID to move | string |  `exchange email id`  `office 365 email id` 
-**email** |  required  | Destination Mailbox \(Email\) | string |  `email` 
+**email** |  required  | Destination Mailbox (Email) | string |  `email` 
 **folder** |  required  | Destination Mail Folder Name/Path | string |  `mail folder`  `mail folder path` 
-**impersonate\_email** |  optional  | Impersonation Email | string |  `email` 
-**dont\_impersonate** |  optional  | Don't use impersonation | boolean | 
-**is\_public\_folder** |  optional  | Mailbox folder is a public folder | boolean | 
+**impersonate_email** |  optional  | Impersonation Email | string |  `email` 
+**dont_impersonate** |  optional  | Don't use impersonation | boolean | 
+**is_public_folder** |  optional  | Mailbox folder is a public folder | boolean | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.dont\_impersonate | boolean |  |   True  False 
-action\_result\.parameter\.email | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.parameter\.folder | string |  `mail folder`  `mail folder path`  |   Inbox/myfolder 
-action\_result\.parameter\.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0\_MMHKonvdoWQcAQSl1b8BFiEmbqZql\_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql\_JiUtwABS2DpdwAAAA== 
-action\_result\.parameter\.impersonate\_email | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.parameter\.is\_public\_folder | boolean |  |   True  False 
-action\_result\.data\.\*\.new\_email\_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq\+QSJSiCN540EaIAAAAAAEbAAC63sxpeq\+QSJSiCN540EaIAAHWGokmAAA= 
-action\_result\.summary | string |  |  
-action\_result\.message | string |  |   Successfully moved 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.dont_impersonate | boolean |  |   True  False 
+action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.folder | string |  `mail folder`  `mail folder path`  |   Inbox/myfolder 
+action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA== 
+action_result.parameter.impersonate_email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.is_public_folder | boolean |  |   True  False 
+action_result.data.\*.new_email_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA= 
+action_result.summary | string |  |  
+action_result.message | string |  |   Successfully moved 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'block sender'
 Add the sender email into the block list
@@ -707,27 +707,27 @@ Add the sender email into the block list
 Type: **contain**  
 Read only: **False**
 
-This action takes as input an email whose sender will be added to the Block Senders List\. The message ID changes after the execution and is a required parameter for request hence undo action would require unique ID\. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List\.<ul><li>If the <b>move\_to\_junk\_folder</b> parameter is set to True, the sender of the target email message is added to the blocked sender list and the email message is moved to the Junk Email folder\.</li><li>If the <b>move\_to\_junk\_folder</b> attribute is set to False, the sender of the target email message is added to the blocked sender list and the email message is not moved from the folder\.</li></ul>To view the current Block Senders list, please read the following Powershell articles\: <ul><li>https\://docs\.microsoft\.com/en\-us/powershell/exchange/exchange\-online/connect\-to\-exchange\-online\-powershell/connect\-to\-exchange\-online\-powershell?view=exchange\-ps</li><li>https\://docs\.microsoft\.com/en\-us/powershell/module/exchange/antispam\-antimalware/Get\-MailboxJunkEmailConfiguration?view=exchange\-ps</li></ul>
+This action takes as input an email whose sender will be added to the Block Senders List. The message ID changes after the execution and is a required parameter for request hence undo action would require unique ID. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List.<ul><li>If the <b>move_to_junk_folder</b> parameter is set to True, the sender of the target email message is added to the blocked sender list and the email message is moved to the Junk Email folder.</li><li>If the <b>move_to_junk_folder</b> attribute is set to False, the sender of the target email message is added to the blocked sender list and the email message is not moved from the folder.</li></ul>To view the current Block Senders list, please read the following Powershell articles: <ul><li>https://docs.microsoft.com/en-us/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/connect-to-exchange-online-powershell?view=exchange-ps</li><li>https://docs.microsoft.com/en-us/powershell/module/exchange/antispam-antimalware/Get-MailboxJunkEmailConfiguration?view=exchange-ps</li></ul>
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **id** |  required  | Message ID to pick the sender of | string |  `exchange email id`  `office 365 email id` 
-**move\_to\_junk\_folder** |  optional  | Should the email be moved to the junk folder | boolean | 
-**email** |  optional  | Email of the mailbox owner \(used during impersonation\) | string |  `email` 
+**move_to_junk_folder** |  optional  | Should the email be moved to the junk folder | boolean | 
+**email** |  optional  | Email of the mailbox owner (used during impersonation) | string |  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.email | string |  `email`  |   foo\@bar\.onmicrosoft\.com 
-action\_result\.parameter\.id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq\+QSJSiCN540EaIAAAAAAEMAAC63sxpeq\+QSJSiCN540EaIAAHWGo0OAAA= 
-action\_result\.parameter\.move\_to\_junk\_folder | boolean |  |   True  False 
-action\_result\.data\.\*\.new\_email\_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq\+QSJSiCN540EaIAAAAAAEbAAC63sxpeq\+QSJSiCN540EaIAAHWGokmAAA= 
-action\_result\.summary\.new\_email\_id | string |  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq\+QSJSiCN540EaIAAAAAAEbAAC63sxpeq\+QSJSiCN540EaIAAHWGokmAAA= 
-action\_result\.message | string |  |   Sender blocked\. Message moved to Junk Folder 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.email | string |  `email`  |   foo@bar.onmicrosoft.com 
+action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEMAAC63sxpeq+QSJSiCN540EaIAAHWGo0OAAA= 
+action_result.parameter.move_to_junk_folder | boolean |  |   True  False 
+action_result.data.\*.new_email_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA= 
+action_result.summary.new_email_id | string |  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA= 
+action_result.message | string |  |   Sender blocked. Message moved to Junk Folder 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'unblock sender'
 Remove the sender email from the block list
@@ -735,27 +735,27 @@ Remove the sender email from the block list
 Type: **correct**  
 Read only: **False**
 
-This action takes as input an email whose sender will be removed from the Block Senders List\. The message ID changes after the execution and is a required parameter for request hence undo action would require unique ID\. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List\.<ul><li>If the <b>move\_from\_junk\_folder</b> parameter is set to True, the sender of the target email message is removed from the blocked sender list and the email message is moved from the Junk Email folder\.</li><li>If the <b>move\_from\_junk\_folder</b> attribute is set to False, the sender of the target email message is removed from the blocked sender list and the email message is not moved from the folder\.</li></ul>To view the current Block Senders list, please read the following Powershell articles\: <ul><li>https\://docs\.microsoft\.com/en\-us/powershell/exchange/exchange\-online/connect\-to\-exchange\-online\-powershell/connect\-to\-exchange\-online\-powershell?view=exchange\-ps</li><li>https\://docs\.microsoft\.com/en\-us/powershell/module/exchange/antispam\-antimalware/Get\-MailboxJunkEmailConfiguration?view=exchange\-ps</li></ul>
+This action takes as input an email whose sender will be removed from the Block Senders List. The message ID changes after the execution and is a required parameter for request hence undo action would require unique ID. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List.<ul><li>If the <b>move_from_junk_folder</b> parameter is set to True, the sender of the target email message is removed from the blocked sender list and the email message is moved from the Junk Email folder.</li><li>If the <b>move_from_junk_folder</b> attribute is set to False, the sender of the target email message is removed from the blocked sender list and the email message is not moved from the folder.</li></ul>To view the current Block Senders list, please read the following Powershell articles: <ul><li>https://docs.microsoft.com/en-us/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/connect-to-exchange-online-powershell?view=exchange-ps</li><li>https://docs.microsoft.com/en-us/powershell/module/exchange/antispam-antimalware/Get-MailboxJunkEmailConfiguration?view=exchange-ps</li></ul>
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **id** |  required  | Message ID to pick the sender of | string |  `exchange email id`  `office 365 email id` 
-**move\_from\_junk\_folder** |  optional  | Should the email be moved out of the junk folder | boolean | 
-**email** |  optional  | Email of the mailbox owner \(used during impersonation\) | string |  `email` 
+**move_from_junk_folder** |  optional  | Should the email be moved out of the junk folder | boolean | 
+**email** |  optional  | Email of the mailbox owner (used during impersonation) | string |  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.email | string |  `email`  |   foo\@bar\.onmicrosoft\.com 
-action\_result\.parameter\.id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq\+QSJSiCN540EaIAAAAAAEbAAC63sxpeq\+QSJSiCN540EaIAAHWGokmAAA= 
-action\_result\.parameter\.move\_from\_junk\_folder | boolean |  |   True  False 
-action\_result\.data\.\*\.new\_email\_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq\+QSJSiCN540EaIAAAAAAEMAAC63sxpeq\+QSJSiCN540EaIAAHWGo0PAAA= 
-action\_result\.summary\.new\_email\_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq\+QSJSiCN540EaIAAAAAAEMAAC63sxpeq\+QSJSiCN540EaIAAHWGo0PAAA= 
-action\_result\.message | string |  |   Sender Unblocked\. Message moved out of Junk Folder 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.email | string |  `email`  |   foo@bar.onmicrosoft.com 
+action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA= 
+action_result.parameter.move_from_junk_folder | boolean |  |   True  False 
+action_result.data.\*.new_email_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEMAAC63sxpeq+QSJSiCN540EaIAAHWGo0PAAA= 
+action_result.summary.new_email_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEMAAC63sxpeq+QSJSiCN540EaIAAHWGo0PAAA= 
+action_result.message | string |  |   Sender Unblocked. Message moved out of Junk Folder 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'get email'
 Get an email from the server
@@ -763,229 +763,229 @@ Get an email from the server
 Type: **investigate**  
 Read only: **True**
 
-Every container that is created by the app has the following values\:<ul><li>The container ID that is generated by the SOAR platform\.</li><li>The Source ID that the app equates to the email ID on the server if known or the vault ID if asked to parse from the vault\.</li><li>The raw\_email data in the container's data field is set to the RFC822 format of the email\.</li></ul>This action parses email data and if specified create containers and artifacts\. The email data to parse is either extracted from the remote server if an email ID is specified, from a SOAR container, if the <b>container\_id</b> is specified or from the vault item if the <b>vault\_id</b> is specified\.<br>If all three parameters are specified, the action will use the <b>container\_id</b>\.<br>The data paths differ depending on where the email data is parsed from\.<br><br><p>If parsed from the server\:<br><ul><li>The data path <b>action\_result\.data\.\*\.t\_MimeContent\.\#text</b> contains the email in RFC822 format but base64 encoded\.</li><li>The data path <b>action\_result\.data\.\*\.t\_Body\.\#text</b> contains the email body\.</li><li>The widget for this action will render a text version of the email body if possible\.</li><li>If impersonation is enabled on the asset, the <b>email</b> parameter is required, else <b>email</b> will be ignored\.</li></ul></p><p>If parsed from the container or vault\:<br><ul><li>The widget does not render the email body\.</li><li>The email headers are listed in a table\.</li></ul></p><p>If <b>ingest\_email</b> is set to </b>True</b>\:<br><ul><li>The ID of the container created or updated will be set in the <b>action\_result\.summary\.container\_id</b> data path</li><li>The widget will display this ID as <b>Ingested Container ID</b></li></ul></p>Do note that any containers and artifacts created will use the label configured in the asset\.<br>The action will fail if the vault item asked to parse and ingest is not a valid MSG file\.
+Every container that is created by the app has the following values:<ul><li>The container ID that is generated by the SOAR platform.</li><li>The Source ID that the app equates to the email ID on the server if known or the vault ID if asked to parse from the vault.</li><li>The raw_email data in the container's data field is set to the RFC822 format of the email.</li></ul>This action parses email data and if specified create containers and artifacts. The email data to parse is either extracted from the remote server if an email ID is specified, from a SOAR container, if the <b>container_id</b> is specified or from the vault item if the <b>vault_id</b> is specified.<br>If all three parameters are specified, the action will use the <b>container_id</b>.<br>The data paths differ depending on where the email data is parsed from.<br><br><p>If parsed from the server:<br><ul><li>The data path <b>action_result.data.\*.t_MimeContent.#text</b> contains the email in RFC822 format but base64 encoded.</li><li>The data path <b>action_result.data.\*.t_Body.#text</b> contains the email body.</li><li>The widget for this action will render a text version of the email body if possible.</li><li>If impersonation is enabled on the asset, the <b>email</b> parameter is required, else <b>email</b> will be ignored.</li></ul></p><p>If parsed from the container or vault:<br><ul><li>The widget does not render the email body.</li><li>The email headers are listed in a table.</li></ul></p><p>If <b>ingest_email</b> is set to </b>True</b>:<br><ul><li>The ID of the container created or updated will be set in the <b>action_result.summary.container_id</b> data path</li><li>The widget will display this ID as <b>Ingested Container ID</b></li></ul></p>Do note that any containers and artifacts created will use the label configured in the asset.<br>The action will fail if the vault item asked to parse and ingest is not a valid MSG file.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **id** |  optional  | Message ID to get | string |  `exchange email id`  `office 365 email id` 
-**email** |  optional  | Email of the mailbox owner \(used during impersonation\) | string |  `email` 
-**container\_id** |  optional  | Container ID to get email data from | numeric |  `phantom container id` 
-**vault\_id** |  optional  | Vault ID to get email from | string |  `vault id` 
-**ingest\_email** |  optional  | Create containers and artifacts | boolean | 
+**email** |  optional  | Email of the mailbox owner (used during impersonation) | string |  `email` 
+**container_id** |  optional  | Container ID to get email data from | numeric |  `phantom container id` 
+**vault_id** |  optional  | Vault ID to get email from | string |  `vault id` 
+**ingest_email** |  optional  | Create containers and artifacts | boolean | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.container\_id | numeric |  `phantom container id`  |   360 
-action\_result\.parameter\.email | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.parameter\.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0\_MMHKonvdoWQcAQSl1b8BFiEmbqZql\_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql\_JiUtwABS2DpfAAAAA== 
-action\_result\.parameter\.ingest\_email | boolean |  |   True  False 
-action\_result\.parameter\.vault\_id | string |  `vault id`  |   719dbf72d7c0bc89d7e34306c08a0b66191902b9 
-action\_result\.data\.\*\.Accept\-Language | string |  |   en\-US 
-action\_result\.data\.\*\.Authentication\-Results | string |  |  
-action\_result\.data\.\*\.CC | string |  |   Test1 Test <Test1\-test\@test\.onmicrosoft\.com>, Test3 test
-	<test3\-test\@test\.onmicrosoft\.com>, test4\-test
-	<test4\-test\@test\.onmicrosoft\.com> 
-action\_result\.data\.\*\.Cc | string |  |  
-action\_result\.data\.\*\.Content\-Language | string |  |   en\-US 
-action\_result\.data\.\*\.Content\-Transfer\-Encoding | string |  |  
-action\_result\.data\.\*\.Content\-Type | string |  |  
-action\_result\.data\.\*\.DKIM\-Signature | string |  |  
-action\_result\.data\.\*\.Date | string |  |  
-action\_result\.data\.\*\.Delivered\-To | string |  |  
-action\_result\.data\.\*\.From | string |  |  
-action\_result\.data\.\*\.Importance | string |  |  
-action\_result\.data\.\*\.In\-Reply\-To | string |  |  
-action\_result\.data\.\*\.Keywords | string |  |   Yellow,Blue 
-action\_result\.data\.\*\.List\-ID | string |  |  
-action\_result\.data\.\*\.MIME\-Version | string |  |  
-action\_result\.data\.\*\.Mail\-Filter\-Gateway | string |  |  
-action\_result\.data\.\*\.Message\-ID | string |  `internet message id`  |   9D50879E\-56CC\-4692\-B069\-EF71BFC8B956\@test\.com 
-action\_result\.data\.\*\.Message\-Id | string |  |   9D50879E\-56CC\-4692\-B069\-EF71BFC8B956\@test\.com 
-action\_result\.data\.\*\.Mime\-Version | string |  |   1\.0 \(Mac OS X Mail 11\.5 \\\(3445\.9\.1\\\)\) 
-action\_result\.data\.\*\.Mime\-version | string |  |  
-action\_result\.data\.\*\.Received | string |  |  
-action\_result\.data\.\*\.Received\-SPF | string |  |  
-action\_result\.data\.\*\.References | string |  |  
-action\_result\.data\.\*\.Reply\-To | string |  |  
-action\_result\.data\.\*\.Return\-Path | string |  |  
-action\_result\.data\.\*\.Sender | string |  |  
-action\_result\.data\.\*\.SpamDiagnosticMetadata | string |  |  
-action\_result\.data\.\*\.SpamDiagnosticOutput | string |  |  
-action\_result\.data\.\*\.Subject | string |  |  
-action\_result\.data\.\*\.Thread\-Index | string |  |   AQHU\+Oj1xuD20z3Pd0q457aXRQmm/A== 
-action\_result\.data\.\*\.Thread\-Topic | string |  |   Backup Details 
-action\_result\.data\.\*\.To | string |  |  
-action\_result\.data\.\*\.User\-Agent | string |  |  
-action\_result\.data\.\*\.X\-Account\-Key | string |  |  
-action\_result\.data\.\*\.X\-CSA\-Complaints | string |  |  
-action\_result\.data\.\*\.X\-CTCH\-RefID | string |  |  
-action\_result\.data\.\*\.X\-DKIM\-Signer | string |  |   DkimX \(v3\.20\.320\) 
-action\_result\.data\.\*\.X\-DkimResult\-Test | string |  |  
-action\_result\.data\.\*\.X\-EMLMAPI | string |  |   1 
-action\_result\.data\.\*\.X\-EMLSPAM | string |  |   0 
-action\_result\.data\.\*\.X\-EMLSPAM\-INFO | string |  |   NTS 
-action\_result\.data\.\*\.X\-EMLSPAM\-REFID | string |  |   15\.1i72ko9\.1drkk1sq8\.9tvke 
-action\_result\.data\.\*\.X\-EMLSPAM\-SCORE | string |  |   \-100 
-action\_result\.data\.\*\.X\-EOPAttributedMessage | string |  |  
-action\_result\.data\.\*\.X\-EOPTenantAttributedMessage | string |  |  
-action\_result\.data\.\*\.X\-Exchange\-Antispam\-Report\-CFA\-Test | string |  |  
-action\_result\.data\.\*\.X\-Exchange\-Antispam\-Report\-Test | string |  |  
-action\_result\.data\.\*\.X\-Forefront\-Antispam\-Report | string |  |  
-action\_result\.data\.\*\.X\-IncomingHeaderCount | string |  |  
-action\_result\.data\.\*\.X\-IncomingTopHeaderMarker | string |  |  
-action\_result\.data\.\*\.X\-MS\-Exchange\-CrossTenant\-AuthAs | string |  |   Anonymous 
-action\_result\.data\.\*\.X\-MS\-Exchange\-CrossTenant\-AuthSource | string |  |   
- CO2NAM12FT063\.eop\-nam11\.prod\.protection\.outlook\.com 
-action\_result\.data\.\*\.X\-MS\-Exchange\-CrossTenant\-FromEntityHeader | string |  |  
-action\_result\.data\.\*\.X\-MS\-Exchange\-CrossTenant\-Id | string |  |  
-action\_result\.data\.\*\.X\-MS\-Exchange\-CrossTenant\-Network\-Message\-Id | string |  |   eea20072\-262f\-4c77\-fea1\-08d99e9ee568 
-action\_result\.data\.\*\.X\-MS\-Exchange\-CrossTenant\-OriginalArrivalTime | string |  |  
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-AVStamp\-Service | string |  |  
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-AuthAs | string |  |   Anonymous 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-AuthMechanism | string |  |   04 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-AuthSource | string |  |   DM3NAM03FT025\.eop\-NAM03\.prod\.protection\.outlook\.com 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-ExpirationInterval | string |  |   1\:00\:00\:00\.0000000 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-ExpirationIntervalReason | string |  |   OriginalSubmit 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-ExpirationStartTime | string |  |   03 Nov 2021 07\:52\:34\.0520
- \(UTC\) 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-ExpirationStartTimeReason | string |  |   OriginalSubmit 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-MessageDirectionality | string |  |  
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-Network\-Message\-Id | string |  |   5f710505\-67ec\-412d\-1f18\-08d6c43b2595 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-RecordReviewCfmType | string |  |   0 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Organization\-SCL | string |  |   1 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Processed\-By\-BccFoldering | string |  |   15\.20\.4649\.019 
-action\_result\.data\.\*\.X\-MS\-Exchange\-Transport\-CrossTenantHeadersStamped | string |  |  
-action\_result\.data\.\*\.X\-MS\-Exchange\-Transport\-EndToEndLatency | string |  |  
-action\_result\.data\.\*\.X\-MS\-Has\-Attach | string |  |  
-action\_result\.data\.\*\.X\-MS\-Iris\-MetaData | string |  |   \{"Type"\:null,"Fields"\:\{"InstanceID"\:"e192f723\-f038\-4208\-a42c\-da18e82e8edf","ActivityID"\:"585c19de\-7826\-40e3\-8ae0\-4d8d9446s2a4"\}\} 
-action\_result\.data\.\*\.X\-MS\-Office365\-Filtering\-Correlation\-Id | string |  |  
-action\_result\.data\.\*\.X\-MS\-Oob\-TLC\-OOBClassifiers | string |  |   OLM\:6790; 
-action\_result\.data\.\*\.X\-MS\-PublicTrafficType | string |  |   Email 
-action\_result\.data\.\*\.X\-MS\-TNEF\-Correlator | string |  |  
-action\_result\.data\.\*\.X\-MS\-TrafficTypeDiagnostic | string |  |   MW3PR11MB4569\: 
-action\_result\.data\.\*\.X\-Mail\-Filter\-Gateway\-From | string |  `email`  |  
-action\_result\.data\.\*\.X\-Mail\-Filter\-Gateway\-ID | string |  |  
-action\_result\.data\.\*\.X\-Mail\-Filter\-Gateway\-SpamDetectionEngine | string |  |  
-action\_result\.data\.\*\.X\-Mail\-Filter\-Gateway\-SpamScore | string |  |  
-action\_result\.data\.\*\.X\-Mail\-Filter\-Gateway\-To | string |  `email`  |  
-action\_result\.data\.\*\.X\-Mailer | string |  |  
-action\_result\.data\.\*\.X\-Microsoft\-Antispam | string |  |  
-action\_result\.data\.\*\.X\-Microsoft\-Antispam\-Mailbox\-Delivery | string |  |   ENG\:\(20160514016\)\(750119\)\(520011016\)\(944506303\)\(944626516\) 
-action\_result\.data\.\*\.X\-Microsoft\-Antispam\-Message\-Info | string |  |  
-action\_result\.data\.\*\.X\-Microsoft\-Exchange\-Diagnostics | string |  |  
-action\_result\.data\.\*\.X\-MimeOLE | string |  |  
-action\_result\.data\.\*\.X\-Mozilla\-Keys | string |  |  
-action\_result\.data\.\*\.X\-Priority | string |  |  
-action\_result\.data\.\*\.X\-SOHU\-Antispam\-Bayes | string |  |  
-action\_result\.data\.\*\.X\-SOHU\-Antispam\-Language | string |  |  
-action\_result\.data\.\*\.X\-Spam\-Status | string |  |  
-action\_result\.data\.\*\.X\-UIDL | string |  |  
-action\_result\.data\.\*\.X\-Universally\-Unique\-Identifier | string |  |   5D79A10E\-C85D\-4CE7\-B6D1\-9DCC124FFD5B 
-action\_result\.data\.\*\.acceptlanguage | string |  |   en\-US 
-action\_result\.data\.\*\.authentication\-results | string |  |  
-action\_result\.data\.\*\.decodedSubject | string |  |   All content together 
-action\_result\.data\.\*\.received\-spf | string |  |   Pass \(protection\.outlook\.com\: domain of microsoft\.com\) 
-action\_result\.data\.\*\.suggested\_attachment\_session\_id | string |  |   43d9f8e0\-ef4b\-d632\-00e2\-4abed4aa0917 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_AttachmentId\.\@Id | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_ContentId | string |  |   d756bc71\-43c6\-46f2\-b820\-395a18d7c8e8 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_ContentType | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_IsContactPhoto | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_IsInline | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_LastModifiedTime | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_Size | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_AttachmentId\.\@Id | string |  |   AAMkAGFmNTRhODA4LWIxMjQtNDJjYy05NDM2LWQ5MzY1MGFhMTkzYwBGAAAAAADRlY7ewL4xToKRDciQog5UBwBvUzMoUJx2S4nbgxzZWx2PAAErpUKKAABvUzMoUJx2S4nbgxzZWx2PAAErpUaJAAABEgAQALAq0uoMizdOkKn0KRLVZRA= 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_ContentId | string |  |   f\_k2e9r8820 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_ContentType | string |  |   text/plain 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_IsContactPhoto | string |  |   false 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_IsInline | string |  |   false 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_LastModifiedTime | string |  |   2019\-11\-18T11\:39\:09 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_Name | string |  |   Decoded unicode content\.txt 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_Size | string |  |   3060 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_AttachmentId\.\@Id | string |  |   AAMkAGFmNTRhODA4LWIxMjQtNDJjYy05NDM2LWQ5MzY1MGFhMTkzYwBGAAAAAADRlY7ewL4xToKRDciQog5UBwBvUzMoUJx2S4nbgxzZWx2PAAEHZktbAABvUzMoUJx2S4nbgxzZWx2PAAEnqxySAAABEgAQAJLWPCMq6xVKqs/B8AGe9u8= 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_ContentId | string |  |   7EDA0C436D3462448FB924F5E23C15E9\@namprd17\.prod\.outlook\.com 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_ContentType | string |  |   message/rfc822 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_IsInline | string |  |   false 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_LastModifiedTime | string |  |   2019\-11\-08T11\:46\:32 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_Name | string |  |   Test user added you to the test\-h1 group 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_Size | string |  |   69824 
-action\_result\.data\.\*\.t\_Body\.\#text | string |  |  
-action\_result\.data\.\*\.t\_Body\.\@BodyType | string |  |  
-action\_result\.data\.\*\.t\_CcRecipients\.t\_Mailbox\.t\_EmailAddress | string |  |  
-action\_result\.data\.\*\.t\_CcRecipients\.t\_Mailbox\.t\_MailboxType | string |  |  
-action\_result\.data\.\*\.t\_CcRecipients\.t\_Mailbox\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_CcRecipients\.t\_Mailbox\.t\_RoutingType | string |  |  
-action\_result\.data\.\*\.t\_DateTimeCreated | string |  |  
-action\_result\.data\.\*\.t\_DateTimeReceived | string |  |  
-action\_result\.data\.\*\.t\_DateTimeSent | string |  |  
-action\_result\.data\.\*\.t\_ExtendedProperty\.t\_ExtendedFieldURI\.\@PropertyTag | string |  |   0x7d 
-action\_result\.data\.\*\.t\_ExtendedProperty\.t\_ExtendedFieldURI\.\@PropertyType | string |  |   String 
-action\_result\.data\.\*\.t\_ExtendedProperty\.t\_Value | string |  |   MWHPR18MB1519\.namprd18\.prod\.outlook\.com 
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_EmailAddress | string |  `email`  |  
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_MailboxType | string |  |  
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_RoutingType | string |  |  
-action\_result\.data\.\*\.t\_HasAttachments | string |  |  
-action\_result\.data\.\*\.t\_InternetMessageId | string |  `internet message id`  |  
-action\_result\.data\.\*\.t\_IsAssociated | string |  |  
-action\_result\.data\.\*\.t\_IsDeliveryReceiptRequested | string |  |  
-action\_result\.data\.\*\.t\_IsRead | string |  |  
-action\_result\.data\.\*\.t\_IsReadReceiptRequested | string |  |  
-action\_result\.data\.\*\.t\_ItemId\.\@ChangeKey | string |  |  
-action\_result\.data\.\*\.t\_ItemId\.\@Id | string |  |  
-action\_result\.data\.\*\.t\_LastModifiedTime | string |  |  
-action\_result\.data\.\*\.t\_MimeContent\.\#text | string |  |  
-action\_result\.data\.\*\.t\_MimeContent\.\@CharacterSet | string |  |  
-action\_result\.data\.\*\.t\_ResponseObjects\.t\_ForwardItem | string |  |  
-action\_result\.data\.\*\.t\_ResponseObjects\.t\_ReplyAllToItem | string |  |  
-action\_result\.data\.\*\.t\_ResponseObjects\.t\_ReplyToItem | string |  |  
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_EmailAddress | string |  `email`  |  
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_MailboxType | string |  |  
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_RoutingType | string |  |  
-action\_result\.data\.\*\.t\_Sensitivity | string |  |  
-action\_result\.data\.\*\.t\_Size | string |  |  
-action\_result\.data\.\*\.t\_Subject | string |  |  
-action\_result\.data\.\*\.t\_ToRecipients\.t\_Mailbox\.\*\.t\_EmailAddress | string |  `email`  |  
-action\_result\.data\.\*\.t\_ToRecipients\.t\_Mailbox\.\*\.t\_MailboxType | string |  |  
-action\_result\.data\.\*\.t\_ToRecipients\.t\_Mailbox\.\*\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_ToRecipients\.t\_Mailbox\.\*\.t\_RoutingType | string |  |  
-action\_result\.data\.\*\.x\-forefront\-antispam\-report | string |  |  
-action\_result\.data\.\*\.x\-job | string |  |  
-action\_result\.data\.\*\.x\-microsoft\-antispam | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-antispam\-messagedata | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-crosstenant\-authas | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-crosstenant\-authsource | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-crosstenant\-fromentityheader | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-crosstenant\-id | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-crosstenant\-mailboxtype | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-crosstenant\-network\-message\-id | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-crosstenant\-originalarrivaltime | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-crosstenant\-userprincipalname | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-organization\-authas | string |  |   Internal 
-action\_result\.data\.\*\.x\-ms\-exchange\-organization\-authmechanism | string |  |   04 
-action\_result\.data\.\*\.x\-ms\-exchange\-organization\-authsource | string |  |   BN7PR17MB2068\.namprd17\.prod\.outlook\.com 
-action\_result\.data\.\*\.x\-ms\-exchange\-organization\-originalclientipaddress | string |  |   103\.66\.112\.226 
-action\_result\.data\.\*\.x\-ms\-exchange\-organization\-originalserveripaddress | string |  |   \:\:1 
-action\_result\.data\.\*\.x\-ms\-exchange\-processed\-by\-bccfoldering | string |  |   15\.20\.4566\.015 
-action\_result\.data\.\*\.x\-ms\-exchange\-transport\-crosstenantheadersstamped | string |  |  
-action\_result\.data\.\*\.x\-ms\-exchange\-transport\-endtoendlatency | string |  |   00\:00\:01\.7075969 
-action\_result\.data\.\*\.x\-ms\-office365\-filtering\-correlation\-id | string |  |  
-action\_result\.data\.\*\.x\-ms\-oob\-tlc\-oobclassifiers | string |  |  
-action\_result\.data\.\*\.x\-ms\-publictraffictype | string |  |   Email 
-action\_result\.data\.\*\.x\-ms\-traffictypediagnostic | string |  |  
-action\_result\.data\.\*\.x\-originating\-ip | string |  |  
-action\_result\.summary\.container\_id | numeric |  `phantom container id`  |  
-action\_result\.summary\.create\_time | string |  |  
-action\_result\.summary\.email\_id | string |  `exchange email id`  `office 365 email id`  |  
-action\_result\.summary\.sent\_time | string |  |  
-action\_result\.summary\.subject | string |  |  
-action\_result\.message | string |  |   success 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.container_id | numeric |  `phantom container id`  |   360 
+action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpfAAAAA== 
+action_result.parameter.ingest_email | boolean |  |   True  False 
+action_result.parameter.vault_id | string |  `vault id`  |   719dbf72d7c0bc89d7e34306c08a0b66191902b9 
+action_result.data.\*.Accept-Language | string |  |   en-US 
+action_result.data.\*.Authentication-Results | string |  |  
+action_result.data.\*.CC | string |  |   Test1 Test <Test1-test@test.onmicrosoft.com>, Test3 test
+	<test3-test@test.onmicrosoft.com>, test4-test
+	<test4-test@test.onmicrosoft.com> 
+action_result.data.\*.Cc | string |  |  
+action_result.data.\*.Content-Language | string |  |   en-US 
+action_result.data.\*.Content-Transfer-Encoding | string |  |  
+action_result.data.\*.Content-Type | string |  |  
+action_result.data.\*.DKIM-Signature | string |  |  
+action_result.data.\*.Date | string |  |  
+action_result.data.\*.Delivered-To | string |  |  
+action_result.data.\*.From | string |  |  
+action_result.data.\*.Importance | string |  |  
+action_result.data.\*.In-Reply-To | string |  |  
+action_result.data.\*.Keywords | string |  |   Yellow,Blue 
+action_result.data.\*.List-ID | string |  |  
+action_result.data.\*.MIME-Version | string |  |  
+action_result.data.\*.Mail-Filter-Gateway | string |  |  
+action_result.data.\*.Message-ID | string |  `internet message id`  |   9D50879E-56CC-4692-B069-EF71BFC8B956@test.com 
+action_result.data.\*.Message-Id | string |  |   9D50879E-56CC-4692-B069-EF71BFC8B956@test.com 
+action_result.data.\*.Mime-Version | string |  |   1.0 (Mac OS X Mail 11.5 \\(3445.9.1\\)) 
+action_result.data.\*.Mime-version | string |  |  
+action_result.data.\*.Received | string |  |  
+action_result.data.\*.Received-SPF | string |  |  
+action_result.data.\*.References | string |  |  
+action_result.data.\*.Reply-To | string |  |  
+action_result.data.\*.Return-Path | string |  |  
+action_result.data.\*.Sender | string |  |  
+action_result.data.\*.SpamDiagnosticMetadata | string |  |  
+action_result.data.\*.SpamDiagnosticOutput | string |  |  
+action_result.data.\*.Subject | string |  |  
+action_result.data.\*.Thread-Index | string |  |   AQHU+Oj1xuD20z3Pd0q457aXRQmm/A== 
+action_result.data.\*.Thread-Topic | string |  |   Backup Details 
+action_result.data.\*.To | string |  |  
+action_result.data.\*.User-Agent | string |  |  
+action_result.data.\*.X-Account-Key | string |  |  
+action_result.data.\*.X-CSA-Complaints | string |  |  
+action_result.data.\*.X-CTCH-RefID | string |  |  
+action_result.data.\*.X-DKIM-Signer | string |  |   DkimX (v3.20.320) 
+action_result.data.\*.X-DkimResult-Test | string |  |  
+action_result.data.\*.X-EMLMAPI | string |  |   1 
+action_result.data.\*.X-EMLSPAM | string |  |   0 
+action_result.data.\*.X-EMLSPAM-INFO | string |  |   NTS 
+action_result.data.\*.X-EMLSPAM-REFID | string |  |   15.1i72ko9.1drkk1sq8.9tvke 
+action_result.data.\*.X-EMLSPAM-SCORE | string |  |   -100 
+action_result.data.\*.X-EOPAttributedMessage | string |  |  
+action_result.data.\*.X-EOPTenantAttributedMessage | string |  |  
+action_result.data.\*.X-Exchange-Antispam-Report-CFA-Test | string |  |  
+action_result.data.\*.X-Exchange-Antispam-Report-Test | string |  |  
+action_result.data.\*.X-Forefront-Antispam-Report | string |  |  
+action_result.data.\*.X-IncomingHeaderCount | string |  |  
+action_result.data.\*.X-IncomingTopHeaderMarker | string |  |  
+action_result.data.\*.X-MS-Exchange-CrossTenant-AuthAs | string |  |   Anonymous 
+action_result.data.\*.X-MS-Exchange-CrossTenant-AuthSource | string |  |   
+ CO2NAM12FT063.eop-nam11.prod.protection.outlook.com 
+action_result.data.\*.X-MS-Exchange-CrossTenant-FromEntityHeader | string |  |  
+action_result.data.\*.X-MS-Exchange-CrossTenant-Id | string |  |  
+action_result.data.\*.X-MS-Exchange-CrossTenant-Network-Message-Id | string |  |   eea20072-262f-4c77-fea1-08d99e9ee568 
+action_result.data.\*.X-MS-Exchange-CrossTenant-OriginalArrivalTime | string |  |  
+action_result.data.\*.X-MS-Exchange-Organization-AVStamp-Service | string |  |  
+action_result.data.\*.X-MS-Exchange-Organization-AuthAs | string |  |   Anonymous 
+action_result.data.\*.X-MS-Exchange-Organization-AuthMechanism | string |  |   04 
+action_result.data.\*.X-MS-Exchange-Organization-AuthSource | string |  |   DM3NAM03FT025.eop-NAM03.prod.protection.outlook.com 
+action_result.data.\*.X-MS-Exchange-Organization-ExpirationInterval | string |  |   1:00:00:00.0000000 
+action_result.data.\*.X-MS-Exchange-Organization-ExpirationIntervalReason | string |  |   OriginalSubmit 
+action_result.data.\*.X-MS-Exchange-Organization-ExpirationStartTime | string |  |   03 Nov 2021 07:52:34.0520
+ (UTC) 
+action_result.data.\*.X-MS-Exchange-Organization-ExpirationStartTimeReason | string |  |   OriginalSubmit 
+action_result.data.\*.X-MS-Exchange-Organization-MessageDirectionality | string |  |  
+action_result.data.\*.X-MS-Exchange-Organization-Network-Message-Id | string |  |   5f710505-67ec-412d-1f18-08d6c43b2595 
+action_result.data.\*.X-MS-Exchange-Organization-RecordReviewCfmType | string |  |   0 
+action_result.data.\*.X-MS-Exchange-Organization-SCL | string |  |   1 
+action_result.data.\*.X-MS-Exchange-Processed-By-BccFoldering | string |  |   15.20.4649.019 
+action_result.data.\*.X-MS-Exchange-Transport-CrossTenantHeadersStamped | string |  |  
+action_result.data.\*.X-MS-Exchange-Transport-EndToEndLatency | string |  |  
+action_result.data.\*.X-MS-Has-Attach | string |  |  
+action_result.data.\*.X-MS-Iris-MetaData | string |  |   {"Type":null,"Fields":{"InstanceID":"e192f723-f038-4208-a42c-da18e82e8edf","ActivityID":"585c19de-7826-40e3-8ae0-4d8d9446s2a4"}} 
+action_result.data.\*.X-MS-Office365-Filtering-Correlation-Id | string |  |  
+action_result.data.\*.X-MS-Oob-TLC-OOBClassifiers | string |  |   OLM:6790; 
+action_result.data.\*.X-MS-PublicTrafficType | string |  |   Email 
+action_result.data.\*.X-MS-TNEF-Correlator | string |  |  
+action_result.data.\*.X-MS-TrafficTypeDiagnostic | string |  |   MW3PR11MB4569: 
+action_result.data.\*.X-Mail-Filter-Gateway-From | string |  `email`  |  
+action_result.data.\*.X-Mail-Filter-Gateway-ID | string |  |  
+action_result.data.\*.X-Mail-Filter-Gateway-SpamDetectionEngine | string |  |  
+action_result.data.\*.X-Mail-Filter-Gateway-SpamScore | string |  |  
+action_result.data.\*.X-Mail-Filter-Gateway-To | string |  `email`  |  
+action_result.data.\*.X-Mailer | string |  |  
+action_result.data.\*.X-Microsoft-Antispam | string |  |  
+action_result.data.\*.X-Microsoft-Antispam-Mailbox-Delivery | string |  |   ENG:(20160514016)(750119)(520011016)(944506303)(944626516) 
+action_result.data.\*.X-Microsoft-Antispam-Message-Info | string |  |  
+action_result.data.\*.X-Microsoft-Exchange-Diagnostics | string |  |  
+action_result.data.\*.X-MimeOLE | string |  |  
+action_result.data.\*.X-Mozilla-Keys | string |  |  
+action_result.data.\*.X-Priority | string |  |  
+action_result.data.\*.X-SOHU-Antispam-Bayes | string |  |  
+action_result.data.\*.X-SOHU-Antispam-Language | string |  |  
+action_result.data.\*.X-Spam-Status | string |  |  
+action_result.data.\*.X-UIDL | string |  |  
+action_result.data.\*.X-Universally-Unique-Identifier | string |  |   5D79A10E-C85D-4CE7-B6D1-9DCC124FFD5B 
+action_result.data.\*.acceptlanguage | string |  |   en-US 
+action_result.data.\*.authentication-results | string |  |  
+action_result.data.\*.decodedSubject | string |  |   All content together 
+action_result.data.\*.received-spf | string |  |   Pass (protection.outlook.com: domain of microsoft.com) 
+action_result.data.\*.suggested_attachment_session_id | string |  |   43d9f8e0-ef4b-d632-00e2-4abed4aa0917 
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_AttachmentId.@Id | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_ContentId | string |  |   d756bc71-43c6-46f2-b820-395a18d7c8e8 
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_ContentType | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_IsContactPhoto | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_IsInline | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_LastModifiedTime | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_Name | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_Size | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.t_AttachmentId.@Id | string |  |   AAMkAGFmNTRhODA4LWIxMjQtNDJjYy05NDM2LWQ5MzY1MGFhMTkzYwBGAAAAAADRlY7ewL4xToKRDciQog5UBwBvUzMoUJx2S4nbgxzZWx2PAAErpUKKAABvUzMoUJx2S4nbgxzZWx2PAAErpUaJAAABEgAQALAq0uoMizdOkKn0KRLVZRA= 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_ContentId | string |  |   f_k2e9r8820 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_ContentType | string |  |   text/plain 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_IsContactPhoto | string |  |   false 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_IsInline | string |  |   false 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_LastModifiedTime | string |  |   2019-11-18T11:39:09 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_Name | string |  |   Decoded unicode content.txt 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_Size | string |  |   3060 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_AttachmentId.@Id | string |  |   AAMkAGFmNTRhODA4LWIxMjQtNDJjYy05NDM2LWQ5MzY1MGFhMTkzYwBGAAAAAADRlY7ewL4xToKRDciQog5UBwBvUzMoUJx2S4nbgxzZWx2PAAEHZktbAABvUzMoUJx2S4nbgxzZWx2PAAEnqxySAAABEgAQAJLWPCMq6xVKqs/B8AGe9u8= 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_ContentId | string |  |   7EDA0C436D3462448FB924F5E23C15E9@namprd17.prod.outlook.com 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_ContentType | string |  |   message/rfc822 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_IsInline | string |  |   false 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_LastModifiedTime | string |  |   2019-11-08T11:46:32 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_Name | string |  |   Test user added you to the test-h1 group 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_Size | string |  |   69824 
+action_result.data.\*.t_Body.#text | string |  |  
+action_result.data.\*.t_Body.@BodyType | string |  |  
+action_result.data.\*.t_CcRecipients.t_Mailbox.t_EmailAddress | string |  |  
+action_result.data.\*.t_CcRecipients.t_Mailbox.t_MailboxType | string |  |  
+action_result.data.\*.t_CcRecipients.t_Mailbox.t_Name | string |  |  
+action_result.data.\*.t_CcRecipients.t_Mailbox.t_RoutingType | string |  |  
+action_result.data.\*.t_DateTimeCreated | string |  |  
+action_result.data.\*.t_DateTimeReceived | string |  |  
+action_result.data.\*.t_DateTimeSent | string |  |  
+action_result.data.\*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag | string |  |   0x7d 
+action_result.data.\*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType | string |  |   String 
+action_result.data.\*.t_ExtendedProperty.t_Value | string |  |   MWHPR18MB1519.namprd18.prod.outlook.com 
+action_result.data.\*.t_From.t_Mailbox.t_EmailAddress | string |  `email`  |  
+action_result.data.\*.t_From.t_Mailbox.t_MailboxType | string |  |  
+action_result.data.\*.t_From.t_Mailbox.t_Name | string |  |  
+action_result.data.\*.t_From.t_Mailbox.t_RoutingType | string |  |  
+action_result.data.\*.t_HasAttachments | string |  |  
+action_result.data.\*.t_InternetMessageId | string |  `internet message id`  |  
+action_result.data.\*.t_IsAssociated | string |  |  
+action_result.data.\*.t_IsDeliveryReceiptRequested | string |  |  
+action_result.data.\*.t_IsRead | string |  |  
+action_result.data.\*.t_IsReadReceiptRequested | string |  |  
+action_result.data.\*.t_ItemId.@ChangeKey | string |  |  
+action_result.data.\*.t_ItemId.@Id | string |  |  
+action_result.data.\*.t_LastModifiedTime | string |  |  
+action_result.data.\*.t_MimeContent.#text | string |  |  
+action_result.data.\*.t_MimeContent.@CharacterSet | string |  |  
+action_result.data.\*.t_ResponseObjects.t_ForwardItem | string |  |  
+action_result.data.\*.t_ResponseObjects.t_ReplyAllToItem | string |  |  
+action_result.data.\*.t_ResponseObjects.t_ReplyToItem | string |  |  
+action_result.data.\*.t_Sender.t_Mailbox.t_EmailAddress | string |  `email`  |  
+action_result.data.\*.t_Sender.t_Mailbox.t_MailboxType | string |  |  
+action_result.data.\*.t_Sender.t_Mailbox.t_Name | string |  |  
+action_result.data.\*.t_Sender.t_Mailbox.t_RoutingType | string |  |  
+action_result.data.\*.t_Sensitivity | string |  |  
+action_result.data.\*.t_Size | string |  |  
+action_result.data.\*.t_Subject | string |  |  
+action_result.data.\*.t_ToRecipients.t_Mailbox.\*.t_EmailAddress | string |  `email`  |  
+action_result.data.\*.t_ToRecipients.t_Mailbox.\*.t_MailboxType | string |  |  
+action_result.data.\*.t_ToRecipients.t_Mailbox.\*.t_Name | string |  |  
+action_result.data.\*.t_ToRecipients.t_Mailbox.\*.t_RoutingType | string |  |  
+action_result.data.\*.x-forefront-antispam-report | string |  |  
+action_result.data.\*.x-job | string |  |  
+action_result.data.\*.x-microsoft-antispam | string |  |  
+action_result.data.\*.x-ms-exchange-antispam-messagedata | string |  |  
+action_result.data.\*.x-ms-exchange-crosstenant-authas | string |  |  
+action_result.data.\*.x-ms-exchange-crosstenant-authsource | string |  |  
+action_result.data.\*.x-ms-exchange-crosstenant-fromentityheader | string |  |  
+action_result.data.\*.x-ms-exchange-crosstenant-id | string |  |  
+action_result.data.\*.x-ms-exchange-crosstenant-mailboxtype | string |  |  
+action_result.data.\*.x-ms-exchange-crosstenant-network-message-id | string |  |  
+action_result.data.\*.x-ms-exchange-crosstenant-originalarrivaltime | string |  |  
+action_result.data.\*.x-ms-exchange-crosstenant-userprincipalname | string |  |  
+action_result.data.\*.x-ms-exchange-organization-authas | string |  |   Internal 
+action_result.data.\*.x-ms-exchange-organization-authmechanism | string |  |   04 
+action_result.data.\*.x-ms-exchange-organization-authsource | string |  |   BN7PR17MB2068.namprd17.prod.outlook.com 
+action_result.data.\*.x-ms-exchange-organization-originalclientipaddress | string |  |   103.66.112.226 
+action_result.data.\*.x-ms-exchange-organization-originalserveripaddress | string |  |   ::1 
+action_result.data.\*.x-ms-exchange-processed-by-bccfoldering | string |  |   15.20.4566.015 
+action_result.data.\*.x-ms-exchange-transport-crosstenantheadersstamped | string |  |  
+action_result.data.\*.x-ms-exchange-transport-endtoendlatency | string |  |   00:00:01.7075969 
+action_result.data.\*.x-ms-office365-filtering-correlation-id | string |  |  
+action_result.data.\*.x-ms-oob-tlc-oobclassifiers | string |  |  
+action_result.data.\*.x-ms-publictraffictype | string |  |   Email 
+action_result.data.\*.x-ms-traffictypediagnostic | string |  |  
+action_result.data.\*.x-originating-ip | string |  |  
+action_result.summary.container_id | numeric |  `phantom container id`  |  
+action_result.summary.create_time | string |  |  
+action_result.summary.email_id | string |  `exchange email id`  `office 365 email id`  |  
+action_result.summary.sent_time | string |  |  
+action_result.summary.subject | string |  |  
+action_result.message | string |  |   success 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'list addresses'
 Get the email addresses that make up a Distribution List
@@ -993,30 +993,30 @@ Get the email addresses that make up a Distribution List
 Type: **investigate**  
 Read only: **True**
 
-The <b>group</b> parameter supports as input the email \(for e\.g\. dleng\@corp\.contoso\.com\) or the name \(for e\.g\. dleng\) of the distribution list\. If the recursive parameter is true and if any group in the hierarchy below the group provided in the input parameter points to any group in the parent chain, then the action may take 10\-15 minutes to execute because the method calls itself recursively until the maximum depth of recursion is exhausted\.
+The <b>group</b> parameter supports as input the email (for e.g. dleng@corp.contoso.com) or the name (for e.g. dleng) of the distribution list. If the recursive parameter is true and if any group in the hierarchy below the group provided in the input parameter points to any group in the parent chain, then the action may take 10-15 minutes to execute because the method calls itself recursively until the maximum depth of recursion is exhausted.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **group** |  required  | Distribution List to expand | string |  `email`  `exchange distribution list` 
 **recursive** |  optional  | Expand all sub distribution lists | boolean | 
-**impersonate\_email** |  optional  | Impersonation email | string |  `email` 
+**impersonate_email** |  optional  | Impersonation email | string |  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.group | string |  `email`  `exchange distribution list`  |   test\_playbook2\@testdomain\.onmicrosoft\.com 
-action\_result\.parameter\.recursive | boolean |  |   True  False 
-action\_result\.parameter\.impersonate\_email | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.data\.\*\.t\_EmailAddress | string |  `email`  |  
-action\_result\.data\.\*\.t\_MailboxType | string |  |  
-action\_result\.data\.\*\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_RoutingType | string |  |  
-action\_result\.summary\.total\_entries | numeric |  |  
-action\_result\.message | string |  |   success 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.group | string |  `email`  `exchange distribution list`  |   test_playbook2@testdomain.onmicrosoft.com 
+action_result.parameter.recursive | boolean |  |   True  False 
+action_result.parameter.impersonate_email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.data.\*.t_EmailAddress | string |  `email`  |  
+action_result.data.\*.t_MailboxType | string |  |  
+action_result.data.\*.t_Name | string |  |  
+action_result.data.\*.t_RoutingType | string |  |  
+action_result.summary.total_entries | numeric |  |  
+action_result.message | string |  |   success 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'lookup email'
 Resolve an Alias name or email address, into mailboxes
@@ -1028,47 +1028,47 @@ Read only: **True**
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **email** |  required  | Name to resolve | string |  `exchange alias`  `email` 
-**impersonate\_email** |  optional  | Impersonation email | string |  `email` 
+**impersonate_email** |  optional  | Impersonation email | string |  `email` 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.email | string |  `exchange alias`  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.parameter\.impersonate\_email | string |  `email`  |   user\@example\.onmicrosoft\.com 
-action\_result\.data\.\*\.t\_Contact\.t\_AssistantName | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_CompanyName | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_ContactSource | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_Culture | string |  |   en\-US 
-action\_result\.data\.\*\.t\_Contact\.t\_Culture | string |  |   en\-US 
-action\_result\.data\.\*\.t\_Contact\.t\_Department | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_DisplayName | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_EmailAddresses\.\*\.\#text | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_EmailAddresses\.\*\.\@Key | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_GivenName | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_Initials | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_JobTitle | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_Manager | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_OfficeLocation | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_PhoneNumbers\.t\_Entry\.\*\.\#text | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_PhoneNumbers\.t\_Entry\.\*\.\@Key | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_PhysicalAddresses\.t\_Entry\.\@Key | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_PhysicalAddresses\.t\_Entry\.t\_City | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_PhysicalAddresses\.t\_Entry\.t\_CountryOrRegion | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_PhysicalAddresses\.t\_Entry\.t\_PostalCode | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_PhysicalAddresses\.t\_Entry\.t\_State | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_PhysicalAddresses\.t\_Entry\.t\_Street | string |  |  
-action\_result\.data\.\*\.t\_Contact\.t\_Surname | string |  |  
-action\_result\.data\.\*\.t\_Mailbox\.t\_EmailAddress | string |  |  
-action\_result\.data\.\*\.t\_Mailbox\.t\_ItemId\.\@ChangeKey | string |  |   EQAAABYAAABBKXVvwEWISZupmqX4mJS3AAKo15Rj 
-action\_result\.data\.\*\.t\_Mailbox\.t\_ItemId\.\@Id | string |  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0\+MMHKonvdoWQcAQSl1b8BFiEmbqZql\+JiUtwAAAgEOAAAAQSl1b8BFiEmbqZql\+JiUtwACqImgdwAAAA== 
-action\_result\.data\.\*\.t\_Mailbox\.t\_MailboxType | string |  |  
-action\_result\.data\.\*\.t\_Mailbox\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_Mailbox\.t\_RoutingType | string |  |  
-action\_result\.summary\.total\_entries | numeric |  |  
-action\_result\.message | string |  |   Total entries\: 2 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.email | string |  `exchange alias`  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.impersonate_email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.data.\*.t_Contact.t_AssistantName | string |  |  
+action_result.data.\*.t_Contact.t_CompanyName | string |  |  
+action_result.data.\*.t_Contact.t_ContactSource | string |  |  
+action_result.data.\*.t_Contact.t_Culture | string |  |   en-US 
+action_result.data.\*.t_Contact.t_Culture | string |  |   en-US 
+action_result.data.\*.t_Contact.t_Department | string |  |  
+action_result.data.\*.t_Contact.t_DisplayName | string |  |  
+action_result.data.\*.t_Contact.t_EmailAddresses.\*.#text | string |  |  
+action_result.data.\*.t_Contact.t_EmailAddresses.\*.@Key | string |  |  
+action_result.data.\*.t_Contact.t_GivenName | string |  |  
+action_result.data.\*.t_Contact.t_Initials | string |  |  
+action_result.data.\*.t_Contact.t_JobTitle | string |  |  
+action_result.data.\*.t_Contact.t_Manager | string |  |  
+action_result.data.\*.t_Contact.t_OfficeLocation | string |  |  
+action_result.data.\*.t_Contact.t_PhoneNumbers.t_Entry.\*.#text | string |  |  
+action_result.data.\*.t_Contact.t_PhoneNumbers.t_Entry.\*.@Key | string |  |  
+action_result.data.\*.t_Contact.t_PhysicalAddresses.t_Entry.@Key | string |  |  
+action_result.data.\*.t_Contact.t_PhysicalAddresses.t_Entry.t_City | string |  |  
+action_result.data.\*.t_Contact.t_PhysicalAddresses.t_Entry.t_CountryOrRegion | string |  |  
+action_result.data.\*.t_Contact.t_PhysicalAddresses.t_Entry.t_PostalCode | string |  |  
+action_result.data.\*.t_Contact.t_PhysicalAddresses.t_Entry.t_State | string |  |  
+action_result.data.\*.t_Contact.t_PhysicalAddresses.t_Entry.t_Street | string |  |  
+action_result.data.\*.t_Contact.t_Surname | string |  |  
+action_result.data.\*.t_Mailbox.t_EmailAddress | string |  |  
+action_result.data.\*.t_Mailbox.t_ItemId.@ChangeKey | string |  |   EQAAABYAAABBKXVvwEWISZupmqX4mJS3AAKo15Rj 
+action_result.data.\*.t_Mailbox.t_ItemId.@Id | string |  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0+MMHKonvdoWQcAQSl1b8BFiEmbqZql+JiUtwAAAgEOAAAAQSl1b8BFiEmbqZql+JiUtwACqImgdwAAAA== 
+action_result.data.\*.t_Mailbox.t_MailboxType | string |  |  
+action_result.data.\*.t_Mailbox.t_Name | string |  |  
+action_result.data.\*.t_Mailbox.t_RoutingType | string |  |  
+action_result.summary.total_entries | numeric |  |  
+action_result.message | string |  |   Total entries: 2 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'update email'
 Update an email on the server
@@ -1076,96 +1076,96 @@ Update an email on the server
 Type: **generic**  
 Read only: **False**
 
-Currently, this action only updates the category and subject of an email\. To set multiple categories, please pass a comma\-separated list to the <b>category</b> parameter\.<br>NOTE\: If the user tries to update the categories, then the existing categories of the email will be replaced with the new categories provided as input\.
+Currently, this action only updates the category and subject of an email. To set multiple categories, please pass a comma-separated list to the <b>category</b> parameter.<br>NOTE: If the user tries to update the categories, then the existing categories of the email will be replaced with the new categories provided as input.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **id** |  required  | Message ID to update | string |  `exchange email id`  `office 365 email id` 
-**email** |  optional  | Email of the mailbox owner \(used during impersonation\) | string |  `email` 
+**email** |  optional  | Email of the mailbox owner (used during impersonation) | string |  `email` 
 **subject** |  optional  | Subject to set | string | 
 **category** |  optional  | Categories to set | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success  failed 
-action\_result\.parameter\.category | string |  |   Yellow, Blue, Purple, red 
-action\_result\.parameter\.email | string |  `email`  |   test\@sample\.com 
-action\_result\.parameter\.id | string |  `exchange email id`  `office 365 email id`  |   AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA= 
-action\_result\.parameter\.subject | string |  |   Both value are modified 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_AttachmentId\.\@Id | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_ContentType | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_IsContactPhoto | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_IsInline | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_LastModifiedTime | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.\*\.t\_Size | string |  |  
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_AttachmentId\.\@Id | string |  |   AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAABEgAQAHAXDtZM8ItNnDTtvcd6IAo= 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_ContentId | string |  `email`  |   7518226202D21C4397EE1CB1E2E540C7\@sample\.com 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_ContentType | string |  |   application/octet\-stream 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_IsContactPhoto | string |  |   false 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_IsInline | string |  |   false 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_LastModifiedTime | string |  |   2017\-10\-03T21\:31\:05 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_Name | string |  |   test\.msg 
-action\_result\.data\.\*\.t\_Attachments\.t\_FileAttachment\.t\_Size | string |  |   55360 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_AttachmentId\.\@Id | string |  |   AAMkAGFmNTRhODA4LWIxMjQtNDJjYy05NDM2LWQ5MzY1MGFhMTkzYwBGAAAAAADRlY7ewL4xToKRDciQog5UBwBvUzMoUJx2S4nbgxzZWx2PAAEHZktbAABvUzMoUJx2S4nbgxzZWx2PAAEnqxyTAAABEgAQAN3G1cBjf8hIhr55ziP1DBI= 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_ContentId | string |  |   9C14EE4B699D7349B0403C3CDF3F8729\@namprd17\.prod\.outlook\.com 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_ContentType | string |  |   message/rfc822 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_IsInline | string |  |   false 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_LastModifiedTime | string |  |   2019\-11\-08T11\:46\:32 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_Name | string |  |   Test user added you to the test\-h1 group 
-action\_result\.data\.\*\.t\_Attachments\.t\_ItemAttachment\.t\_Size | string |  |   69852 
-action\_result\.data\.\*\.t\_Body\.\#text | string |  |   Attached \.msg file\. Hello 
-action\_result\.data\.\*\.t\_Body\.\@BodyType | string |  |   Text 
-action\_result\.data\.\*\.t\_Categories | string |  |   red 
-action\_result\.data\.\*\.t\_CcRecipients\.t\_Mailbox\.t\_EmailAddress | string |  |  
-action\_result\.data\.\*\.t\_CcRecipients\.t\_Mailbox\.t\_MailboxType | string |  |  
-action\_result\.data\.\*\.t\_CcRecipients\.t\_Mailbox\.t\_Name | string |  |  
-action\_result\.data\.\*\.t\_CcRecipients\.t\_Mailbox\.t\_RoutingType | string |  |  
-action\_result\.data\.\*\.t\_DateTimeCreated | string |  |   2017\-10\-05T20\:19\:58Z 
-action\_result\.data\.\*\.t\_DateTimeReceived | string |  |   2017\-10\-03T21\:31\:05Z 
-action\_result\.data\.\*\.t\_DateTimeSent | string |  |   2017\-10\-03T21\:31\:20Z 
-action\_result\.data\.\*\.t\_ExtendedProperty\.t\_ExtendedFieldURI\.\@PropertyTag | string |  |   0x7d 
-action\_result\.data\.\*\.t\_ExtendedProperty\.t\_ExtendedFieldURI\.\@PropertyType | string |  |   String 
-action\_result\.data\.\*\.t\_ExtendedProperty\.t\_Value | string |  |   MWHPR18MB1519\.namprd18\.prod\.outlook\.com 
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_EmailAddress | string |  `email`  |   test\@sample\.com 
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_MailboxType | string |  |   OneOff 
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_Name | string |  |   Test 
-action\_result\.data\.\*\.t\_From\.t\_Mailbox\.t\_RoutingType | string |  |   SMTP 
-action\_result\.data\.\*\.t\_HasAttachments | string |  |   true 
-action\_result\.data\.\*\.t\_InternetMessageId | string |  |   <81c761fe\-caa8\-f924\-f65d\-079382c1ad0b\@sample\.com> 
-action\_result\.data\.\*\.t\_IsAssociated | string |  |   false 
-action\_result\.data\.\*\.t\_IsDeliveryReceiptRequested | string |  |   false 
-action\_result\.data\.\*\.t\_IsRead | string |  |   true 
-action\_result\.data\.\*\.t\_IsReadReceiptRequested | string |  |   false 
-action\_result\.data\.\*\.t\_ItemId\.\@ChangeKey | string |  |   CQAAABYAAACQhMsoV7EYSJF42ChR9SCxAAAAj9UU 
-action\_result\.data\.\*\.t\_ItemId\.\@Id | string |  |   AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA= 
-action\_result\.data\.\*\.t\_LastModifiedTime | string |  |   2017\-10\-31T01\:09\:20Z 
-action\_result\.data\.\*\.t\_MimeContent\.\#text | string |  |   RnJvbTogUGhhbnRvbSBVc2VyIDxwaGFudG9t\.\.\. 
-action\_result\.data\.\*\.t\_MimeContent\.\@CharacterSet | string |  |   UTF\-8 
-action\_result\.data\.\*\.t\_ResponseObjects\.t\_ForwardItem | string |  |  
-action\_result\.data\.\*\.t\_ResponseObjects\.t\_ReplyAllToItem | string |  |  
-action\_result\.data\.\*\.t\_ResponseObjects\.t\_ReplyToItem | string |  |  
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_EmailAddress | string |  `email`  |   test\@sample\.com 
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_MailboxType | string |  |   OneOff 
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_Name | string |  |   test 
-action\_result\.data\.\*\.t\_Sender\.t\_Mailbox\.t\_RoutingType | string |  |   SMTP 
-action\_result\.data\.\*\.t\_Sensitivity | string |  |   Normal 
-action\_result\.data\.\*\.t\_Size | string |  |   56353 
-action\_result\.data\.\*\.t\_Subject | string |  |   Both value are modified 
-action\_result\.data\.\*\.t\_ToRecipients\.t\_Mailbox\.\*\.t\_EmailAddress | string |  `email`  |   test\@sample\.com 
-action\_result\.data\.\*\.t\_ToRecipients\.t\_Mailbox\.\*\.t\_MailboxType | string |  |   Mailbox 
-action\_result\.data\.\*\.t\_ToRecipients\.t\_Mailbox\.\*\.t\_Name | string |  |   Test User 
-action\_result\.data\.\*\.t\_ToRecipients\.t\_Mailbox\.\*\.t\_RoutingType | string |  |   SMTP 
-action\_result\.summary\.create\_time | string |  |   2017\-10\-05T20\:19\:58Z 
-action\_result\.summary\.sent\_time | string |  |   2017\-10\-03T21\:31\:20Z 
-action\_result\.summary\.subject | string |  |   Both value are modified 
-action\_result\.message | string |  |   Create time\: 2017\-10\-05T20\:19\:58Z
-Subject\: Both value are modified
-Sent time\: 2017\-10\-03T21\:31\:20Z 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success  failed 
+action_result.parameter.category | string |  |   Yellow, Blue, Purple, red 
+action_result.parameter.email | string |  `email`  |   test@sample.com 
+action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA= 
+action_result.parameter.subject | string |  |   Both value are modified 
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_AttachmentId.@Id | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_ContentType | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_IsContactPhoto | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_IsInline | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_LastModifiedTime | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_Name | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_Size | string |  |  
+action_result.data.\*.t_Attachments.t_FileAttachment.t_AttachmentId.@Id | string |  |   AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAABEgAQAHAXDtZM8ItNnDTtvcd6IAo= 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_ContentId | string |  `email`  |   7518226202D21C4397EE1CB1E2E540C7@sample.com 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_ContentType | string |  |   application/octet-stream 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_IsContactPhoto | string |  |   false 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_IsInline | string |  |   false 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_LastModifiedTime | string |  |   2017-10-03T21:31:05 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_Name | string |  |   test.msg 
+action_result.data.\*.t_Attachments.t_FileAttachment.t_Size | string |  |   55360 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_AttachmentId.@Id | string |  |   AAMkAGFmNTRhODA4LWIxMjQtNDJjYy05NDM2LWQ5MzY1MGFhMTkzYwBGAAAAAADRlY7ewL4xToKRDciQog5UBwBvUzMoUJx2S4nbgxzZWx2PAAEHZktbAABvUzMoUJx2S4nbgxzZWx2PAAEnqxyTAAABEgAQAN3G1cBjf8hIhr55ziP1DBI= 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_ContentId | string |  |   9C14EE4B699D7349B0403C3CDF3F8729@namprd17.prod.outlook.com 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_ContentType | string |  |   message/rfc822 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_IsInline | string |  |   false 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_LastModifiedTime | string |  |   2019-11-08T11:46:32 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_Name | string |  |   Test user added you to the test-h1 group 
+action_result.data.\*.t_Attachments.t_ItemAttachment.t_Size | string |  |   69852 
+action_result.data.\*.t_Body.#text | string |  |   Attached .msg file. Hello 
+action_result.data.\*.t_Body.@BodyType | string |  |   Text 
+action_result.data.\*.t_Categories | string |  |   red 
+action_result.data.\*.t_CcRecipients.t_Mailbox.t_EmailAddress | string |  |  
+action_result.data.\*.t_CcRecipients.t_Mailbox.t_MailboxType | string |  |  
+action_result.data.\*.t_CcRecipients.t_Mailbox.t_Name | string |  |  
+action_result.data.\*.t_CcRecipients.t_Mailbox.t_RoutingType | string |  |  
+action_result.data.\*.t_DateTimeCreated | string |  |   2017-10-05T20:19:58Z 
+action_result.data.\*.t_DateTimeReceived | string |  |   2017-10-03T21:31:05Z 
+action_result.data.\*.t_DateTimeSent | string |  |   2017-10-03T21:31:20Z 
+action_result.data.\*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag | string |  |   0x7d 
+action_result.data.\*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType | string |  |   String 
+action_result.data.\*.t_ExtendedProperty.t_Value | string |  |   MWHPR18MB1519.namprd18.prod.outlook.com 
+action_result.data.\*.t_From.t_Mailbox.t_EmailAddress | string |  `email`  |   test@sample.com 
+action_result.data.\*.t_From.t_Mailbox.t_MailboxType | string |  |   OneOff 
+action_result.data.\*.t_From.t_Mailbox.t_Name | string |  |   Test 
+action_result.data.\*.t_From.t_Mailbox.t_RoutingType | string |  |   SMTP 
+action_result.data.\*.t_HasAttachments | string |  |   true 
+action_result.data.\*.t_InternetMessageId | string |  |   <81c761fe-caa8-f924-f65d-079382c1ad0b@sample.com> 
+action_result.data.\*.t_IsAssociated | string |  |   false 
+action_result.data.\*.t_IsDeliveryReceiptRequested | string |  |   false 
+action_result.data.\*.t_IsRead | string |  |   true 
+action_result.data.\*.t_IsReadReceiptRequested | string |  |   false 
+action_result.data.\*.t_ItemId.@ChangeKey | string |  |   CQAAABYAAACQhMsoV7EYSJF42ChR9SCxAAAAj9UU 
+action_result.data.\*.t_ItemId.@Id | string |  |   AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA= 
+action_result.data.\*.t_LastModifiedTime | string |  |   2017-10-31T01:09:20Z 
+action_result.data.\*.t_MimeContent.#text | string |  |   RnJvbTogUGhhbnRvbSBVc2VyIDxwaGFudG9t... 
+action_result.data.\*.t_MimeContent.@CharacterSet | string |  |   UTF-8 
+action_result.data.\*.t_ResponseObjects.t_ForwardItem | string |  |  
+action_result.data.\*.t_ResponseObjects.t_ReplyAllToItem | string |  |  
+action_result.data.\*.t_ResponseObjects.t_ReplyToItem | string |  |  
+action_result.data.\*.t_Sender.t_Mailbox.t_EmailAddress | string |  `email`  |   test@sample.com 
+action_result.data.\*.t_Sender.t_Mailbox.t_MailboxType | string |  |   OneOff 
+action_result.data.\*.t_Sender.t_Mailbox.t_Name | string |  |   test 
+action_result.data.\*.t_Sender.t_Mailbox.t_RoutingType | string |  |   SMTP 
+action_result.data.\*.t_Sensitivity | string |  |   Normal 
+action_result.data.\*.t_Size | string |  |   56353 
+action_result.data.\*.t_Subject | string |  |   Both value are modified 
+action_result.data.\*.t_ToRecipients.t_Mailbox.\*.t_EmailAddress | string |  `email`  |   test@sample.com 
+action_result.data.\*.t_ToRecipients.t_Mailbox.\*.t_MailboxType | string |  |   Mailbox 
+action_result.data.\*.t_ToRecipients.t_Mailbox.\*.t_Name | string |  |   Test User 
+action_result.data.\*.t_ToRecipients.t_Mailbox.\*.t_RoutingType | string |  |   SMTP 
+action_result.summary.create_time | string |  |   2017-10-05T20:19:58Z 
+action_result.summary.sent_time | string |  |   2017-10-03T21:31:20Z 
+action_result.summary.subject | string |  |   Both value are modified 
+action_result.message | string |  |   Create time: 2017-10-05T20:19:58Z
+Subject: Both value are modified
+Sent time: 2017-10-03T21:31:20Z 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'trace email'
 Get message trace from the server
@@ -1173,59 +1173,59 @@ Get message trace from the server
 Type: **investigate**  
 Read only: **True**
 
-The trace email action provides summary information about the processing of email messages that have passed through the Office 365 system for the organization in the last 10 days\.<br><br>Valid values for the <b>status</b> parameter are\:<ul><li><b>None\:</b> The message has no delivery status because it was rejected or redirected to a different recipient\.</li><li><b>GettingStatus\:</b> The message is waiting for status update\.</li><li><b>Failed\:</b> Message delivery was attempted and it failed or the message was filtered as spam or malware, or by transport rules\.</li><li><b>Pending\:</b> Message delivery is underway or was deferred and is being retried\.</li><li><b>Delivered\:</b> The message was delivered to its destination\.</li><li><b>Expanded\:</b> There was no message delivery because the message was addressed to a distribution group and the membership of the distribution was expanded\.</li><li><b>Quarantined\:</b> The message was quarantined\.</li><li><b>FilteredAsSpam\:</b> The message was marked as spam\.</li></ul>The 'start date' and 'end date' parameters are considered optional, but if you provide one, you have to provide the other\. i\. e\. If you provide a 'start date' in the parameter option, you must also specify an 'end date' and vice versa\. If the pair is not provided in the query, the default reporting time period is the previous two days\.<br>If 'widget filter' is set to True, the angular brackets will be removed from the Internet Message ID field\.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter\. The input should be of the form <i>min\_offset</i>\-<i>max\_offset</i>\. If the range parameter is not specified by default the action will fetch all possible data\.<br><br>Please note that the username and password are required for the 'trace email' action, because it will only use the 'basic auth' for all the cases\. Azure authentication workflow will be ignored by this action\. The user must have an administrator role for accessing the message trace\. For more information about APIs and permissions please visit the <a href='https\://docs\.microsoft\.com/en\-us/previous\-versions/office/developer/o365\-enterprise\-developers/jj984335\(v=office\.15\)' target="\_blank">official documentation</a>\.
+The trace email action provides summary information about the processing of email messages that have passed through the Office 365 system for the organization in the last 10 days.<br><br>Valid values for the <b>status</b> parameter are:<ul><li><b>None:</b> The message has no delivery status because it was rejected or redirected to a different recipient.</li><li><b>GettingStatus:</b> The message is waiting for status update.</li><li><b>Failed:</b> Message delivery was attempted and it failed or the message was filtered as spam or malware, or by transport rules.</li><li><b>Pending:</b> Message delivery is underway or was deferred and is being retried.</li><li><b>Delivered:</b> The message was delivered to its destination.</li><li><b>Expanded:</b> There was no message delivery because the message was addressed to a distribution group and the membership of the distribution was expanded.</li><li><b>Quarantined:</b> The message was quarantined.</li><li><b>FilteredAsSpam:</b> The message was marked as spam.</li></ul>The 'start date' and 'end date' parameters are considered optional, but if you provide one, you have to provide the other. i. e. If you provide a 'start date' in the parameter option, you must also specify an 'end date' and vice versa. If the pair is not provided in the query, the default reporting time period is the previous two days.<br>If 'widget filter' is set to True, the angular brackets will be removed from the Internet Message ID field.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. If the range parameter is not specified by default the action will fetch all possible data.<br><br>Please note that the username and password are required for the 'trace email' action, because it will only use the 'basic auth' for all the cases. Azure authentication workflow will be ignored by this action. The user must have an administrator role for accessing the message trace. For more information about APIs and permissions please visit the <a href='https://docs.microsoft.com/en-us/previous-versions/office/developer/o365-enterprise-developers/jj984335(v=office.15)' target="_blank">official documentation</a>.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**sender\_address** |  optional  | The SMTP email address of the user the message was purportedly from\. You can specify multiple values separated by commas\. | string |  `email` 
-**recipient\_address** |  optional  | The SMTP email address of the user that the message was addressed to\. You can specify multiple values separated by commas\. | string |  `email` 
-**status** |  optional  | The status corresponds to the Detail field of the last processing step recorded for the message\. You can specify multiple values separated by commas\. | string | 
-**message\_trace\_id** |  optional  | An identifier used to get the detailed message transfer trace information | string |  `office 365 trace id` 
-**start\_date** |  optional  | Start date of the date range | string | 
-**end\_date** |  optional  | End date of the date range | string | 
-**from\_ip** |  optional  | The IPv4 or IPv6 address that transmitted the message to the Office 365 email system | string |  `ip`  `ipv6` 
-**to\_ip** |  optional  | The IPv4 or IPv6 address that the Office 365 email system sent the message to | string |  `ip`  `ipv6` 
-**internet\_message\_id** |  optional  | This parameter filters the results by the Internet Message ID also known as the Client ID | string |  `internet message id` 
-**widget\_filter** |  optional  | Widget Filter to clean certain special character | boolean | 
-**range** |  optional  | Email range to return \(min\_offset\-max\_offset\) | string | 
+**sender_address** |  optional  | The SMTP email address of the user the message was purportedly from. You can specify multiple values separated by commas. | string |  `email` 
+**recipient_address** |  optional  | The SMTP email address of the user that the message was addressed to. You can specify multiple values separated by commas. | string |  `email` 
+**status** |  optional  | The status corresponds to the Detail field of the last processing step recorded for the message. You can specify multiple values separated by commas. | string | 
+**message_trace_id** |  optional  | An identifier used to get the detailed message transfer trace information | string |  `office 365 trace id` 
+**start_date** |  optional  | Start date of the date range | string | 
+**end_date** |  optional  | End date of the date range | string | 
+**from_ip** |  optional  | The IPv4 or IPv6 address that transmitted the message to the Office 365 email system | string |  `ip`  `ipv6` 
+**to_ip** |  optional  | The IPv4 or IPv6 address that the Office 365 email system sent the message to | string |  `ip`  `ipv6` 
+**internet_message_id** |  optional  | This parameter filters the results by the Internet Message ID also known as the Client ID | string |  `internet message id` 
+**widget_filter** |  optional  | Widget Filter to clean certain special character | boolean | 
+**range** |  optional  | Email range to return (min_offset-max_offset) | string | 
 
 #### Action Output
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
-action\_result\.status | string |  |   success 
-action\_result\.parameter\.end\_date | string |  |   2021\-12\-03T00\:00\:00Z 
-action\_result\.parameter\.from\_ip | string |  `ip`  `ipv6`  |   8\.8\.8\.8 
-action\_result\.parameter\.internet\_message\_id | string |  `internet message id`  |   <5d9f6c67\.1c69fb81\.f1728\.0d54\@mx\.test\.com> 
-action\_result\.parameter\.message\_trace\_id | string |  `office 365 trace id`  |   62a796a1\-00df\-43ca\-3732\-08d74da88f70 
-action\_result\.parameter\.range | string |  |   0\-10 
-action\_result\.parameter\.recipient\_address | string |  `email`  |   abc\@test\.com 
-action\_result\.parameter\.sender\_address | string |  `email`  |   abc\@test\.com 
-action\_result\.parameter\.start\_date | string |  |   2021\-12\-01T00\:00\:00Z 
-action\_result\.parameter\.status | string |  |   Delivered 
-action\_result\.parameter\.to\_ip | string |  `ip`  `ipv6`  |   8\.8\.8\.8 
-action\_result\.parameter\.widget\_filter | boolean |  |   True  False 
-action\_result\.data\.\*\.\*\.EndDate | string |  |   /Date\(1570809448312\)/ 
-action\_result\.data\.\*\.\*\.FromIP | string |  `ip`  `ipv6`  |   8\.8\.8\.8 
-action\_result\.data\.\*\.\*\.Index | numeric |  |   0 
-action\_result\.data\.\*\.\*\.MessageId | string |  `internet message id`  |   <5d9f6c67\.1c69fb81\.f1728\.0d54\@mx\.test\.com> 
-action\_result\.data\.\*\.\*\.MessageTraceId | string |  `office 365 trace id`  |   62a796a1\-00df\-43ca\-3732\-08d74da88f70 
-action\_result\.data\.\*\.\*\.Organization | string |  |   test\.com 
-action\_result\.data\.\*\.\*\.Received | string |  |   /Date\(1570729065255\)/ 
-action\_result\.data\.\*\.\*\.RecipientAddress | string |  `email`  |   abc\@test\.com 
-action\_result\.data\.\*\.\*\.SenderAddress | string |  `email`  |   xyz\@test\.com 
-action\_result\.data\.\*\.\*\.Size | numeric |  |   13211 
-action\_result\.data\.\*\.\*\.StartDate | string |  |   /Date\(1570636648312\)/ 
-action\_result\.data\.\*\.\*\.Status | string |  |   Delivered 
-action\_result\.data\.\*\.\*\.Subject | string |  |   Test SMTP config 
-action\_result\.data\.\*\.\*\.ToIP | string |  `ip`  `ipv6`  |   8\.8\.8\.8 
-action\_result\.data\.\*\.\*\.\_\_metadata\.id | string |  `url`  |   https\://reports\.office365\.com/ecp/ReportingWebService/Reporting\.svc/MessageTrace\(0\) 
-action\_result\.data\.\*\.\*\.\_\_metadata\.type | string |  |   TenantReporting\.MessageTrace 
-action\_result\.data\.\*\.\*\.\_\_metadata\.uri | string |  `url`  |   https\://reports\.office365\.com/ecp/ReportingWebService/Reporting\.svc/MessageTrace\(0\) 
-action\_result\.summary\.emails\_found | numeric |  |   2 
-action\_result\.message | string |  |   Emails found\: 2 
-summary\.total\_objects | numeric |  |   1 
-summary\.total\_objects\_successful | numeric |  |   1   
+action_result.status | string |  |   success 
+action_result.parameter.end_date | string |  |   2021-12-03T00:00:00Z 
+action_result.parameter.from_ip | string |  `ip`  `ipv6`  |   8.8.8.8 
+action_result.parameter.internet_message_id | string |  `internet message id`  |   <5d9f6c67.1c69fb81.f1728.0d54@mx.test.com> 
+action_result.parameter.message_trace_id | string |  `office 365 trace id`  |   62a796a1-00df-43ca-3732-08d74da88f70 
+action_result.parameter.range | string |  |   0-10 
+action_result.parameter.recipient_address | string |  `email`  |   abc@test.com 
+action_result.parameter.sender_address | string |  `email`  |   abc@test.com 
+action_result.parameter.start_date | string |  |   2021-12-01T00:00:00Z 
+action_result.parameter.status | string |  |   Delivered 
+action_result.parameter.to_ip | string |  `ip`  `ipv6`  |   8.8.8.8 
+action_result.parameter.widget_filter | boolean |  |   True  False 
+action_result.data.\*.\*.EndDate | string |  |   /Date(1570809448312)/ 
+action_result.data.\*.\*.FromIP | string |  `ip`  `ipv6`  |   8.8.8.8 
+action_result.data.\*.\*.Index | numeric |  |   0 
+action_result.data.\*.\*.MessageId | string |  `internet message id`  |   <5d9f6c67.1c69fb81.f1728.0d54@mx.test.com> 
+action_result.data.\*.\*.MessageTraceId | string |  `office 365 trace id`  |   62a796a1-00df-43ca-3732-08d74da88f70 
+action_result.data.\*.\*.Organization | string |  |   test.com 
+action_result.data.\*.\*.Received | string |  |   /Date(1570729065255)/ 
+action_result.data.\*.\*.RecipientAddress | string |  `email`  |   abc@test.com 
+action_result.data.\*.\*.SenderAddress | string |  `email`  |   xyz@test.com 
+action_result.data.\*.\*.Size | numeric |  |   13211 
+action_result.data.\*.\*.StartDate | string |  |   /Date(1570636648312)/ 
+action_result.data.\*.\*.Status | string |  |   Delivered 
+action_result.data.\*.\*.Subject | string |  |   Test SMTP config 
+action_result.data.\*.\*.ToIP | string |  `ip`  `ipv6`  |   8.8.8.8 
+action_result.data.\*.\*.__metadata.id | string |  `url`  |   https://reports.office365.com/ecp/ReportingWebService/Reporting.svc/MessageTrace(0) 
+action_result.data.\*.\*.__metadata.type | string |  |   TenantReporting.MessageTrace 
+action_result.data.\*.\*.__metadata.uri | string |  `url`  |   https://reports.office365.com/ecp/ReportingWebService/Reporting.svc/MessageTrace(0) 
+action_result.summary.emails_found | numeric |  |   2 
+action_result.message | string |  |   Emails found: 2 
+summary.total_objects | numeric |  |   1 
+summary.total_objects_successful | numeric |  |   1   
 
 ## action: 'on poll'
 Action handler for the ingest functionality
@@ -1233,16 +1233,16 @@ Action handler for the ingest functionality
 Type: **ingest**  
 Read only: **True**
 
-Please see sections <a href="\#poll\_now">POLL NOW</a> and <a href="\#scheduled\_polling">Scheduled Polling</a> for more info on how this action is implemented by the app\.
+Please see sections <a href="#poll_now">POLL NOW</a> and <a href="#scheduled_polling">Scheduled Polling</a> for more info on how this action is implemented by the app.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**start\_time** |  optional  | Parameter Ignored in this app | numeric | 
-**end\_time** |  optional  | Parameter Ignored in this app | numeric | 
-**container\_id** |  optional  | Parameter Ignored in this app | string | 
-**container\_count** |  required  | Maximum number of emails to ingest | numeric | 
-**artifact\_count** |  optional  | Parameter Ignored in this app | numeric | 
+**start_time** |  optional  | Parameter Ignored in this app | numeric | 
+**end_time** |  optional  | Parameter Ignored in this app | numeric | 
+**container_id** |  optional  | Parameter Ignored in this app | string | 
+**container_count** |  required  | Maximum number of emails to ingest | numeric | 
+**artifact_count** |  optional  | Parameter Ignored in this app | numeric | 
 
 #### Action Output
 No Output
