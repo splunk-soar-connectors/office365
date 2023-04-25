@@ -100,6 +100,7 @@ class EWSOnPremConnector(BaseConnector):
     # actions supported by this script
     ACTION_ID_RUN_QUERY = "run_query"
     ACTION_ID_DELETE_EMAIL = "delete_email"
+    ACTION_ID_SOFT_DELETE_EMAIL = "soft_delete_email"
     ACTION_ID_UPDATE_EMAIL = "update_email"
     ACTION_ID_COPY_EMAIL = "copy_email"
     ACTION_ID_MOVE_EMAIL = "move_email"
@@ -1859,7 +1860,7 @@ class EWSOnPremConnector(BaseConnector):
         # Set the Status
         return action_result.set_status(phantom.APP_SUCCESS)
 
-    def _delete_email(self, param):
+    def _delete_email(self, param, action):
 
         action_result = ActionResult(dict(param))
 
@@ -1869,10 +1870,12 @@ class EWSOnPremConnector(BaseConnector):
         message_id = param[EWSONPREM_JSON_ID]
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
 
+        is_hard_delete = True if action == 'hard' else False
+
         message_ids = ph_utils.get_list_from_string(message_id)
 
         try:
-            data = ews_soap.get_delete_email(message_ids)
+            data = ews_soap.get_delete_email(message_ids, is_hard_delete=is_hard_delete)
         except Exception as e:
             self.add_action_result(action_result)
             error_text = self._get_error_message_from_exception(e)
@@ -3041,7 +3044,9 @@ class EWSOnPremConnector(BaseConnector):
         if action == self.ACTION_ID_RUN_QUERY:
             ret_val = self._run_query(param)
         elif action == self.ACTION_ID_DELETE_EMAIL:
-            ret_val = self._delete_email(param)
+            ret_val = self._delete_email(param, action='hard')
+        elif action == self.ACTION_ID_SOFT_DELETE_EMAIL:
+            ret_val = self._delete_email(param, action='soft')
         elif action == self.ACTION_ID_UPDATE_EMAIL:
             ret_val = self._update_email(param)
         elif action == self.ACTION_ID_GET_EMAIL:

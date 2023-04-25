@@ -9,21 +9,20 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.13.0",
+    "app_version": "2.14.0",
     "utctime_updated": "2022-01-19T04:31:28.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.4.0",
+    "min_phantom_version": "5.5.0",
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
         "Cloud January 12, 2023"
     ],
     "pip_dependencies": {
-        "wheel": [
-            {
+        "wheel": [{
                 "module": "Django",
                 "input_file": "wheels/py3/Django-3.2.16-py3-none-any.whl"
             },
@@ -259,8 +258,7 @@
             "order": 23
         }
     },
-    "actions": [
-        {
+    "actions": [{
             "action": "test connectivity",
             "description": "Validate the asset configuration for connectivity",
             "verbose": "To check the connection and credentials, this action tries to list the email ids of the configured <b>poll_user</b>.",
@@ -355,8 +353,7 @@
                 "type": "table",
                 "height": 5
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -599,8 +596,105 @@
                 "type": "table",
                 "height": 5
             },
-            "output": [
+            "output": [{
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
                 {
+                    "data_path": "action_result.parameter.email",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "example_values": [
+                        "user@example.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.id",
+                    "data_type": "string",
+                    "contains": [
+                        "exchange email id",
+                        "office 365 email id"
+                    ],
+                    "column_name": "Message ID",
+                    "column_order": 0,
+                    "example_values": [
+                        "AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA=="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Successfully deleted email"
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                }
+            ],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "soft delete email",
+            "description": "Delete emails",
+            "verbose": "This action supports a comma-separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server. The deleted emails are moved to the Deleted Items (trash) folder.",
+            "type": "contain",
+            "identifier": "soft_delete_email",
+            "read_only": false,
+            "parameters": {
+                "id": {
+                    "description": "Message IDs to delete (comma-separated values supported)",
+                    "data_type": "string",
+                    "order": 0,
+                    "contains": [
+                        "exchange email id",
+                        "office 365 email id"
+                    ],
+                    "primary": true,
+                    "required": true
+                },
+                "email": {
+                    "description": "Email of the mailbox owner (used during impersonation)",
+                    "data_type": "string",
+                    "order": 1,
+                    "contains": [
+                        "email"
+                    ],
+                    "primary": true
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Soft Delete Email",
+                "type": "table",
+                "height": 5
+            },
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -735,8 +829,7 @@
                 "type": "table",
                 "height": 5
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -921,8 +1014,7 @@
                 "type": "table",
                 "height": 5
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -1076,8 +1168,7 @@
                 "type": "table",
                 "height": 5
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -1201,8 +1292,7 @@
                 "type": "table",
                 "height": 5
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -1348,8 +1438,7 @@
                 "view": "ewsonprem_view.display_email",
                 "height": 5
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -2488,8 +2577,7 @@
                 "type": "table",
                 "height": 5
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -2509,14 +2597,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.parameter.recursive",
-                    "data_type": "boolean",
-                    "example_values": [
-                        true,
-                        false
-                    ]
-                },
-                {
                     "data_path": "action_result.parameter.impersonate_email",
                     "data_type": "string",
                     "contains": [
@@ -2524,6 +2604,14 @@
                     ],
                     "example_values": [
                         "user@example.onmicrosoft.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.recursive",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -2616,8 +2704,7 @@
                 "view": "ewsonprem_view.display_resolve_names",
                 "height": 5
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -2845,8 +2932,7 @@
             "render": {
                 "type": "table"
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -3457,8 +3543,7 @@
                     "order": 10
                 }
             },
-            "output": [
-                {
+            "output": [{
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
@@ -3791,8 +3876,7 @@
         }
     ],
     "pip39_dependencies": {
-        "wheel": [
-            {
+        "wheel": [{
                 "module": "Django",
                 "input_file": "wheels/py3/Django-3.2.16-py3-none-any.whl"
             },
