@@ -6,7 +6,7 @@ Connector Version: 2.14.0
 Product Vendor: Microsoft  
 Product Name: Office 365  
 Product Version Supported (regex): ".\*"  
-Minimum Product Version: 5.4.0  
+Minimum Product Version: 5.5.0  
 
 This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service
 
