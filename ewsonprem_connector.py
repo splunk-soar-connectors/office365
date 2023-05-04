@@ -775,7 +775,7 @@ class EWSOnPremConnector(BaseConnector):
         self.debug_print("Cleaning the state")
         if self.auth_type != AUTH_TYPE_CLIENT_CRED:
             self._state.pop("oauth_client_token", None)
-        if self.auth_type != AUTH_TYPE_AZURE_INTERACTIVE or self.auth_type != AUTH_TYPE_AZURE:
+        elif self.auth_type not in (AUTH_TYPE_AZURE_INTERACTIVE, AUTH_TYPE_AZURE):
             self._state.pop("oauth_token", None)
             self._state.pop("client_id", None)
 
