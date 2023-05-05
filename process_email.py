@@ -365,6 +365,8 @@ class ProcessEmail(object):
             return obj.replace('\x00', '')
         if isinstance(obj, list):
             return [self._sanitize_dict(item) for item in obj]
+        if isinstance(obj, set):
+            return {self._sanitize_dict(item) for item in obj}
         if isinstance(obj, dict):
             return {k: self._sanitize_dict(v) for k, v in obj.items()}
         return obj
@@ -418,6 +420,7 @@ class ProcessEmail(object):
     def _add_artifacts(self, cef_key, input_set, artifact_name, start_index, artifacts):
 
         added_artifacts = 0
+        input_set = self._sanitize_dict(input_set)
         for entry in input_set:
 
             # ignore empty entries
@@ -430,8 +433,6 @@ class ProcessEmail(object):
             artifact['cef'] = {cef_key: entry}
             artifact['name'] = artifact_name
             self._debug_print('Artifact:', artifact)
-            if artifact:
-                artifact = self._sanitize_dict(artifact)
             artifacts.append(artifact)
             added_artifacts += 1
 
@@ -874,8 +875,8 @@ class ProcessEmail(object):
         tmp_dir = tmp_dir
         if not os.path.exists(tmp_dir):
             os.makedirs(tmp_dir)
-        extract_attach = self._config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]
-        extract_eml = self._config[PROC_EMAIL_JSON_EXTRACT_EML]
+        extract_attach = self._config.get(PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS, True)
+        extract_eml = self._config.get(PROC_EMAIL_JSON_EXTRACT_EML, True)
         charset = mail.get_content_charset()
 
         if not charset:
