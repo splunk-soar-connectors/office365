@@ -2,7 +2,7 @@
 # EWS for Office 365
 
 Publisher: Splunk  
-Connector Version: 2.14.0  
+Connector Version: 2.15.0  
 Product Vendor: Microsoft  
 Product Name: Office 365  
 Product Version Supported (regex): ".\*"  
@@ -579,13 +579,13 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string |  |   success  failed 
 action_result.parameter.body | string |  |   Text body 
-action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.email | string |  `email`  |   user@example.test.com 
 action_result.parameter.folder | string |  `mail folder`  `mail folder path`  |   Archive 
 action_result.parameter.ignore_subfolders | boolean |  |   True  False 
 action_result.parameter.internet_message_id | string |  `internet message id`  |   CAOj3gTm-8BRJ_v+=UPGqCcBFRbUPFn9cspjZJs=P4PPWL34-2Q@mail.gmail.com 
 action_result.parameter.query | string |  |   subject:test AND from:"User Name" 
 action_result.parameter.range | string |  |   0-10 
-action_result.parameter.sender | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.sender | string |  `email`  |   user@example.test.com 
 action_result.parameter.subject | string |  |   Task Update 
 action_result.data.\*.folder | string |  `mail folder`  |  
 action_result.data.\*.folder_path | string |  `mail folder path`  |  
@@ -625,7 +625,7 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string |  |   success  failed 
-action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.email | string |  `email`  |   user@example.test.com 
 action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA== 
 action_result.data | string |  |  
 action_result.summary | string |  |  
@@ -656,10 +656,10 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string |  |   success  failed 
 action_result.parameter.dont_impersonate | boolean |  |   True  False 
-action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.email | string |  `email`  |   user@example.test.com 
 action_result.parameter.folder | string |  `mail folder`  `mail folder path`  |   Inbox/myfolder 
 action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA== 
-action_result.parameter.impersonate_email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.impersonate_email | string |  `email`  |   user@example.test.com 
 action_result.parameter.is_public_folder | boolean |  |   True  False 
 action_result.data.\*.new_email_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA= 
 action_result.summary | string |  |  
@@ -690,10 +690,10 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string |  |   success  failed 
 action_result.parameter.dont_impersonate | boolean |  |   True  False 
-action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.email | string |  `email`  |   user@example.test.com 
 action_result.parameter.folder | string |  `mail folder`  `mail folder path`  |   Inbox/myfolder 
 action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA== 
-action_result.parameter.impersonate_email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.impersonate_email | string |  `email`  |   user@example.test.com 
 action_result.parameter.is_public_folder | boolean |  |   True  False 
 action_result.data.\*.new_email_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA= 
 action_result.summary | string |  |  
@@ -720,7 +720,7 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string |  |   success  failed 
-action_result.parameter.email | string |  `email`  |   foo@bar.onmicrosoft.com 
+action_result.parameter.email | string |  `email`  |   foo@bar.test.com 
 action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEMAAC63sxpeq+QSJSiCN540EaIAAHWGo0OAAA= 
 action_result.parameter.move_to_junk_folder | boolean |  |   True  False 
 action_result.data.\*.new_email_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA= 
@@ -748,7 +748,7 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string |  |   success  failed 
-action_result.parameter.email | string |  `email`  |   foo@bar.onmicrosoft.com 
+action_result.parameter.email | string |  `email`  |   foo@bar.test.com 
 action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA= 
 action_result.parameter.move_from_junk_folder | boolean |  |   True  False 
 action_result.data.\*.new_email_id | string |  `exchange email id`  `office 365 email id`  |   AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEMAAC63sxpeq+QSJSiCN540EaIAAHWGo0PAAA= 
@@ -779,15 +779,15 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string |  |   success  failed 
 action_result.parameter.container_id | numeric |  `phantom container id`  |   360 
-action_result.parameter.email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.email | string |  `email`  |   user@example.test.com 
 action_result.parameter.id | string |  `exchange email id`  `office 365 email id`  |   AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpfAAAAA== 
 action_result.parameter.ingest_email | boolean |  |   True  False 
 action_result.parameter.vault_id | string |  `vault id`  |   719dbf72d7c0bc89d7e34306c08a0b66191902b9 
 action_result.data.\*.Accept-Language | string |  |   en-US 
 action_result.data.\*.Authentication-Results | string |  |  
-action_result.data.\*.CC | string |  |   Test1 Test <Test1-test@test.onmicrosoft.com>, Test3 test
-	<test3-test@test.onmicrosoft.com>, test4-test
-	<test4-test@test.onmicrosoft.com> 
+action_result.data.\*.CC | string |  |   Test1 Test <Test1-test@test.test.com>, Test3 test
+	<test3-test@test.test.com>, test4-test
+	<test4-test@test.test.com> 
 action_result.data.\*.Cc | string |  |  
 action_result.data.\*.Content-Language | string |  |   en-US 
 action_result.data.\*.Content-Transfer-Encoding | string |  |  
@@ -887,7 +887,7 @@ action_result.data.\*.X-Universally-Unique-Identifier | string |  |   5D79A10E-C
 action_result.data.\*.acceptlanguage | string |  |   en-US 
 action_result.data.\*.authentication-results | string |  |  
 action_result.data.\*.decodedSubject | string |  |   All content together 
-action_result.data.\*.received-spf | string |  |   Pass (protection.outlook.com: domain of microsoft.com) 
+action_result.data.\*.received-spf | string |  |   Pass (protection.test.com: domain of test.com) 
 action_result.data.\*.suggested_attachment_session_id | string |  |   43d9f8e0-ef4b-d632-00e2-4abed4aa0917 
 action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_AttachmentId.@Id | string |  |  
 action_result.data.\*.t_Attachments.t_FileAttachment.\*.t_ContentId | string |  |   d756bc71-43c6-46f2-b820-395a18d7c8e8 
@@ -1006,9 +1006,9 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string |  |   success  failed 
-action_result.parameter.group | string |  `email`  `exchange distribution list`  |   test_playbook2@testdomain.onmicrosoft.com 
+action_result.parameter.group | string |  `email`  `exchange distribution list`  |   test_playbook2@testdomain.test.com 
+action_result.parameter.impersonate_email | string |  `email`  |   user@example.test.com 
 action_result.parameter.recursive | boolean |  |   True  False 
-action_result.parameter.impersonate_email | string |  `email`  |   user@example.onmicrosoft.com 
 action_result.data.\*.t_EmailAddress | string |  `email`  |  
 action_result.data.\*.t_MailboxType | string |  |  
 action_result.data.\*.t_Name | string |  |  
@@ -1034,8 +1034,8 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string |  |   success  failed 
-action_result.parameter.email | string |  `exchange alias`  `email`  |   user@example.onmicrosoft.com 
-action_result.parameter.impersonate_email | string |  `email`  |   user@example.onmicrosoft.com 
+action_result.parameter.email | string |  `exchange alias`  `email`  |   user@example.test.com 
+action_result.parameter.impersonate_email | string |  `email`  |   user@example.test.com 
 action_result.data.\*.t_Contact.t_AssistantName | string |  |  
 action_result.data.\*.t_Contact.t_CompanyName | string |  |  
 action_result.data.\*.t_Contact.t_ContactSource | string |  |  
