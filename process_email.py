@@ -441,8 +441,17 @@ class ProcessEmail(object):
     def _parse_email_headers_as_inline(self, file_data, parsed_mail, charset, email_id):
 
         # remove the 'Forwarded Message' from the email text and parse it
-        p = re.compile(r".*Forwarded Message.*\n(.*)", re.IGNORECASE)
-        email_text = p.sub(r'\1', file_data.strip())
+        pattern = re.compile(r"^.*Forwarded Message.*\n(.*)", re.IGNORECASE)
+        email_text = file_data
+        search_result = pattern.search(file_data.strip())
+        if search_result:
+            email_text = pattern.sub(r'\1', file_data.strip())
+        else:
+            pattern = re.compile(r"\n.*Forwarded Message.*\n(.*)", re.IGNORECASE)
+            search_result = pattern.search(file_data.strip())
+            if search_result:
+                email_text = pattern.sub("\n{}".format(r'\1'), file_data.strip())
+            self._debug_print(email_text)
         mail = email.message_from_string(email_text)
 
         # Get the array

@@ -9,7 +9,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "2.14.0",
+    "app_version": "2.15.0",
     "utctime_updated": "2022-01-19T04:31:28.000000Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
@@ -19,7 +19,7 @@
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud April 27, 2023"
+        "Cloud May 17, 2023"
     ],
     "pip_dependencies": {
         "wheel": [
@@ -378,7 +378,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -431,7 +431,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -615,7 +615,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -761,7 +761,7 @@
                     "column_name": "Destination Mailbox",
                     "column_order": 0,
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -797,7 +797,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -947,7 +947,7 @@
                     "column_name": "User Email",
                     "column_order": 0,
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -983,7 +983,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -1089,7 +1089,7 @@
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "example_values": [
-                        "foo@bar.onmicrosoft.com"
+                        "foo@bar.test.com"
                     ],
                     "contains": [
                         "email"
@@ -1214,7 +1214,7 @@
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "example_values": [
-                        "foo@bar.onmicrosoft.com"
+                        "foo@bar.test.com"
                     ],
                     "contains": [
                         "email"
@@ -1374,7 +1374,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -1423,7 +1423,7 @@
                     "data_path": "action_result.data.*.CC",
                     "data_type": "string",
                     "example_values": [
-                        "Test1 Test <Test1-test@test.onmicrosoft.com>, Test3 test\r\n\t<test3-test@test.onmicrosoft.com>, test4-test\r\n\t<test4-test@test.onmicrosoft.com>"
+                        "Test1 Test <Test1-test@test.test.com>, Test3 test\r\n\t<test3-test@test.test.com>, test4-test\r\n\t<test4-test@test.test.com>"
                     ]
                 },
                 {
@@ -1932,7 +1932,7 @@
                     "data_path": "action_result.data.*.received-spf",
                     "data_type": "string",
                     "example_values": [
-                        "Pass (protection.outlook.com: domain of microsoft.com)"
+                        "Pass (protection.test.com: domain of test.com)"
                     ]
                 },
                 {
@@ -2505,15 +2505,7 @@
                         "exchange distribution list"
                     ],
                     "example_values": [
-                        "test_playbook2@testdomain.onmicrosoft.com"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.recursive",
-                    "data_type": "boolean",
-                    "example_values": [
-                        true,
-                        false
+                        "test_playbook2@testdomain.test.com"
                     ]
                 },
                 {
@@ -2523,7 +2515,15 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.recursive",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -2633,7 +2633,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -2643,7 +2643,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -3764,26 +3764,31 @@
             "parameters": {
                 "start_time": {
                     "data_type": "numeric",
-                    "description": "Parameter Ignored in this app"
+                    "description": "Parameter Ignored in this app",
+                    "order": 0
                 },
                 "end_time": {
                     "data_type": "numeric",
-                    "description": "Parameter Ignored in this app"
+                    "description": "Parameter Ignored in this app",
+                    "order": 1
                 },
                 "container_id": {
                     "data_type": "string",
-                    "description": "Parameter Ignored in this app"
+                    "description": "Parameter Ignored in this app",
+                    "order": 2
                 },
                 "container_count": {
                     "data_type": "numeric",
                     "description": "Maximum number of emails to ingest",
                     "required": true,
-                    "default": 100
+                    "default": 100,
+                    "order": 3
                 },
                 "artifact_count": {
                     "data_type": "numeric",
                     "description": "Parameter Ignored in this app",
-                    "default": 1000
+                    "default": 1000,
+                    "order": 4
                 }
             },
             "output": [],
