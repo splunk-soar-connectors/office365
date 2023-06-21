@@ -470,10 +470,6 @@ class EWSOnPremConnector(BaseConnector):
         if not ret[0]:
             self.debug_print("Deleting the state files")
             self._state = {"app_version": self.get_app_json().get("app_version")}
-        try:
-            self._state = rsh._encrypt_state(self._state)
-        except Exception:
-            return None, EWS_ENCRYPTION_ERROR
 
         return ret
 
