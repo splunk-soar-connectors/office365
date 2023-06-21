@@ -511,7 +511,7 @@ class EWSOnPremConnector(BaseConnector):
         elif self.get_action_identifier() == "test_asset_connectivity" and not self._is_token_test_connectivity:
             self._is_token_test_connectivity = True
             self.all_authentication_methods(config)
-    
+
     def _set_azure_auth(self, config):
 
         ret_val, message = self._check_password(config)
@@ -534,7 +534,7 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print("Try to generate token from refresh token")
             ret = self._azure_int_auth_refresh(client_id, client_secret)
             return ret
-        
+
         client_req_id = str(uuid.uuid4())
 
         ret_val, domain = self._get_domain(username, client_req_id)
@@ -802,7 +802,8 @@ class EWSOnPremConnector(BaseConnector):
 
         message = ''
         self._clean_the_state()
-        if not self._state.get("oauth_token", {}).get("access_token") or ((self._state.get('client_id') and config.get("client_id")) and self._state.get('client_id') != config.get("client_id")):
+        if not self._state.get("oauth_token", {}).get("access_token") or \
+                ((self._state.get('client_id') and config.get("client_id")) and self._state.get('client_id') != config.get("client_id")):
             self._is_token_test_connectivity = self.get_action_identifier() == "test_asset_connectivity"
             ret = self.all_authentication_methods(config)
             if phantom.is_fail(ret):
@@ -934,7 +935,7 @@ class EWSOnPremConnector(BaseConnector):
                 pass
 
         return ""
-    
+
     def all_authentication_methods(self, config):
         "Method for using all type of authentication"
         if self.auth_type == AUTH_TYPE_AZURE:
