@@ -125,7 +125,7 @@ class RequestStateHandler:
                 state['oauth_token']['id_token'] = encryption_helper.encrypt(  # pylint: disable=E1101
                     oauth_token['id_token'],
                     self._asset_id
-            )
+                )
         return state
 
     def _decrypt_state(self, state):
