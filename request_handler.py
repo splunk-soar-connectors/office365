@@ -110,22 +110,13 @@ class RequestStateHandler:
     def _encrypt_state(self, state):
         if 'oauth_token' in state:
             oauth_token = state['oauth_token']
-
-            if state['oauth_token'].get('access_token'):
-                state['oauth_token']['access_token'] = encryption_helper.encrypt(  # pylint: disable=E1101
-                    oauth_token['access_token'],
-                    self._asset_id
-                )
-            if state['oauth_token'].get('refresh_token'):
-                state['oauth_token']['refresh_token'] = encryption_helper.encrypt(  # pylint: disable=E1101
-                    oauth_token['refresh_token'],
-                    self._asset_id
-                )
-            if state['oauth_token'].get('id_token'):
-                state['oauth_token']['id_token'] = encryption_helper.encrypt(  # pylint: disable=E1101
-                    oauth_token['id_token'],
-                    self._asset_id
-                )
+            token_list = ['access_token', 'refresh_token', 'id_token']
+            for token_name in token_list:
+                if state['oauth_token'].get(token_name):
+                    state['oauth_token'][token_name] = encryption_helper.encrypt(  # pylint: disable=E1101
+                        oauth_token[token_name],
+                        self._asset_id
+                    )
         return state
 
     def _decrypt_state(self, state):
@@ -133,21 +124,13 @@ class RequestStateHandler:
             if 'oauth_token' in state:
 
                 oauth_token = state["oauth_token"]
-                if state['oauth_token'].get('access_token'):
-                    state['oauth_token']['access_token'] = encryption_helper.decrypt(  # pylint: disable=E1101
-                        oauth_token['access_token'],
-                        self._asset_id
-                    )
-                if state['oauth_token'].get('refresh_token'):
-                    state['oauth_token']['refresh_token'] = encryption_helper.decrypt(  # pylint: disable=E1101
-                        oauth_token['refresh_token'],
-                        self._asset_id
-                    )
-                if state['oauth_token'].get('id_token'):
-                    state['oauth_token']['id_token'] = encryption_helper.decrypt(  # pylint: disable=E1101
-                        oauth_token['id_token'],
-                        self._asset_id
-                    )
+                token_list = ['access_token', 'refresh_token', 'id_token']
+                for token_name in token_list:
+                    if state['oauth_token'].get(token_name):
+                        state['oauth_token'][token_name] = encryption_helper.decrypt(  # pylint: disable=E1101
+                            oauth_token[token_name],
+                            self._asset_id
+                        )
         except Exception:
             message = "Error While decrypting"
             state.pop('oauth_token', None)
