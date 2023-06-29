@@ -390,13 +390,14 @@ class EWSOnPremConnector(BaseConnector):
 
         self.save_progress("To continue, open this link in a new tab in your browser")
         self.save_progress(url)
-        for _ in range(0, 60):
+        for _ in range(0, 10):
             time.sleep(5)
             state = rsh.load_state()
             oauth_token = state.get('oauth_token')
             if oauth_token:
                 break
             elif state.get('error'):
+                self._reset_the_state()
                 return None, "Error retrieving OAuth token"
         else:
             return None, "Timed out waiting for login"
@@ -438,6 +439,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             oauth_token = r.json()
             if "error" in oauth_token:
+                if oauth_token["error"] in EWS_ASSET_PARAM_CHECK_LIST_ERRORS:
+                    self._reset_the_state()
                 return None, oauth_token["error_description"]
         except Exception:
             return None, "Error retrieving OAuth Token"
@@ -465,11 +468,8 @@ class EWSOnPremConnector(BaseConnector):
         else:
             self.debug_print("Try to generate token from authorization code")
             ret = self._azure_int_auth_initial(client_id, rsh, client_secret)
-
-        self._state['client_id'] = client_id
-        if not ret[0]:
-            self.debug_print("Deleting the state files")
-            self._state = {"app_version": self.get_app_json().get("app_version")}
+            if ret[0]:
+                self._state['client_id'] = client_id
 
         return ret
 
@@ -505,12 +505,13 @@ class EWSOnPremConnector(BaseConnector):
         return phantom.APP_SUCCESS, domain
 
     def _set_header_for_rest_call(self, config):
-        if self.get_action_identifier() != "test_asset_connectivity" and self._state.get("oauth_token", {}):
+        if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and self._state.get("oauth_token", {}):
             resp_json = self._state.get("oauth_token", {})
             self._session.auth = OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type'])
-        elif self.get_action_identifier() == "test_asset_connectivity" and not self._is_token_test_connectivity:
+        elif self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and not self._is_token_test_connectivity:
             self._is_token_test_connectivity = True
-            self.all_authentication_methods(config)
+            return self.all_authentication_methods(config)
+        return phantom.APP_SUCCESS, ""
 
     def _set_azure_auth(self, config):
 
@@ -563,7 +564,7 @@ class EWSOnPremConnector(BaseConnector):
             return None, str(e)
 
         if r.status_code != 200:
-            return None, self._clean_str(r.text)
+            return None, self._extract_error(r)
 
         resp_json = None
         try:
@@ -667,6 +668,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             error_json = r.json()
             error = error_json["error"]
+            if error in EWS_ASSET_PARAM_CHECK_LIST_ERRORS:
+                self._reset_the_state()
             error_desc = error_json["error_description"]
             error_text = "An error occurred. Error: {}, description: {}".format(error, error_desc)
             return error_text
@@ -734,8 +737,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             if "oauth_client_token" in state and self.auth_type == AUTH_TYPE_CLIENT_CRED:
                 self.debug_print("Encrypting the oauth client token")
-                token = json.dumps(state["oauth_client_token"])
-                state["oauth_client_token"] = encryption_helper.encrypt(token, self.get_asset_id())
+                token = state["oauth_client_token"]
+                state["oauth_client_token"]["access_token"] = encryption_helper.encrypt(token["access_token"], self.get_asset_id())
         except Exception as e:
             self.debug_print("Error occurred while encrypting the token: {}. Deleting the token".format(
                 self._get_error_message_from_exception(e)))
@@ -750,8 +753,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             if "oauth_client_token" in state:
                 self.debug_print("Decrypting the oauth client token")
-                token = encryption_helper.decrypt(state["oauth_client_token"], self.get_asset_id())
-                state["oauth_client_token"] = json.loads(token)
+                token = encryption_helper.decrypt(state["oauth_client_token"]["access_token"], self.get_asset_id())
+                state["oauth_client_token"]["access_token"] = token
         except Exception as e:
             self.debug_print("Error occurred while decrypting the token: {}. Deleting the token".format(
                 self._get_error_message_from_exception(e)))
@@ -761,8 +764,10 @@ class EWSOnPremConnector(BaseConnector):
 
     def finalize(self):
         rsh = RequestStateHandler(self.get_asset_id())
-        # self.save_state(self._encrypt_client_token(self._state))
-        self._state = rsh._encrypt_state(self._state)
+        if self.auth_type == AUTH_TYPE_CLIENT_CRED:
+            self._state = self._encrypt_client_token(self._state)
+        else:
+            self._state = rsh._encrypt_state(self._state)
         self.save_state(self._state)
         return phantom.APP_SUCCESS
 
@@ -774,6 +779,10 @@ class EWSOnPremConnector(BaseConnector):
         elif self.auth_type not in (AUTH_TYPE_AZURE_INTERACTIVE, AUTH_TYPE_AZURE):
             self._state.pop("oauth_token", None)
             self._state.pop("client_id", None)
+
+    def _reset_the_state(self):
+        self.debug_print("Reseting the state files")
+        self._state = {"app_version": self.get_app_json().get("app_version")}
 
     def initialize(self):
         """ Called once for every action, all member initializations occur here"""
@@ -802,12 +811,19 @@ class EWSOnPremConnector(BaseConnector):
 
         message = ''
         self._clean_the_state()
-        if not self._state.get("oauth_token", {}).get("access_token") or \
-                ((self._state.get('client_id') and config.get("client_id")) and self._state.get('client_id') != config.get("client_id")):
-            self._is_token_test_connectivity = self.get_action_identifier() == "test_asset_connectivity"
-            ret = self.all_authentication_methods(config)
+        is_oauth_token_exist = self.auth_type in [AUTH_TYPE_AZURE, AUTH_TYPE_AZURE_INTERACTIVE] and \
+            not self._state.get("oauth_token", {}).get("access_token")
+        is_oauth_client_token_exist = self.auth_type == AUTH_TYPE_CLIENT_CRED and \
+            not self._state.get("oauth_client_token", {}).get("access_token")
+        is_client_id_changed = (self._state.get('client_id') and config.get("client_id")) and \
+            self._state.get('client_id') != config.get("client_id")
+
+        if is_client_id_changed or is_oauth_token_exist or is_oauth_client_token_exist:
+            self._is_token_test_connectivity = self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY
+            ret, message = self.all_authentication_methods(config)
+
             if phantom.is_fail(ret):
-                return self.get_status()
+                return self.set_status(ret, message)
 
         if self._base_url.endswith('/'):
             self._base_url = self._base_url[:-1]
@@ -967,18 +983,18 @@ class EWSOnPremConnector(BaseConnector):
             self.save_progress("Using HTTP Basic authentication")
 
         if not self._session.auth:
-            if self._state.get("oauth_token"):
-                self._state.pop("oauth_token")
-            return self.set_status(phantom.APP_ERROR, message)
-        return phantom.APP_SUCCESS
+            return phantom.APP_ERROR, message
+        return phantom.APP_SUCCESS, ""
 
     def _make_rest_call(self, result, data, check_response, data_string=False):
         """ Function that makes the REST call to the device, generic function that can be called from various action handlers
         Needs to return two values, 1st the phantom.APP_[SUCCESS|ERROR], 2nd the response
         """
         config = self.get_config()
-        self._set_header_for_rest_call(config)
         resp_json = None
+        ret, message = self._set_header_for_rest_call(config)
+        if phantom.is_fail(ret):
+            return result.set_status(ret, message), resp_json
 
         if self._impersonate and (not self._target_user):
             return result.set_status(phantom.APP_ERROR, "Impersonation is required, but target user not set. Cannot continue execution"), None
@@ -1002,8 +1018,11 @@ class EWSOnPremConnector(BaseConnector):
             result.add_debug_data({'r_text': r.text if r else 'r is None'})
             result.add_debug_data({'r_headers': r.headers})
 
-        if r.status_code == 401:
-            self.all_authentication_methods(config)
+        if r.status_code == 401 and \
+                (self.auth_type == AUTH_TYPE_AZURE_INTERACTIVE and self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY):
+            ret, message = self.all_authentication_methods(config)
+            if phantom.is_fail(ret):
+                return result.set_status(ret, message), resp_json
             try:
                 r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=self._timeout, verify=True)
             except Exception as e:

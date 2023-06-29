@@ -62,6 +62,7 @@ EWSONPREM_MAX_END_OFFSET_VAL = 2147483646
 EWS_O365_RESOURCE = "https://outlook.office365.com"
 EWS_LOGIN_URL = "https://login.windows.net"
 EWS_TRACE_URL = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace"
+EWS_ASSET_PARAM_CHECK_LIST_ERRORS = ["unauthorized_client", "invalid_client", "invalid_grant", "invalid_request"]
 
 EWS_MODIFY_CONFIG = "Toggling the impersonation configuration on the asset might help, or login user does not have privileges to the mailbox." \
     " Please check the asset configuration parameters"
