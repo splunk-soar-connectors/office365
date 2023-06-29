@@ -531,7 +531,8 @@ class EWSOnPremConnector(BaseConnector):
         if not client_secret:
             return None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_SECRET)
 
-        if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
+        oauth_token = self._state.get('oauth_token')
+        if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and oauth_token and oauth_token.get("refresh_token"):
             self.debug_print("Try to generate token from refresh token")
             ret = self._azure_int_auth_refresh(client_id, client_secret)
             return ret
@@ -1018,8 +1019,9 @@ class EWSOnPremConnector(BaseConnector):
             result.add_debug_data({'r_text': r.text if r else 'r is None'})
             result.add_debug_data({'r_headers': r.headers})
 
-        if r.status_code == 401 and \
-                (self.auth_type == AUTH_TYPE_AZURE_INTERACTIVE and self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY):
+        if r.status_code == 401:
+            if self.auth_type == AUTH_TYPE_CLIENT_CRED:
+                self._state.pop("oauth_client_token", None)
             ret, message = self.all_authentication_methods(config)
             if phantom.is_fail(ret):
                 return result.set_status(ret, message), resp_json
