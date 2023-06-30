@@ -108,31 +108,32 @@ class RequestStateHandler:
             raise AttributeError("RequestStateHandler got invalid asset_id")
 
     def _encrypt_state(self, state):
-        if 'oauth_token' in state:
-            oauth_token = state['oauth_token']
-            token_list = ['access_token', 'refresh_token', 'id_token']
-            for token_name in token_list:
-                if state['oauth_token'].get(token_name):
-                    state['oauth_token'][token_name] = encryption_helper.encrypt(  # pylint: disable=E1101
-                        oauth_token[token_name],
-                        self._asset_id
-                    )
+        try:
+            if 'oauth_token' in state:
+                token_list = ['access_token', 'refresh_token', 'id_token']
+                for token_name in token_list:
+                    if state['oauth_token'].get(token_name):
+                        state['oauth_token'][token_name] = encryption_helper.encrypt(  # pylint: disable=E1101
+                            state['oauth_token'][token_name],
+                            self._asset_id
+                        )
+        except Exception:
+            state.pop('oauth_token')
+            return state
         return state
 
     def _decrypt_state(self, state):
         try:
             if 'oauth_token' in state:
-
-                oauth_token = state["oauth_token"]
                 token_list = ['access_token', 'refresh_token', 'id_token']
                 for token_name in token_list:
                     if state['oauth_token'].get(token_name):
                         state['oauth_token'][token_name] = encryption_helper.decrypt(  # pylint: disable=E1101
-                            oauth_token[token_name],
+                            state['oauth_token'][token_name],
                             self._asset_id
                         )
         except Exception:
-            message = "Error While decrypting"
+            message = "Error while decrypting"
             state.pop('oauth_token', None)
             return state, message
         return state, ""
