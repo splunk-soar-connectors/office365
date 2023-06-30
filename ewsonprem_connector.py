@@ -507,6 +507,7 @@ class EWSOnPremConnector(BaseConnector):
         return phantom.APP_SUCCESS, domain
 
     def _set_header_for_rest_call(self, config):
+        """This function is used to update the headers with access_token before making REST call."""
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
             resp_json = None
             if self._state.get("oauth_token", {}):
@@ -515,6 +516,8 @@ class EWSOnPremConnector(BaseConnector):
                 resp_json = self._state.get("oauth_client_token", {})
             if resp_json:
                 self._session.auth = OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type'])
+        # self._is_token_test_connectivity variable set for generating the tokens only for once while having
+        # the multiple calls.
         elif self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and not self._is_token_test_connectivity:
             self._is_token_test_connectivity = True
             return self.all_authentication_methods(config)
@@ -789,7 +792,7 @@ class EWSOnPremConnector(BaseConnector):
             self._state.pop("oauth_token", None)
 
     def _reset_the_state(self):
-        self.debug_print("Reseting the state files")
+        self.debug_print("Resetting the state file")
         self._state = {"app_version": self.get_app_json().get("app_version")}
 
     def initialize(self):
