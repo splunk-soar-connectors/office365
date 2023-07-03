@@ -516,11 +516,9 @@ class EWSOnPremConnector(BaseConnector):
                 resp_json = self._state.get("oauth_client_token", {})
             if resp_json:
                 self._session.auth = OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type'])
-        # self._is_token_test_connectivity variable set for generating the tokens only for once while having
-        # the multiple calls.
         elif self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and not self._is_token_test_connectivity:
             self._is_token_test_connectivity = True
-            return self.all_authentication_methods(config)
+            return self.set_authentication_method(config)
         return phantom.APP_SUCCESS, ""
 
     def _set_azure_auth(self, config):
@@ -812,7 +810,6 @@ class EWSOnPremConnector(BaseConnector):
         else:
             self._state, message = self.rsh._decrypt_state(self._state)
             if message:
-                # self.save_progress(message)
                 return self.set_status(phantom.APP_ERROR, message)
 
         # The headers, initialize them here once and use them for all other REST calls
@@ -832,7 +829,7 @@ class EWSOnPremConnector(BaseConnector):
             self._state.get('client_id') != config.get("client_id")
         if self._is_client_id_changed or is_oauth_token_exist or is_oauth_client_token_exist:
             self._is_token_test_connectivity = self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY
-            ret, message = self.all_authentication_methods(config)
+            ret, message = self.set_authentication_method(config)
 
             if phantom.is_fail(ret):
                 return self.set_status(ret, message)
@@ -964,8 +961,8 @@ class EWSOnPremConnector(BaseConnector):
 
         return ""
 
-    def all_authentication_methods(self, config):
-        "Method for using all type of authentication"
+    def set_authentication_method(self, config):
+        "Method for setting authentication"
         if self.auth_type == AUTH_TYPE_AZURE:
             self.save_progress("Using Azure AD authentication")
             self._session.auth, message = self._set_azure_auth(config)
@@ -1033,7 +1030,7 @@ class EWSOnPremConnector(BaseConnector):
         if r.status_code == 401:
             if self.auth_type == AUTH_TYPE_CLIENT_CRED:
                 self._reset_the_state()
-            ret, message = self.all_authentication_methods(config)
+            ret, message = self.set_authentication_method(config)
             if phantom.is_fail(ret):
                 return result.set_status(ret, message), resp_json
             try:
