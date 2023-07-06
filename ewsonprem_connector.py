@@ -723,7 +723,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             r = self._session.post(url, headers=headers, data=data, verify=True, timeout=self._timeout)
         except Exception as e:
-            self._reset_the_state()
+            self._state.pop("oauth_client_token", None)
             return None, str(e)
 
         if r.status_code != 200:
@@ -1029,7 +1029,7 @@ class EWSOnPremConnector(BaseConnector):
 
         if r.status_code == 401:
             if self.auth_type == AUTH_TYPE_CLIENT_CRED:
-                self._reset_the_state()
+                self._state.pop("oauth_client_token", None)
             ret, message = self.set_authentication_method(config)
             if phantom.is_fail(ret):
                 return result.set_status(ret, message), resp_json
