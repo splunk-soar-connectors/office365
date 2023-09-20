@@ -735,6 +735,9 @@ class EWSOnPremConnector(BaseConnector):
         return state
 
     def finalize(self):
+        self.debug_print("Value of last_ingested_format is {}".format(str(self._state.get('last_ingested_format'))))
+        self.debug_print("Value of last_email_format is {}".format(str(self._state.get('last_email_format'))))
+        self.debug_print("Value of last_created_format is {}".format(str(self._state.get('last_created_format'))))
         self.save_state(self._encrypt_client_token(self._state))
         return phantom.APP_SUCCESS
 
@@ -815,6 +818,10 @@ class EWSOnPremConnector(BaseConnector):
             return ret
 
         self.set_validator('ipv6', self._is_ip)
+
+        self.debug_print("Value of last_ingested_format is {}".format(str(self._state.get('last_ingested_format'))))
+        self.debug_print("Value of last_email_format is {}".format(str(self._state.get('last_email_format'))))
+        self.debug_print("Value of last_created_format is {}".format(str(self._state.get('last_created_format'))))
 
         return phantom.APP_SUCCESS
 
@@ -933,6 +940,10 @@ class EWSOnPremConnector(BaseConnector):
 
         resp_json = None
 
+        self.debug_print("DEBUGGING: Value of self._impersonate is {}".format(str(self._impersonate)))
+        self.debug_print("DEBUGGING: Value of self._target_user is {}".format(str(self._target_user)))
+        self.debug_print("DEBUGGING: Value of data is {}".format(str(data)))
+
         if self._impersonate and (not self._target_user):
             return result.set_status(phantom.APP_ERROR, "Impersonation is required, but target user not set. Cannot continue execution"), None
 
@@ -943,9 +954,12 @@ class EWSOnPremConnector(BaseConnector):
 
         data = ews_soap.get_string(data)
 
+        self.debug_print("DEBUGGING: Value of data is {}".format(str(data)))
+
         # Make the call
         try:
             r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
+            self.debug_print("DEBUGGING: Value of r.url is {}".format(str(r.url)))
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
             error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
@@ -955,7 +969,7 @@ class EWSOnPremConnector(BaseConnector):
             result.add_debug_data({'r_status_code': r.status_code})
             result.add_debug_data({'r_text': r.text if r else 'r is None'})
             result.add_debug_data({'r_headers': r.headers})
-
+        self.debug_print("DEBUGGING: Value of r.status_code is {}".format(str(r.status_code)))
         if r.status_code == 401 and self.auth_type == AUTH_TYPE_CLIENT_CRED:
             self._state.pop("oauth_client_token", None)
             self._session.auth, message = self._set_client_cred_auth(self.get_config())
@@ -963,11 +977,13 @@ class EWSOnPremConnector(BaseConnector):
                 return result.set_status(phantom.APP_ERROR, message), None
             try:
                 r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=DEFAULT_REQUEST_TIMEOUT, verify=True)
+                self.debug_print("DEBUGGING: Value of r.url is {}".format(str(r.url)))
             except Exception as e:
                 error_code, error_msg = self._get_error_message_from_exception(e)
                 error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 return result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, error_text), resp_json
 
+        self.debug_print("DEBUGGING: Value of r.status_code is {}".format(str(r.status_code)))
         if not (200 <= r.status_code <= 399):
             # error
             detail = self._get_http_error_details(r)
@@ -996,12 +1012,15 @@ class EWSOnPremConnector(BaseConnector):
         # Check if there is a fault node present
         fault_node = resp_json.get('s:Envelope', {}).get('s:Body', {}).get('s:Fault')
 
+        self.debug_print("DEBUGGING: Value of fault_node is {}".format(str(fault_node)))
+
         if fault_node:
             return self._parse_fault_node(result, fault_node), None
 
         # Now try getting the response message
         try:
             resp_message = check_response(resp_json)
+            self.debug_print("DEBUGGING: Value of resp_message is {}".format(str(resp_message)))
         except Exception as e:
             msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=r.text)
             error_code, error_msg = self._get_error_message_from_exception(e)
@@ -1978,10 +1997,10 @@ class EWSOnPremConnector(BaseConnector):
         """ The input folder is a list, meaning the folder name matched multiple folder
             Given the folder path, this function will return the one that matches, or fail
         """
-
+        self.debug_print("DEBUGGING: In _get_matching_folder_path function")
         if not folder_list:
             return action_result(phantom.APP_ERROR, "Unable to find info about folder '{0}'. Returned info list empty".format(folder_name)), None
-
+        self.debug_print("DEBUGGING: Value of folder_list is {}".format(str(folder_list)))
         for curr_folder in folder_list:
             curr_folder_path = self._extract_folder_path(curr_folder.get('t:ExtendedProperty'))
 
@@ -1992,43 +2011,58 @@ class EWSOnPremConnector(BaseConnector):
             phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'".format(folder_path)), None
 
     def _get_folder_info(self, user, folder_path, action_result, is_public_folder=False):
+
+        self.debug_print("DEBUGGING: Value of user is {}".format(str(user)))
+        self.debug_print("DEBUGGING: Value of folder_path is {}".format(str(folder_path)))
+        self.debug_print("DEBUGGING: Value of is_public_folder is {}".format(str(is_public_folder)))
         # hindsight is always 20-20, set the folder path separator to be '/', thinking folder names allow '\' as a char.
         # turns out even '/' is supported by office365, so let the action escape the '/' char if it's part of the folder name
         folder_path = folder_path.replace('\\/', self.REPLACE_CONST)
+        self.debug_print("DEBUGGING: Value of folder_path is {}".format(str(folder_path)))
         folder_names = folder_path.split('/')
+        self.debug_print("DEBUGGING: Value of folder_names is {}".format(str(folder_names)))
 
         folder_names = list(filter(None, folder_names))
+        self.debug_print("DEBUGGING: Value of folder_names is {}".format(str(folder_names)))
         if not folder_names:
             return action_result.set_status(phantom.APP_ERROR, "Please provide a valid value for folder path"), None
 
         for i, folder_name in enumerate(folder_names):
             folder_names[i] = folder_name.replace(self.REPLACE_CONST, '/')
 
+        self.debug_print("DEBUGGING: Value of folder_names is {}".format(str(folder_names)))
+
         if is_public_folder:
             parent_folder_id = 'publicfoldersroot'
         else:
             parent_folder_id = 'root'
 
-        for i, folder_name in enumerate(folder_names):
+        self.debug_print("DEBUGGING: Value of parent_folder_id is {}".format(str(parent_folder_id)))
 
+        for i, folder_name in enumerate(folder_names):
+            self.debug_print("DEBUGGING: Value of folder_name is {}".format(str(folder_name)))
             curr_valid_folder_path = '\\'.join(folder_names[:i + 1])
 
             self.save_progress('Getting info about {0}\\{1}'.format(self._clean_str(user), curr_valid_folder_path))
 
             input_xml = ews_soap.xml_get_children_info(user, child_folder_name=folder_name, parent_folder_id=parent_folder_id)
-
+            self.debug_print("DEBUGGING: Value of input_xml is {}".format(str(input_xml)))
+            self.debug_print("DEBUGGING: Value of self._check_findfolder_response is {}".format(str(self._check_findfolder_response)))
             ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
+            self.debug_print("DEBUGGING: Value of resp_json is {}".format(str(resp_json)))
 
             if phantom.is_fail(ret_val):
                 return ret_val, None
 
             total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
+            self.debug_print("DEBUGGING: Value of total_items is {}".format(str(total_items)))
 
             if total_items == '0':
                 return action_result.set_status(
                     phantom.APP_ERROR, "Folder '{0}' not found, possibly not present".format(curr_valid_folder_path)), None
 
             folder = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
+            self.debug_print("DEBUGGING: Value of folder is {}".format(str(folder)))
 
             if not folder:
                 return action_result.set_status(
@@ -2040,6 +2074,7 @@ class EWSOnPremConnector(BaseConnector):
                 folder = [folder]
 
             ret_val, folder = self._get_matching_folder_path(folder, folder_name, curr_valid_folder_path, action_result)
+            self.debug_print("DEBUGGING: Value of folder is {}".format(str(folder)))
 
             if phantom.is_fail(ret_val):
                 return ret_val, None
@@ -2051,6 +2086,7 @@ class EWSOnPremConnector(BaseConnector):
                 ), None
 
             folder_id = folder.get('t:FolderId', {}).get('@Id')
+            self.debug_print("DEBUGGING: Value of folder_id is {}".format(str(folder_id)))
 
             if not folder_id:
                 return action_result.set_status(
@@ -2065,6 +2101,8 @@ class EWSOnPremConnector(BaseConnector):
                 'children_count': folder.get('t:ChildFolderCount'),
                 'folder_path': self._extract_folder_path(folder.get('t:ExtendedProperty'))
             }
+
+            self.debug_print("DEBUGGING: Value of folder_info is {}".format(str(folder_info)))
 
         return phantom.APP_SUCCESS, folder_info
 
@@ -2615,36 +2653,52 @@ class EWSOnPremConnector(BaseConnector):
         return phantom.APP_SUCCESS
 
     def _get_email_infos_to_process(self, offset, max_emails, action_result, restriction=None):
+        self.debug_print("DEBUGGING: In _get_email_infos_to_process")
+        self.debug_print("DEBUGGING: Value of offset is {}".format(str(offset)))
+        self.debug_print("DEBUGGING: Value of max_emails is {}".format(str(max_emails)))
+        self.debug_print("DEBUGGING: Value of restriction is {}".format(str(restriction)))
 
         config = self.get_config()
 
         # get the user
         poll_user = config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])
+        self.debug_print("DEBUGGING: Value of poll_user is {}".format(str(poll_user)))
 
         if not poll_user:
             return action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None
 
         self._target_user = poll_user
+        self.debug_print("DEBUGGING: Value of self._target_user is {}".format(str(self._target_user)))
 
         folder_path = config.get(EWS_JSON_POLL_FOLDER, 'Inbox')
+        self.debug_print("DEBUGGING: Value of folder_path is {}".format(str(folder_path)))
 
         is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
+        self.debug_print("DEBUGGING: Value of is_public_folder is {}".format(str(is_public_folder)))
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
+        self.debug_print("DEBUGGING: Value of folder_info is {}".format(str(folder_info)))
 
         if phantom.is_fail(ret_val):
             return ret_val, None
 
         manner = config[EWS_JSON_INGEST_MANNER]
+        self.debug_print("DEBUGGING: Value of manner is {}".format(str(manner)))
         folder_id = folder_info['id']
+        self.debug_print("DEBUGGING: Value of folder_id is {}".format(str(folder_id)))
 
         order = "Ascending"
         if manner == EWS_INGEST_LATEST_EMAILS:
             order = "Descending"
 
+        self.debug_print("DEBUGGING: Value of order is {}".format(str(order)))
+
         data = ews_soap.xml_get_email_ids(
             poll_user, order=order, offset=offset, max_emails=max_emails, folder_id=folder_id, restriction=restriction)
+        self.debug_print("DEBUGGING: Value of data is {}".format(str(data)))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_find_response)
+
+        self.debug_print("DEBUGGING: Value of resp_json is {}".format(str(resp_json)))
 
         # Process errors
         if phantom.is_fail(ret_val):
@@ -2656,22 +2710,27 @@ class EWSOnPremConnector(BaseConnector):
             return ret_val, None
 
         resp_json = resp_json.get('m:RootFolder')
+        self.debug_print("DEBUGGING: Value of resp_json is {}".format(str(resp_json)))
 
         if not resp_json:
             return action_result.set_status(phantom.APP_ERROR, 'Result does not contain required RootFolder key'), None
 
         items = resp_json.get('t:Items')
+        self.debug_print("DEBUGGING: Value of items is {}".format(str(items)))
 
         if items is None:
             self.debug_print("Items is None")
             return action_result.set_status(phantom.APP_SUCCESS, 'Result does not contain items key. Possibly no emails in folder'), None
 
         items = resp_json.get('t:Items', {}).get('t:Message', [])
+        self.debug_print("DEBUGGING: Value of items is {}".format(str(items)))
 
         if not isinstance(items, list):
             items = [items]
 
         email_infos = [{'id': x['t:ItemId']['@Id'], 'last_modified_time': x['t:LastModifiedTime']} for x in items]
+
+        self.debug_print("DEBUGGING: Value of email_infos is {}".format(str(email_infos)))
 
         return phantom.APP_SUCCESS, email_infos
 
@@ -2679,6 +2738,7 @@ class EWSOnPremConnector(BaseConnector):
         return "{0}.........{1}".format(email_id[:20], email_id[-20:])
 
     def _process_email_ids(self, email_ids, action_result):
+        self.debug_print("DEBUGGING: In _process_email_ids")
 
         if email_ids is None:
             return action_result.set_status(phantom.APP_ERROR, "Did not get access to email IDs")
@@ -2703,6 +2763,8 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(
                 phantom.APP_ERROR, "ErrorExp in _process_email_id for all the email IDs: {}".format(str(failed_emails_parsing_list)))
 
+        self.debug_print("DEBUGGING: Value of failed_emails_parsing_list is {}".format(str(failed_emails_parsing_list)))
+
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_fips_enabled(self):
@@ -2720,14 +2782,18 @@ class EWSOnPremConnector(BaseConnector):
 
     def _poll_now(self, param):
 
+        self.debug_print("DEBUGGING: In _poll_now function")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
+        self.debug_print("DEBUGGING: Getting config")
         # Get the maximum number of emails that we can pull
         config = self.get_config()
 
+        self.debug_print("DEBUGGING: Got config")
         # Get the maximum number of emails that we can pull, same as container count
         try:
             max_emails = int(param[phantom.APP_JSON_CONTAINER_COUNT])
+            self.debug_print("DEBUGGING: Value of max_emails is {}".format(str(max_emails)))
             if max_emails == 0 or (max_emails and (not str(max_emails).isdigit() or max_emails <= 0)):
                 return action_result.set_status(
                     phantom.APP_ERROR, "Please provide a valid non-zero positive integer value in 'container_count' parameter")
@@ -2737,21 +2803,27 @@ class EWSOnPremConnector(BaseConnector):
         self.save_progress("Will be ingesting all possible artifacts (ignoring max artifacts value) for POLL NOW")
 
         email_id = param.get(phantom.APP_JSON_CONTAINER_ID)
+        self.debug_print("DEBUGGING: Value of email_id is {}".format(str(email_id)))
         email_ids = [email_id]
+        self.debug_print("DEBUGGING: Value of email_ids is {}".format(str(email_ids)))
 
         # get the user
         poll_user = UnicodeDammit(config.get(EWS_JSON_POLL_USER, config[phantom.APP_JSON_USERNAME])).unicode_markup
+        self.debug_print("DEBUGGING: Value of poll_user is {}".format(str(poll_user)))
 
         if not poll_user:
             return action_result.set_status(phantom.APP_ERROR, "Polling User Email not specified, cannot continue"), None
 
         self._target_user = poll_user
+        self.debug_print("DEBUGGING: Value of self._target_user is {}".format(str(self._target_user)))
 
         if not email_id:
 
             self.save_progress("POLL NOW Getting {0} '{1}' email ids".format(max_emails, config[EWS_JSON_INGEST_MANNER]))
-
+            self.debug_print("DEBUGGING: Calling  _get_email_infos_to_process")
             ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result)
+            self.debug_print("DEBUGGING: Value of email_infos is {}".format(str(email_infos)))
+            self.debug_print("DEBUGGING: Value of ret_val is {}".format(str(ret_val)))
 
             if phantom.is_fail(ret_val) or email_infos is None:
                 return action_result.get_status()
@@ -2760,10 +2832,12 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the ingestion process")
 
             email_ids = [x['id'] for x in email_infos]
+            self.debug_print("DEBUGGING: Value of email_ids is {}".format(str(email_ids)))
         else:
             self.save_progress("POLL NOW Getting the single email id")
 
         ret_val = self._process_email_ids(email_ids, action_result)
+        self.debug_print("DEBUGGING: Value of ret_val is {}".format(str(ret_val)))
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -2801,45 +2875,72 @@ class EWSOnPremConnector(BaseConnector):
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
         self.save_state(self._encrypt_client_token(self._state.copy()))
 
+        self.debug_print("DEBUGGING: Value of utc_now is {}".format(str(utc_now)))
+        self.debug_print("DEBUGGING: Value of self._state['last_ingested_format'] is {}".format(str(self._state['last_ingested_format'])))
+        self.debug_print("DEBUGGING: Value of self._state['last_email_format'] is {}".format(str(self._state['last_email_format'])))
+
+        self.debug_print("DEBUGGING: Value of max_emails is {}".format(str(max_emails)))
+        self.debug_print("DEBUGGING: Value of limit is {}".format(str(limit)))
+
         if max_emails:
+            self.debug_print("DEBUGGING: Value of email_index is {}".format(str(email_index)))
+            self.debug_print("DEBUGGING: Value of self._less_data is {}".format(str(self._less_data)))
             if email_index == 0 or self._less_data:
                 return None, None
+            self.debug_print("DEBUGGING: Value of total_ingested is {}".format(str(total_ingested)))
             total_ingested += max_emails - self._dup_data
+            self.debug_print("DEBUGGING: Value of total_ingested is {}".format(str(total_ingested)))
+            self.debug_print("DEBUGGING: Value of max_emails is {}".format(str(max_emails)))
+            self.debug_print("DEBUGGING: Value of self._dup_data is {}".format(str(self._dup_data)))
             self._remaining = limit - total_ingested
+            self.debug_print("DEBUGGING: Value of self._remaining is {}".format(str(self._remaining)))
             if total_ingested >= limit:
                 return None, None
             next_cycle_repeat_data = 0
             last_modified_time = email_infos[email_index]['last_modified_time']
+            self.debug_print("DEBUGGING: Value of last_modified_time is {}".format(str(last_modified_time)))
             for x in reversed(email_infos):
                 if x["last_modified_time"] == last_modified_time:
                     next_cycle_repeat_data += 1
                 else:
                     break
 
+            self.debug_print("DEBUGGING: Value of next_cycle_repeat_data is {}".format(str(next_cycle_repeat_data)))
             max_emails = next_cycle_repeat_data + self._remaining
+            self.debug_print("DEBUGGING: Value of max_emails is {}".format(str(max_emails)))
             return max_emails, total_ingested
         else:
             return None, None
 
     def _on_poll(self, param):
 
+        self.debug_print("DEBUGGING: In _on_poll function")
         # on poll action that is supposed to be scheduled
         if self.is_poll_now():
+            self.debug_print("DEBUGGING: is_poll_now() is True")
             self.debug_print("DEBUGGER: Starting polling now")
             return self._poll_now(param)
 
         config = self.get_config()
+
+        for k in ["first_run_max_emails", "ingest", "ingest_manner", "max_containers", "poll_folder"]:
+            self.debug_print("DEBUGGING: Value of {} is {}".format(k, str(config.get(k))))
+
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         # Fetch first_run_max_emails for asset configuration
         first_run_max_emails = config[EWS_JSON_FIRST_RUN_MAX_EMAILS]
+        self.debug_print("DEBUGGING: Value of first_run_max_emails is {}".format(str(first_run_max_emails)))
         ret_val, first_run_max_emails = self._validate_integer(action_result, first_run_max_emails, "Maximum Emails to Poll First Time")
+        self.debug_print("DEBUGGING: Value of first_run_max_emails is {}".format(str(first_run_max_emails)))
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         # Fetch max_containers for asset configuration
         max_containers = config[EWS_JSON_POLL_MAX_CONTAINERS]
+        self.debug_print("DEBUGGING: Value of max_containers is {}".format(str(max_containers)))
         ret_val, max_containers = self._validate_integer(action_result, max_containers, "Maximum Containers for Scheduled Polling")
+        self.debug_print("DEBUGGING: Value of max_containers is {}".format(str(max_containers)))
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
@@ -2852,6 +2953,8 @@ class EWSOnPremConnector(BaseConnector):
         else:
             max_emails = max_containers
 
+        self.debug_print("DEBUGGING: Value of max_emails is {}".format(str(max_emails)))
+
         total_ingested = 0
         limit = max_emails
         while True:
@@ -2859,6 +2962,11 @@ class EWSOnPremConnector(BaseConnector):
             restriction = self._get_restriction()
 
             ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction)
+            self.debug_print("DEBUGGING: Value of email_infos is {}".format(str(email_infos)))
+
+            self.debug_print("DEBUGGING: (1) Value of total_ingested is {}".format(str(total_ingested)))
+            self.debug_print("DEBUGGING: (1) Value of limit is {}".format(str(limit)))
+            self.debug_print("DEBUGGING: (1) Value of max_emails is {}".format(str(max_emails)))
 
             if phantom.is_fail(ret_val) or email_infos is None:
                 return action_result.get_status()
@@ -2867,26 +2975,37 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the restriction: {}".format(str(restriction)))
 
             if len(email_infos) < max_emails:
+                self.debug_print("DEBUGGING:Value of less data is True")
                 self._less_data = True
 
             # if the config is for latest emails, then the 0th is the latest in the list returned, else
             # The last email is the latest in the list returned
             email_index = 0 if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS else -1
+            self.debug_print("DEBUGGING: Value of email_index is {}".format(str(email_index)))
 
             email_ids = [x['id'] for x in email_infos]
+            self.debug_print("DEBUGGING: Value of email_ids is {}".format(str(email_ids)))
             ret_val = self._process_email_ids(email_ids, action_result)
 
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
+            self.debug_print("DEBUGGING: (2) Value of total_ingested is {}".format(str(total_ingested)))
+            self.debug_print("DEBUGGING: (2) Value of limit is {}".format(str(limit)))
+            self.debug_print("DEBUGGING: (2) Value of max_emails is {}".format(str(max_emails)))
             max_emails, total_ingested = self._manage_data_duplication(email_infos, email_index, max_emails, total_ingested, limit)
+            self.debug_print("DEBUGGING: (3) Value of total_ingested is {}".format(str(total_ingested)))
+            self.debug_print("DEBUGGING: (3) Value of limit is {}".format(str(limit)))
+            self.debug_print("DEBUGGING: (3) Value of max_emails is {}".format(str(max_emails)))
             if not max_emails:
                 break
 
         # Save the state file data only if the ingestion gets successfully completed
         if self._state.get('first_run', True):
             self._state['first_run'] = False
+            self.debug_print("DEBUGGING: Value of first_run is True")
 
+        self.debug_print("DEBUGGING: Exiting _on_poll function")
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_trace_error_details(self, response):
@@ -3075,7 +3194,10 @@ class EWSOnPremConnector(BaseConnector):
         elif action == self.ACTION_ID_RESOLVE_NAME:
             ret_val = self._resolve_name(param)
         elif action == self.ACTION_ID_ON_POLL:
+            self.debug_print("DEBUGGING: Calling On Poll")
             ret_val = self._on_poll(param)
+            self.debug_print("DEBUGGING: On poll call finished")
+
         elif action == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
             ret_val = self._test_connectivity(param)
         elif action == self.ACTION_ID_TRACE_EMAIL:
