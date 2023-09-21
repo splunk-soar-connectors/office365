@@ -1020,7 +1020,6 @@ class EWSOnPremConnector(BaseConnector):
         # Now try getting the response message
         try:
             resp_message = check_response(resp_json)
-            self.debug_print("DEBUGGING: Value of resp_message is {}".format(str(resp_message)))
         except Exception as e:
             msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=r.text)
             error_code, error_msg = self._get_error_message_from_exception(e)
