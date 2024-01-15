@@ -2,7 +2,7 @@
     "appid": "a73f6d32-c9d5-4fec-b024-43876700daa6",
     "logo": "logo_microsoftoffice365.svg",
     "logo_dark": "logo_microsoftoffice365_dark.svg",
-    "license": "Copyright (c) 2016-2023 Splunk Inc.",
+    "license": "Copyright (c) 2016-2024 Splunk Inc.",
     "rest_handler": "request_handler.handle_request",
     "name": "EWS for Office 365",
     "description": "This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service",
@@ -19,7 +19,7 @@
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "Cloud April 27, 2023"
+        "Cloud May 17, 2023"
     ],
     "pip_dependencies": {
         "wheel": [
@@ -338,7 +338,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -391,7 +391,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -464,7 +464,7 @@
                         "exchange email id",
                         "office 365 email id"
                     ],
-                    "column_name": "Message ID",
+                    "column_name": "EWS Email ID/EWS ID",
                     "column_order": 7
                 },
                 {
@@ -527,13 +527,13 @@
         {
             "action": "delete email",
             "description": "Delete emails",
-            "verbose": "This action supports a comma-separated list of message IDs as input, which should be used to delete multiple emails in a single call to the server. The deleted emails are moved to the Deleted Items (trash) folder.",
+            "verbose": "This action supports a comma-separated list of EWS email IDs / EWS IDs as input, which should be used to delete multiple emails in a single call to the server. The deleted emails are moved to the Deleted Items (trash) folder.",
             "type": "contain",
             "identifier": "delete_email",
             "read_only": false,
             "parameters": {
                 "id": {
-                    "description": "Message IDs to delete (comma-separated values supported)",
+                    "description": "EWS email IDs/EWS IDs to delete (comma-separated values supported)",
                     "data_type": "string",
                     "order": 0,
                     "contains": [
@@ -575,7 +575,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -585,7 +585,7 @@
                         "exchange email id",
                         "office 365 email id"
                     ],
-                    "column_name": "Message ID",
+                    "column_name": "EWS Email ID/EWS ID",
                     "column_order": 0,
                     "example_values": [
                         "AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA=="
@@ -632,7 +632,7 @@
             "read_only": false,
             "parameters": {
                 "id": {
-                    "description": "Message ID to copy",
+                    "description": "EWS email ID/EWS ID to copy",
                     "data_type": "string",
                     "order": 0,
                     "contains": [
@@ -721,7 +721,7 @@
                     "column_name": "Destination Mailbox",
                     "column_order": 0,
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -744,7 +744,7 @@
                         "exchange email id",
                         "office 365 email id"
                     ],
-                    "column_name": "Source Message ID",
+                    "column_name": "Source EWS Email ID/EWS ID",
                     "column_order": 2,
                     "example_values": [
                         "AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA=="
@@ -757,7 +757,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -778,7 +778,7 @@
                     "example_values": [
                         "AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA="
                     ],
-                    "column_name": "Destination Message ID",
+                    "column_name": "Destination EWS email ID/EWS ID",
                     "column_order": 3
                 },
                 {
@@ -818,7 +818,7 @@
             "read_only": false,
             "parameters": {
                 "id": {
-                    "description": "Message ID to move",
+                    "description": "EWS email ID/EWS ID to move",
                     "data_type": "string",
                     "order": 0,
                     "contains": [
@@ -907,7 +907,7 @@
                     "column_name": "User Email",
                     "column_order": 0,
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -930,7 +930,7 @@
                         "exchange email id",
                         "office 365 email id"
                     ],
-                    "column_name": "Source Message ID",
+                    "column_name": "Source EWS Email ID/EWS ID",
                     "column_order": 2,
                     "example_values": [
                         "AQMkADU3NDk3MzJlLTY3MDQtNDE2Ny1iZDk1LTc4YjEwYzhmZDc5YQBGAAADyW3X5P7Hb0_MMHKonvdoWQcAQSl1b8BFiEmbqZql_JiUtwAAAgEMAAAAQSl1b8BFiEmbqZql_JiUtwABS2DpdwAAAA=="
@@ -943,7 +943,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -964,7 +964,7 @@
                     "example_values": [
                         "AAMkADVjNTI3MTYxLTYyZDMtNGViYy04MTFhLWZjYjQxYzNmNmI2YwBGAAAAAACJMZRks2m2Qp8kJOYtQ/E0BwC63sxpeq+QSJSiCN540EaIAAAAAAEbAAC63sxpeq+QSJSiCN540EaIAAHWGokmAAA="
                     ],
-                    "column_name": "Destination Message ID",
+                    "column_name": "Destination EWS email ID/EWS ID",
                     "column_order": 3
                 },
                 {
@@ -998,14 +998,14 @@
         {
             "action": "block sender",
             "description": "Add the sender email into the block list",
-            "verbose": "This action takes as input an email whose sender will be added to the Block Senders List. The message ID changes after the execution and is a required parameter for request hence undo action would require unique ID. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List.<ul><li>If the <b>move_to_junk_folder</b> parameter is set to True, the sender of the target email message is added to the blocked sender list and the email message is moved to the Junk Email folder.</li><li>If the <b>move_to_junk_folder</b> attribute is set to False, the sender of the target email message is added to the blocked sender list and the email message is not moved from the folder.</li></ul>To view the current Block Senders list, please read the following Powershell articles: <ul><li>https://docs.microsoft.com/en-us/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/connect-to-exchange-online-powershell?view=exchange-ps</li><li>https://docs.microsoft.com/en-us/powershell/module/exchange/antispam-antimalware/Get-MailboxJunkEmailConfiguration?view=exchange-ps</li></ul>",
+            "verbose": "This action takes as input an email whose sender will be added to the Block Senders List. The EWS email ID/EWS ID changes after the execution and is a required parameter for request hence undo action would require unique ID. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List.<ul><li>If the <b>move_to_junk_folder</b> parameter is set to True, the sender of the target email message is added to the blocked sender list and the email message is moved to the Junk Email folder.</li><li>If the <b>move_to_junk_folder</b> attribute is set to False, the sender of the target email message is added to the blocked sender list and the email message is not moved from the folder.</li></ul>To view the current Block Senders list, please read the following Powershell articles: <ul><li>https://docs.microsoft.com/en-us/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/connect-to-exchange-online-powershell?view=exchange-ps</li><li>https://docs.microsoft.com/en-us/powershell/module/exchange/antispam-antimalware/Get-MailboxJunkEmailConfiguration?view=exchange-ps</li></ul>",
             "type": "contain",
             "identifier": "block_sender",
             "undo": "unblock sender",
             "read_only": false,
             "parameters": {
                 "id": {
-                    "description": "Message ID to pick the sender of",
+                    "description": "EWS email ID/EWS ID to pick the sender of",
                     "data_type": "string",
                     "order": 0,
                     "contains": [
@@ -1049,7 +1049,7 @@
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "example_values": [
-                        "foo@bar.onmicrosoft.com"
+                        "foo@bar.test.com"
                     ],
                     "contains": [
                         "email"
@@ -1123,14 +1123,14 @@
         {
             "action": "unblock sender",
             "description": "Remove the sender email from the block list",
-            "verbose": "This action takes as input an email whose sender will be removed from the Block Senders List. The message ID changes after the execution and is a required parameter for request hence undo action would require unique ID. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List.<ul><li>If the <b>move_from_junk_folder</b> parameter is set to True, the sender of the target email message is removed from the blocked sender list and the email message is moved from the Junk Email folder.</li><li>If the <b>move_from_junk_folder</b> attribute is set to False, the sender of the target email message is removed from the blocked sender list and the email message is not moved from the folder.</li></ul>To view the current Block Senders list, please read the following Powershell articles: <ul><li>https://docs.microsoft.com/en-us/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/connect-to-exchange-online-powershell?view=exchange-ps</li><li>https://docs.microsoft.com/en-us/powershell/module/exchange/antispam-antimalware/Get-MailboxJunkEmailConfiguration?view=exchange-ps</li></ul>",
+            "verbose": "This action takes as input an email whose sender will be removed from the Block Senders List. The EWS email ID/EWS ID changes after the execution and is a required parameter for request hence undo action would require unique ID. Note that a message from the email address must exist in the user's mailbox before you can add the email address to or remove it from the Blocked Senders List.<ul><li>If the <b>move_from_junk_folder</b> parameter is set to True, the sender of the target email message is removed from the blocked sender list and the email message is moved from the Junk Email folder.</li><li>If the <b>move_from_junk_folder</b> attribute is set to False, the sender of the target email message is removed from the blocked sender list and the email message is not moved from the folder.</li></ul>To view the current Block Senders list, please read the following Powershell articles: <ul><li>https://docs.microsoft.com/en-us/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/connect-to-exchange-online-powershell?view=exchange-ps</li><li>https://docs.microsoft.com/en-us/powershell/module/exchange/antispam-antimalware/Get-MailboxJunkEmailConfiguration?view=exchange-ps</li></ul>",
             "type": "correct",
             "identifier": "unblock_sender",
             "undo": "block sender",
             "read_only": false,
             "parameters": {
                 "id": {
-                    "description": "Message ID to pick the sender of",
+                    "description": "EWS email ID/EWS ID to pick the sender of",
                     "data_type": "string",
                     "order": 0,
                     "contains": [
@@ -1174,7 +1174,7 @@
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "example_values": [
-                        "foo@bar.onmicrosoft.com"
+                        "foo@bar.test.com"
                     ],
                     "contains": [
                         "email"
@@ -1258,7 +1258,7 @@
             "read_only": true,
             "parameters": {
                 "id": {
-                    "description": "Message ID to get",
+                    "description": "EWS email ID/EWS ID to get",
                     "data_type": "string",
                     "order": 0,
                     "contains": [
@@ -1334,7 +1334,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -1383,7 +1383,7 @@
                     "data_path": "action_result.data.*.CC",
                     "data_type": "string",
                     "example_values": [
-                        "Test1 Test <Test1-test@test.onmicrosoft.com>, Test3 test\r\n\t<test3-test@test.onmicrosoft.com>, test4-test\r\n\t<test4-test@test.onmicrosoft.com>"
+                        "Test1 Test <Test1-test@test.test.com>, Test3 test\r\n\t<test3-test@test.test.com>, test4-test\r\n\t<test4-test@test.test.com>"
                     ]
                 },
                 {
@@ -1892,7 +1892,7 @@
                     "data_path": "action_result.data.*.received-spf",
                     "data_type": "string",
                     "example_values": [
-                        "Pass (protection.outlook.com: domain of microsoft.com)"
+                        "Pass (protection.test.com: domain of test.com)"
                     ]
                 },
                 {
@@ -2465,15 +2465,7 @@
                         "exchange distribution list"
                     ],
                     "example_values": [
-                        "test_playbook2@testdomain.onmicrosoft.com"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.recursive",
-                    "data_type": "boolean",
-                    "example_values": [
-                        true,
-                        false
+                        "test_playbook2@testdomain.test.com"
                     ]
                 },
                 {
@@ -2483,7 +2475,15 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.recursive",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
                     ]
                 },
                 {
@@ -2593,7 +2593,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -2603,7 +2603,7 @@
                         "email"
                     ],
                     "example_values": [
-                        "user@example.onmicrosoft.com"
+                        "user@example.test.com"
                     ]
                 },
                 {
@@ -2771,7 +2771,7 @@
             "read_only": false,
             "parameters": {
                 "id": {
-                    "description": "Message ID to update",
+                    "description": "EWS email ID/EWS ID to update",
                     "data_type": "string",
                     "order": 0,
                     "contains": [
@@ -2841,7 +2841,7 @@
                         "exchange email id",
                         "office 365 email id"
                     ],
-                    "column_name": "Message ID",
+                    "column_name": "EWS Email ID/EWS ID",
                     "column_order": 1
                 },
                 {
@@ -3724,26 +3724,31 @@
             "parameters": {
                 "start_time": {
                     "data_type": "numeric",
-                    "description": "Parameter Ignored in this app"
+                    "description": "Parameter Ignored in this app",
+                    "order": 0
                 },
                 "end_time": {
                     "data_type": "numeric",
-                    "description": "Parameter Ignored in this app"
+                    "description": "Parameter Ignored in this app",
+                    "order": 1
                 },
                 "container_id": {
                     "data_type": "string",
-                    "description": "Parameter Ignored in this app"
+                    "description": "Parameter Ignored in this app",
+                    "order": 2
                 },
                 "container_count": {
                     "data_type": "numeric",
                     "description": "Maximum number of emails to ingest",
                     "required": true,
-                    "default": 100
+                    "default": 100,
+                    "order": 3
                 },
                 "artifact_count": {
                     "data_type": "numeric",
                     "description": "Parameter Ignored in this app",
-                    "default": 1000
+                    "default": 1000,
+                    "order": 4
                 }
             },
             "output": [],

@@ -1,5 +1,5 @@
 [comment]: # "File: README.md"
-[comment]: # "Copyright (c) 2016-2023 Splunk Inc."
+[comment]: # "Copyright (c) 2016-2024 Splunk Inc."
 [comment]: # ""
 [comment]: # "Licensed under the Apache License, Version 2.0 (the 'License');"
 [comment]: # "you may not use this file except in compliance with the License."
@@ -293,13 +293,13 @@ following properties:
 
       
     The email subject is used as the name of the container. If a subject is not present the
-    generated name is set to the unique message ID that office 365 assigns to every mail in the
+    generated name is set to the unique EWS email ID/EWS ID that office 365 assigns to every mail in the
     mailboxes
 
 -   Source ID
 
       
-    The source ID of the container will be set to the unique message id.
+    The source ID of the container will be set to the unique EWS email ID/EWS ID.
 
 -   Data Key
 
