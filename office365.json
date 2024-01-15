@@ -2,7 +2,7 @@
     "appid": "a73f6d32-c9d5-4fec-b024-43876700daa6",
     "logo": "logo_microsoftoffice365.svg",
     "logo_dark": "logo_microsoftoffice365_dark.svg",
-    "license": "Copyright (c) 2016-2023 Splunk Inc.",
+    "license": "Copyright (c) 2016-2024 Splunk Inc.",
     "rest_handler": "request_handler.handle_request",
     "name": "EWS for Office 365",
     "description": "This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service",
@@ -24,24 +24,8 @@
     "pip_dependencies": {
         "wheel": [
             {
-                "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.16-py3-none-any.whl"
-            },
-            {
-                "module": "asgiref",
-                "input_file": "wheels/py3/asgiref-3.4.1-py3-none-any.whl"
-            },
-            {
                 "module": "beautifulsoup4",
                 "input_file": "wheels/py3/beautifulsoup4-4.9.1-py3-none-any.whl"
-            },
-            {
-                "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.12.7-py3-none-any.whl"
-            },
-            {
-                "module": "chardet",
-                "input_file": "wheels/shared/chardet-3.0.4-py2.py3-none-any.whl"
             },
             {
                 "module": "compoundfiles",
@@ -56,24 +40,12 @@
                 "input_file": "wheels/py3/convert_outlook_msg_file-0.1.0-py3-none-any.whl"
             },
             {
-                "module": "idna",
-                "input_file": "wheels/shared/idna-2.10-py2.py3-none-any.whl"
-            },
-            {
                 "module": "lxml",
-                "input_file": "wheels/py36/lxml-4.9.1-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
+                "input_file": "wheels/py36/lxml-4.9.2-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
             },
             {
                 "module": "python_magic",
                 "input_file": "wheels/shared/python_magic-0.4.18-py2.py3-none-any.whl"
-            },
-            {
-                "module": "pytz",
-                "input_file": "wheels/shared/pytz-2023.3-py2.py3-none-any.whl"
-            },
-            {
-                "module": "requests",
-                "input_file": "wheels/shared/requests-2.25.0-py2.py3-none-any.whl"
             },
             {
                 "module": "six",
@@ -82,18 +54,6 @@
             {
                 "module": "soupsieve",
                 "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
-            },
-            {
-                "module": "sqlparse",
-                "input_file": "wheels/py3/sqlparse-0.4.3-py3-none-any.whl"
-            },
-            {
-                "module": "typing_extensions",
-                "input_file": "wheels/py3/typing_extensions-4.1.1-py3-none-any.whl"
-            },
-            {
-                "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.15-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
@@ -3798,24 +3758,8 @@
     "pip39_dependencies": {
         "wheel": [
             {
-                "module": "Django",
-                "input_file": "wheels/py3/Django-3.2.16-py3-none-any.whl"
-            },
-            {
-                "module": "asgiref",
-                "input_file": "wheels/py3/asgiref-3.6.0-py3-none-any.whl"
-            },
-            {
                 "module": "beautifulsoup4",
                 "input_file": "wheels/py3/beautifulsoup4-4.9.1-py3-none-any.whl"
-            },
-            {
-                "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.12.7-py3-none-any.whl"
-            },
-            {
-                "module": "chardet",
-                "input_file": "wheels/shared/chardet-3.0.4-py2.py3-none-any.whl"
             },
             {
                 "module": "compoundfiles",
@@ -3830,24 +3774,12 @@
                 "input_file": "wheels/py3/convert_outlook_msg_file-0.1.0-py3-none-any.whl"
             },
             {
-                "module": "idna",
-                "input_file": "wheels/shared/idna-2.10-py2.py3-none-any.whl"
-            },
-            {
                 "module": "lxml",
-                "input_file": "wheels/py39/lxml-4.9.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
+                "input_file": "wheels/py39/lxml-4.9.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
             },
             {
                 "module": "python_magic",
                 "input_file": "wheels/shared/python_magic-0.4.18-py2.py3-none-any.whl"
-            },
-            {
-                "module": "pytz",
-                "input_file": "wheels/shared/pytz-2023.3-py2.py3-none-any.whl"
-            },
-            {
-                "module": "requests",
-                "input_file": "wheels/shared/requests-2.25.0-py2.py3-none-any.whl"
             },
             {
                 "module": "six",
@@ -3855,15 +3787,7 @@
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.4-py3-none-any.whl"
-            },
-            {
-                "module": "sqlparse",
-                "input_file": "wheels/py3/sqlparse-0.4.3-py3-none-any.whl"
-            },
-            {
-                "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.15-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.4.1-py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
