@@ -2843,7 +2843,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # deepcopy is used for self._state, because otherwise self._encrypt_client_token()
         # and self.rsh._encrypt_state() will modify self._state by reference and the encrypted
-        # state will be used in the further in the action execution.
+        # state will be incorrectly used later in the action execution.
         if self.auth_type == AUTH_TYPE_CLIENT_CRED:
             self.save_state(self._encrypt_client_token(deepcopy(self._state)))
         else:
