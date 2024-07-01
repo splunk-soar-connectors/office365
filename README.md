@@ -6,12 +6,12 @@ Connector Version: 2.15.0
 Product Vendor: Microsoft  
 Product Name: Office 365  
 Product Version Supported (regex): ".\*"  
-Minimum Product Version: 5.5.0  
+Minimum Product Version: 6.2.1  
 
 This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service
 
 [comment]: # "File: README.md"
-[comment]: # "Copyright (c) 2016-2023 Splunk Inc."
+[comment]: # "Copyright (c) 2016-2024 Splunk Inc."
 [comment]: # ""
 [comment]: # "Licensed under the Apache License, Version 2.0 (the 'License');"
 [comment]: # "you may not use this file except in compliance with the License."
