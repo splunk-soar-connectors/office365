@@ -351,9 +351,25 @@ class EWSOnPremConnector(BaseConnector):
         url_to_app_rest = "{0}/rest/handler/{1}_{2}/{3}".format(phantom_base_url, app_dir_name, app_json['appid'], asset_name)
         return phantom.APP_SUCCESS, url_to_app_rest
 
+    def print_redacted_state(self, state):
+        try:
+            dc_state = deepcopy(state)
+            if "oauth_token" in dc_state:
+                if "refresh_token" in dc_state['oauth_token']:
+                    dc_state['oauth_token']["refresh_token"] = dc_state['oauth_token']["refresh_token"][0:4]
+                if "access_token" in dc_state['oauth_token']:
+                    dc_state['oauth_token']["access_token"] = dc_state['oauth_token']["access_token"][0:4]
+            if "client_id" in dc_state:
+                dc_state["client_id"] = dc_state["client_id"][0:4]
+            self.debug_print(f"Redacted State: {dc_state}")
+        except Exception as e:
+            self.debug_print(f"Failed to print redacted state: {e}")
+
     def _azure_int_auth_initial(self, client_id, client_secret):
 
         state = self.rsh.load_state()
+        self.debug_print(f"Loading temporary state:")
+        self.print_redacted_state(state)
         asset_id = self.get_asset_id()
 
         ret_val, message = self._get_url_to_app_rest()
@@ -397,10 +413,14 @@ class EWSOnPremConnector(BaseConnector):
         for _ in range(0, 60):
             time.sleep(5)
             state = self.rsh.load_state()
+            self.debug_print(f"Loading tmp state while authentication:")
+            self.print_redacted_state(state)
             oauth_token = state.get('oauth_token')
             if oauth_token:
+                self.debug_print("Got the oauth_token!")
                 break
             elif state.get('error'):
+                self.debug_print(f"Error occurred while fetching oauth_token: {state.get('error')}, hence resetting the state file...")
                 self._reset_the_state()
                 return None, "Error retrieving OAuth token"
         else:
@@ -418,12 +438,16 @@ class EWSOnPremConnector(BaseConnector):
     def _azure_int_auth_refresh(self, client_id, client_secret):
 
         oauth_token = self._state.get('oauth_token')
+        self.debug_print(f"Check if state file has oauth_token:")
+        self.print_redacted_state(self._state)
 
         if not (oauth_token and oauth_token.get("refresh_token")):
+            self.debug_print("No refresh token found hence, resetting the state file...")
             self._reset_the_state()
             return None, "Unable to get refresh token. Please run Test Connectivity again"
 
         if client_id != self._state.get('client_id', ''):
+            self.debug_print("Client ID changed hence, resetting the state file...")
             self._reset_the_state()
             return None, "Client ID has been changed. Please run Test Connectivity again"
 
@@ -446,12 +470,15 @@ class EWSOnPremConnector(BaseConnector):
             oauth_token = r.json()
             if "error" in oauth_token:
                 if oauth_token["error"] in EWS_ASSET_PARAM_CHECK_LIST_ERRORS:
+                    self.debug_print(f"Got error in oauth_token: {oauth_token['error']} hence, resetting the state file...")
                     self._reset_the_state()
                 return None, oauth_token["error_description"]
         except Exception:
             return None, "Error retrieving OAuth Token"
 
         self._state['oauth_token'] = oauth_token
+        self.debug_print(f"State file after generating new oauth_token:")
+        self.print_redacted_state(self._state)
         return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
 
     def _set_azure_int_auth(self, config):
@@ -510,6 +537,7 @@ class EWSOnPremConnector(BaseConnector):
     def _set_header_for_rest_call(self, config):
         """This function is used to update the headers with access_token before making REST call."""
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
+            self.debug_print("Setting the headers for REST Call...")
             resp_json = None
             if self._state.get("oauth_token", {}):
                 resp_json = self._state.get("oauth_token", {})
@@ -517,7 +545,10 @@ class EWSOnPremConnector(BaseConnector):
                 resp_json = self._state.get("oauth_client_token", {})
             if resp_json:
                 self._session.auth = OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type'])
+            self.debug_print(f"State while setting the headers:")
+            self.print_redacted_state(self._state)
         elif self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and not self._is_token_test_connectivity:
+            self.debug_print("Setting the authentication method...")
             self._is_token_test_connectivity = True
             return self.set_authentication_method(config)
         return phantom.APP_SUCCESS, ""
@@ -680,6 +711,8 @@ class EWSOnPremConnector(BaseConnector):
             error_json = r.json()
             error = error_json["error"]
             if error in EWS_ASSET_PARAM_CHECK_LIST_ERRORS:
+                self.debug_print(f"Extracted the error: {error} hence resetting this state:")
+                self.print_redacted_state(self._state)
                 self._reset_the_state()
             error_desc = error_json["error_description"]
             error_text = "An error occurred. Error: {}, description: {}".format(error, error_desc)
@@ -797,10 +830,20 @@ class EWSOnPremConnector(BaseConnector):
     def initialize(self):
         """ Called once for every action, all member initializations occur here"""
 
+        self.debug_print("Initializing...")
         config = self.get_config()
         self.auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
+        self.debug_print(f"Authentication type: {self.auth_type}")
         self.rsh = RequestStateHandler(self.get_asset_id())
-        self._state = self.load_state()
+        # self._state = self.load_state()
+
+        try:
+            self._state = self.load_state()
+            self.debug_print(f"State file on initialize:")
+            self.print_redacted_state(self._state)
+        except Exception as e:
+            self.debug_print(f"Exception occurred while loading state, exception: {e}")
+
         if not isinstance(self._state, dict):
             self.debug_print("Resetting the state file with the default format")
             self._state = {"app_version": self.get_app_json().get("app_version")}
@@ -812,6 +855,9 @@ class EWSOnPremConnector(BaseConnector):
             self._state, message = self.rsh._decrypt_state(self._state)
             if message:
                 return self.set_status(phantom.APP_ERROR, message)
+
+        self.debug_print(f"State file after decrypting:")
+        self.print_redacted_state(self._state)
 
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
@@ -853,6 +899,8 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return self.get_status()
 
+        self.debug_print(f"State file at the end of  initialize:")
+        self.print_redacted_state(self._state)
         return phantom.APP_SUCCESS
 
     def _get_error_details(self, resp_json):
@@ -1000,6 +1048,7 @@ class EWSOnPremConnector(BaseConnector):
         """ Function that makes the REST call to the device, generic function that can be called from various action handlers
         Needs to return two values, 1st the phantom.APP_[SUCCESS|ERROR], 2nd the response
         """
+        self.debug_print("Making REST Call..")
         config = self.get_config()
         resp_json = None
         ret, message = self._set_header_for_rest_call(config)
@@ -1015,6 +1064,11 @@ class EWSOnPremConnector(BaseConnector):
             data = ews_soap.add_to_envelope(data)
 
         data = ews_soap.get_string(data)
+        self.debug_print("REST Call request:")
+        self.debug_print(f"Base URL: {self._base_url}")
+        self.debug_print(f"Data: REDACTED")
+        self.debug_print(f"Headers: {self._headers}")
+        self.debug_print(f"Timeout: {self._timeout}")
 
         # Make the call
         try:
@@ -1028,27 +1082,37 @@ class EWSOnPremConnector(BaseConnector):
             result.add_debug_data({'r_text': r.text if r else 'r is None'})
             result.add_debug_data({'r_headers': r.headers})
 
+        self.debug_print(f"REST Call status: {r.status_code}")
+        if r.reason:
+            self.debug_print(f"REST Call reason: {r.reason}")
+
         if r.status_code == 401:
             if self.auth_type == AUTH_TYPE_CLIENT_CRED:
                 self._state.pop("oauth_client_token", None)
+            self.debug_print(f"Current state before authentication again:")
+            self.print_redacted_state(self._state)
             ret, message = self.set_authentication_method(config)
             if phantom.is_fail(ret):
                 return result.set_status(ret, message), resp_json
             try:
+                self.debug_print(f"Making REST Call again...")
                 r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=self._timeout, verify=True)
             except Exception as e:
                 error_text = self._get_error_message_from_exception(e)
                 return result.set_status(phantom.APP_ERROR, EWSONPREM_SERVER_CONNECTIVITY_ERROR, error_text), resp_json
 
         if not (200 <= r.status_code <= 399):
+            self.debug_print(f"REST Call failed, status code: {r.status_code}")
             # error
             detail = self._get_http_error_details(r)
             if r.status_code == 401:
                 detail = "{0}. {1}".format(detail, EWS_MODIFY_CONFIG)
             message = "Call failed with HTTP Code: {0}".format(r.status_code)
             if r.reason:
+                self.debug_print(f"Reason for REST Call failure: {r.reason}")
                 message = "{}. Reason: {}".format(message, r.reason)
             if detail:
+                self.debug_print(f"Details of REST Call failure: {detail}")
                 message = "{}. Details: {}".format(message, detail)
             return result.set_status(phantom.APP_ERROR, message), None
 
@@ -1090,6 +1154,8 @@ class EWSOnPremConnector(BaseConnector):
 
     def _test_connectivity(self, param):
         """ Function that handles the test connectivity action, it is much simpler than other action handlers."""
+        self.debug_print("State at the beginning of _test_connectivity:")
+        self.print_redacted_state(self._state)
 
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
@@ -1116,6 +1182,8 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         # Set the status of the connector result
+        self.debug_print("State at the end of _test_connectivity:")
+        self.print_redacted_state(self._state)
         self.save_progress(EWSONPREM_CONNECTIVITY_TEST_SUCCESS)
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -2157,6 +2225,8 @@ class EWSOnPremConnector(BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS, message)
 
     def _copy_move_email(self, param, action="copy"):
+        self.debug_print("State at the beginning of _copy_move_email:")
+        self.print_redacted_state(self._state)
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
@@ -2216,6 +2286,9 @@ class EWSOnPremConnector(BaseConnector):
         new_email_id = None
 
         action_verb = 'copied' if action == "copy" else 'moved'
+
+        self.debug_print("State at the end of _copy_move_email:")
+        self.print_redacted_state(self._state)
 
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
@@ -2836,6 +2909,8 @@ class EWSOnPremConnector(BaseConnector):
         return last_time.strftime(DATETIME_FORMAT)
 
     def _manage_data_duplication(self, email_infos, email_index, max_emails, total_ingested, limit):
+        self.debug_print("State at the beginning of _manage_data_duplication:")
+        self.print_redacted_state(self._state)
         # Define current time to store as starting reference for the next run of scheduled | interval polling
         utc_now = datetime.utcnow()
         self._state['last_ingested_format'] = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -2848,6 +2923,9 @@ class EWSOnPremConnector(BaseConnector):
             self.save_state(self._encrypt_client_token(deepcopy(self._state)))
         else:
             self.save_state(self.rsh._encrypt_state(deepcopy(self._state)))
+
+        self.debug_print("State in the middle of _manage_data_duplication:")
+        self.print_redacted_state(self._state)
 
         if max_emails:
             if email_index == 0 or self._less_data:
@@ -2870,6 +2948,8 @@ class EWSOnPremConnector(BaseConnector):
             return None, None
 
     def _on_poll(self, param):
+        self.debug_print("State at the beginning of _on_poll:")
+        self.print_redacted_state(self._state)
 
         # on poll action that is supposed to be scheduled
         if self.is_poll_now():
@@ -2936,6 +3016,8 @@ class EWSOnPremConnector(BaseConnector):
         if self._state.get('first_run', True):
             self._state['first_run'] = False
 
+        self.debug_print("State at the end of _on_poll:")
+        self.print_redacted_state(self._state)
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_trace_error_details(self, response):
