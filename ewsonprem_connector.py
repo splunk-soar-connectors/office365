@@ -356,11 +356,18 @@ class EWSOnPremConnector(BaseConnector):
             dc_state = deepcopy(state)
             if "oauth_token" in dc_state:
                 if "refresh_token" in dc_state['oauth_token'] and dc_state['oauth_token']["refresh_token"]:
-                    dc_state['oauth_token']["refresh_token"] = dc_state['oauth_token']["refresh_token"][0:4]
+                    dc_state['oauth_token']["refresh_token"] = dc_state['oauth_token']["refresh_token"][0:8]
                 if "access_token" in dc_state['oauth_token'] and dc_state['oauth_token']["access_token"]:
-                    dc_state['oauth_token']["access_token"] = dc_state['oauth_token']["access_token"][0:4]
+                    dc_state['oauth_token']["access_token"] = dc_state['oauth_token']["access_token"][0:8]
+                if "id_token" in dc_state['oauth_token'] and dc_state['oauth_token']["id_token"]:
+                    dc_state['oauth_token']["id_token"] = dc_state['oauth_token']["id_token"][0:8]
             if "client_id" in dc_state and dc_state["client_id"]:
-                dc_state["client_id"] = dc_state["client_id"][0:4]
+                dc_state["client_id"] = dc_state["client_id"][0:8]
+
+            if "oauth_client_token" in dc_state:
+                if "access_token" in dc_state['oauth_client_token'] and dc_state['oauth_client_token']["access_token"]:
+                    dc_state['oauth_client_token']["access_token"] = dc_state['oauth_client_token']["access_token"][0:8]
+
             self.debug_print(f"Redacted State: {dc_state}")
         except Exception as e:
             self.debug_print(f"Failed to print redacted state: {e}")
