@@ -355,11 +355,11 @@ class EWSOnPremConnector(BaseConnector):
         try:
             dc_state = deepcopy(state)
             if "oauth_token" in dc_state:
-                if "refresh_token" in dc_state['oauth_token']:
+                if "refresh_token" in dc_state['oauth_token'] and dc_state['oauth_token']["refresh_token"]:
                     dc_state['oauth_token']["refresh_token"] = dc_state['oauth_token']["refresh_token"][0:4]
-                if "access_token" in dc_state['oauth_token']:
+                if "access_token" in dc_state['oauth_token'] and dc_state['oauth_token']["access_token"]:
                     dc_state['oauth_token']["access_token"] = dc_state['oauth_token']["access_token"][0:4]
-            if "client_id" in dc_state:
+            if "client_id" in dc_state and dc_state["client_id"]:
                 dc_state["client_id"] = dc_state["client_id"][0:4]
             self.debug_print(f"Redacted State: {dc_state}")
         except Exception as e:
@@ -433,6 +433,9 @@ class EWSOnPremConnector(BaseConnector):
 
         self.rsh.delete_state()
 
+        self.debug_print(f"State at the end of _azure_int_auth_initial:")
+        self.print_redacted_state(state)
+
         return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
 
     def _azure_int_auth_refresh(self, client_id, client_secret):
@@ -482,6 +485,8 @@ class EWSOnPremConnector(BaseConnector):
         return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
 
     def _set_azure_int_auth(self, config):
+        self.debug_print(f"State at the beginning of _set_azure_int_auth:")
+        self.print_redacted_state(self._state)
 
         client_id = config.get(EWS_JSON_CLIENT_ID)
         client_secret = config.get(EWS_JSON_CLIENT_SECRET)
@@ -501,6 +506,8 @@ class EWSOnPremConnector(BaseConnector):
             if ret[0]:
                 self._state['client_id'] = client_id
 
+        self.debug_print(f"State at the end of _set_azure_int_auth:")
+        self.print_redacted_state(self._state)
         return ret
 
     def _get_domain(self, username, client_req_id):
@@ -554,6 +561,8 @@ class EWSOnPremConnector(BaseConnector):
         return phantom.APP_SUCCESS, ""
 
     def _set_azure_auth(self, config):
+        self.debug_print(f"State at the beginning of _set_azure_auth:")
+        self.print_redacted_state(self._state)
 
         ret_val, message = self._check_password(config)
         if phantom.is_fail(ret_val):
@@ -623,6 +632,9 @@ class EWSOnPremConnector(BaseConnector):
         self._state["oauth_token"] = resp_json
         self._state['client_id'] = client_id
         self.save_progress("Got Access Token")
+
+        self.debug_print(f"State at the end of _set_azure_auth:")
+        self.print_redacted_state(self._state)
 
         return OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), ""
 
@@ -808,11 +820,15 @@ class EWSOnPremConnector(BaseConnector):
         return state
 
     def finalize(self):
+        self.debug_print(f"State at the beginning of finalize:")
+        self.print_redacted_state(self._state)
         if self.auth_type == AUTH_TYPE_CLIENT_CRED:
             self._state = self._encrypt_client_token(self._state)
         else:
             self._state = self.rsh._encrypt_state(self._state)
         self.save_state(self._state)
+        self.debug_print(f"State at the end of finalize:")
+        self.print_redacted_state(self._state)
         return phantom.APP_SUCCESS
 
     def _clean_the_state(self):
@@ -1150,6 +1166,8 @@ class EWSOnPremConnector(BaseConnector):
         if resp_class == 'Error':
             return result.set_status(phantom.APP_ERROR, EWSONPREM_FROM_SERVER_ERROR.format(**(self._get_error_details(resp_message)))), resp_json
 
+        self.debug_print(f"State at the end of _make_rest_call:")
+        self.print_redacted_state(self._state)
         return phantom.APP_SUCCESS, resp_message
 
     def _test_connectivity(self, param):
