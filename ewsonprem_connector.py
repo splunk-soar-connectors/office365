@@ -2938,8 +2938,10 @@ class EWSOnPremConnector(BaseConnector):
         # and self.rsh._encrypt_state() will modify self._state by reference and the encrypted
         # state will be incorrectly used later in the action execution.
         if self.auth_type == AUTH_TYPE_CLIENT_CRED:
+            self.debug_print("Saving state with _encrypt_client_token")
             self.save_state(self._encrypt_client_token(deepcopy(self._state)))
         else:
+            self.debug_print("Saving state with rsh._encrypt_state")
             self.save_state(self.rsh._encrypt_state(deepcopy(self._state)))
 
         self.debug_print("State in the middle of _manage_data_duplication:")
