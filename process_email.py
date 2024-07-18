@@ -703,8 +703,6 @@ class ProcessEmail(object):
         status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
         if not process_further:
             return phantom.APP_SUCCESS
-
-
         # This is an attachment and it's not an email
         self._handle_attachment(part, file_name, file_path)
 
@@ -937,7 +935,8 @@ class ProcessEmail(object):
                 self._parse_email_headers(self._parsed_mail, part, add_email_id=add_email_id)
 
                 # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
-                if part.is_multipart() and part.get('Content-Type').find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) and part.get('Content-Disposition') != "attachment":
+                if (part.is_multipart() and part.get('Content-Type').find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) 
+                    and part.get('Content-Disposition') != "attachment"):
                     continue
                 try:
                     ret_val = self._handle_part(part, i, tmp_dir, extract_attach, self._parsed_mail)
