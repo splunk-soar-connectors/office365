@@ -592,7 +592,6 @@ class ProcessEmail(object):
         return phantom.APP_SUCCESS, False
 
     def _handle_attachment(self, part, file_name, file_path):
-
         files = self._parsed_mail[PROC_EMAIL_JSON_FILES]
 
         if not self._config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]:
@@ -601,7 +600,6 @@ class ProcessEmail(object):
         part_base64_encoded = part.get_payload()
 
         headers = self._get_email_headers_from_part(part)
-
         attach_meta_info = dict()
 
         if headers:
@@ -622,35 +620,53 @@ class ProcessEmail(object):
                 del attach_meta_info['content']
                 curr_attach['should_ignore'] = True
 
-        part_payload = part.get_payload(decode=True)
-        try:
-            if not part_payload:
-                with open(file_path, 'wb'):
-                    self._base_connector.debug_print("Payload not found, hence adding empty file")
-            else:
+        if type(part.get_payload()) == list:
+            try:
+                part_payload = part.get_payload()[0]
+                self._debug_print("payload content type: {0}".format(type(part_payload)))
+                with open(file_path, 'wb') as f:
+                    f.write(part_payload.as_string().encode('utf-8'))
+            except IndexError as e:
+                error_message = self._base_connector._get_error_message_from_exception(e)
+                self._base_connector.debug_print("Error occurred while accessing attachment payload. Error Details: {}".format(error_message))
                 with open(file_path, 'wb') as f:
                     f.write(part_payload)
-        except IOError as e:
-            error_message = self._base_connector._get_error_message_from_exception(e)
+            except Exception as e:
+                error_message = self._base_connector._get_error_message_from_exception(e)
+                self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
+                return
+        else:
+            self._debug_print("this payload is a string")
+            part_payload = part.get_payload(decode=True)
+            self._debug_print("handle attach part payload 2 {0}".format(part_payload))
             try:
-                if "File name too long" in error_message:
-                    new_file_name = "ph_long_file_name_temp"
-                    file_path = "{}{}".format(file_path.rstrip(file_name.replace('<', '').replace('>', '').replace(' ', '')), new_file_name)
-                    self._base_connector.debug_print("Original filename: {}".format(file_name))
-                    self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
-                    with open(file_path, 'wb') as uncompressed_file:
-                        uncompressed_file.write(part_payload)
+                if not part_payload:
+                    with open(file_path, 'wb'):
+                        self._base_connector.debug_print("Payload not found, hence adding empty file")
                 else:
+                    with open(file_path, 'wb') as f:
+                        f.write(part_payload)
+            except IOError as e:
+                error_message = self._base_connector._get_error_message_from_exception(e)
+                try:
+                    if "File name too long" in error_message:
+                        new_file_name = "ph_long_file_name_temp"
+                        file_path = "{}{}".format(file_path.rstrip(file_name.replace('<', '').replace('>', '').replace(' ', '')), new_file_name)
+                        self._base_connector.debug_print("Original filename: {}".format(file_name))
+                        self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
+                        with open(file_path, 'wb') as uncompressed_file:
+                            uncompressed_file.write(part_payload)
+                    else:
+                        self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
+                        return
+                except Exception as e:
+                    error_message = self._base_connector._get_error_message_from_exception(e)
                     self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
                     return
             except Exception as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
                 self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
                 return
-        except Exception as e:
-            error_message = self._base_connector._get_error_message_from_exception(e)
-            self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
-            return
 
         files.append({'file_name': file_name, 'file_path': file_path, 'meta_info': attach_meta_info})
 
@@ -680,19 +696,14 @@ class ProcessEmail(object):
             file_name = "{0}{1}".format(name, extension)
         else:
             file_name = self._base_connector._decode_uni_string(file_name, file_name)
-
         # Remove any chars that we don't want in the name
         file_path = "{0}/{1}_{2}".format(tmp_dir, part_index, file_name.replace('<', '').replace('>', '').replace(' ', ''))
 
         # is the part representing the body of the email
         status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
-
         if not process_further:
             return phantom.APP_SUCCESS
 
-        # is this another email as an attachment
-        if content_type is not None and content_type.find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) != -1:
-            return phantom.APP_SUCCESS
 
         # This is an attachment and it's not an email
         self._handle_attachment(part, file_name, file_path)
@@ -926,10 +937,7 @@ class ProcessEmail(object):
                 self._parse_email_headers(self._parsed_mail, part, add_email_id=add_email_id)
 
                 # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
-
-                # _debug_print("part: {0}".format(part.__dict__))
-                # _debug_print("part type", type(part))
-                if part.is_multipart():
+                if part.is_multipart() and part.get('Content-Type').find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) and part.get('Content-Disposition') != "attachment":
                     continue
                 try:
                     ret_val = self._handle_part(part, i, tmp_dir, extract_attach, self._parsed_mail)
@@ -1194,7 +1202,6 @@ class ProcessEmail(object):
             # artifact_count = param.get(phantom.APP_JSON_ARTIFACT_COUNT, EWS_DEFAULT_ARTIFACT_COUNT)
 
         results = results[:container_count]
-
         for result in results:
 
             if container_id is None:
