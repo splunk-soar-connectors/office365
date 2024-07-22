@@ -620,7 +620,7 @@ class ProcessEmail(object):
                 del attach_meta_info['content']
                 curr_attach['should_ignore'] = True
 
-        if type(part.get_payload()) == list:
+        if isinstance(part.get_payload(), list):
             try:
                 part_payload = part.get_payload()[0]
                 self._debug_print("payload content type: {0}".format(type(part_payload)))
@@ -636,15 +636,12 @@ class ProcessEmail(object):
                 self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
                 return
         else:
-            self._debug_print("this payload is a string")
             part_payload = part.get_payload(decode=True)
-            self._debug_print("handle attach part payload 2 {0}".format(part_payload))
             try:
-                if not part_payload:
-                    with open(file_path, 'wb'):
+                with open(file_path, 'wb') as f:
+                    if not part_payload:
                         self._base_connector.debug_print("Payload not found, hence adding empty file")
-                else:
-                    with open(file_path, 'wb') as f:
+                    else:
                         f.write(part_payload)
             except IOError as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
