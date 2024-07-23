@@ -30,17 +30,23 @@
 import ipaddress
 import json
 import os
+import shutil
+import tempfile
 import uuid
 from copy import deepcopy
+from json import JSONDecodeError
+from typing import Optional
 
 import encryption_helper
 import phantom.app as phantom
 import phantom.rules as ph_rules
+import phantom.status as ph_status
 import phantom.utils as ph_utils
 import requests
 import xmltodict
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
+from phantom_common.phfile import set_app_file_perms
 from requests.auth import AuthBase, HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
 
@@ -375,7 +381,7 @@ class EWSOnPremConnector(BaseConnector):
     def _azure_int_auth_initial(self, client_id, client_secret):
 
         state = self.rsh.load_state()
-        self.debug_print(f"Loading temporary state:")
+        self.debug_print("Loading temporary state:")
         self.print_redacted_state(state)
         asset_id = self.get_asset_id()
 
@@ -420,7 +426,7 @@ class EWSOnPremConnector(BaseConnector):
         for _ in range(0, 60):
             time.sleep(5)
             state = self.rsh.load_state()
-            self.debug_print(f"Loading tmp state while authentication:")
+            self.debug_print("Loading tmp state while authentication:")
             self.print_redacted_state(state)
             oauth_token = state.get('oauth_token')
             if oauth_token:
@@ -440,7 +446,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self.rsh.delete_state()
 
-        self.debug_print(f"State at the end of _azure_int_auth_initial:")
+        self.debug_print("State at the end of _azure_int_auth_initial:")
         self.print_redacted_state(state)
 
         return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
@@ -448,7 +454,7 @@ class EWSOnPremConnector(BaseConnector):
     def _azure_int_auth_refresh(self, client_id, client_secret):
 
         oauth_token = self._state.get('oauth_token')
-        self.debug_print(f"Check if state file has oauth_token:")
+        self.debug_print("Check if state file has oauth_token:")
         self.print_redacted_state(self._state)
 
         if not (oauth_token and oauth_token.get("refresh_token")):
@@ -487,12 +493,12 @@ class EWSOnPremConnector(BaseConnector):
             return None, "Error retrieving OAuth Token"
 
         self._state['oauth_token'] = oauth_token
-        self.debug_print(f"State file after generating new oauth_token:")
+        self.debug_print("State file after generating new oauth_token:")
         self.print_redacted_state(self._state)
         return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
 
     def _set_azure_int_auth(self, config):
-        self.debug_print(f"State at the beginning of _set_azure_int_auth:")
+        self.debug_print("State at the beginning of _set_azure_int_auth:")
         self.print_redacted_state(self._state)
 
         client_id = config.get(EWS_JSON_CLIENT_ID)
@@ -513,7 +519,7 @@ class EWSOnPremConnector(BaseConnector):
             if ret[0]:
                 self._state['client_id'] = client_id
 
-        self.debug_print(f"State at the end of _set_azure_int_auth:")
+        self.debug_print("State at the end of _set_azure_int_auth:")
         self.print_redacted_state(self._state)
         return ret
 
@@ -559,7 +565,7 @@ class EWSOnPremConnector(BaseConnector):
                 resp_json = self._state.get("oauth_client_token", {})
             if resp_json:
                 self._session.auth = OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type'])
-            self.debug_print(f"State while setting the headers:")
+            self.debug_print("State while setting the headers:")
             self.print_redacted_state(self._state)
         elif self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and not self._is_token_test_connectivity:
             self.debug_print("Setting the authentication method...")
@@ -568,7 +574,7 @@ class EWSOnPremConnector(BaseConnector):
         return phantom.APP_SUCCESS, ""
 
     def _set_azure_auth(self, config):
-        self.debug_print(f"State at the beginning of _set_azure_auth:")
+        self.debug_print("State at the beginning of _set_azure_auth:")
         self.print_redacted_state(self._state)
 
         ret_val, message = self._check_password(config)
@@ -640,7 +646,7 @@ class EWSOnPremConnector(BaseConnector):
         self._state['client_id'] = client_id
         self.save_progress("Got Access Token")
 
-        self.debug_print(f"State at the end of _set_azure_auth:")
+        self.debug_print("State at the end of _set_azure_auth:")
         self.print_redacted_state(self._state)
 
         return OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), ""
@@ -827,14 +833,14 @@ class EWSOnPremConnector(BaseConnector):
         return state
 
     def finalize(self):
-        self.debug_print(f"State at the beginning of finalize:")
+        self.debug_print("State at the beginning of finalize:")
         self.print_redacted_state(self._state)
         if self.auth_type == AUTH_TYPE_CLIENT_CRED:
             self._state = self._encrypt_client_token(self._state)
         else:
             self._state = self.rsh._encrypt_state(self._state)
         self.save_state(self._state)
-        self.debug_print(f"State at the end of finalize:")
+        self.debug_print("State at the end of finalize:")
         self.print_redacted_state(self._state)
         return phantom.APP_SUCCESS
 
@@ -862,7 +868,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             self._state = self.load_state()
-            self.debug_print(f"State file on initialize:")
+            self.debug_print("State file on initialize:")
             self.print_redacted_state(self._state)
         except Exception as e:
             self.debug_print(f"Exception occurred while loading state, exception: {e}")
@@ -879,7 +885,7 @@ class EWSOnPremConnector(BaseConnector):
             if message:
                 return self.set_status(phantom.APP_ERROR, message)
 
-        self.debug_print(f"State file after decrypting:")
+        self.debug_print("State file after decrypting:")
         self.print_redacted_state(self._state)
 
         # The headers, initialize them here once and use them for all other REST calls
@@ -922,9 +928,91 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return self.get_status()
 
-        self.debug_print(f"State file at the end of  initialize:")
+        self.debug_print("State file at the end of  initialize:")
         self.print_redacted_state(self._state)
         return phantom.APP_SUCCESS
+
+    def load_state(self) -> Optional[dict]:
+        """Load the contents of the state file to the state dictionary.
+
+        Args:
+            None.
+        Returns:
+            (dict): parsed values from state_file into a dictionary.
+        """
+
+        state_file = self.get_state_file_path()
+
+        if not self._create_state_file(state_file):
+            self.error_print("Cannot load state - could not create state file")
+            return None
+
+        state = {}
+
+        try:
+            with open(state_file) as f:
+                in_json = f.read()
+                state = json.loads(in_json)
+        except JSONDecodeError as e:
+            self.error_print(f"In load_state: Exception: {e!s}")  # noqa: PH100 FIXME(PPS-24369)
+            return dict()
+
+        self.debug_print("Loaded state: ")
+        self.print_redacted_state(state)
+
+        self.__state = state
+
+        return state
+
+    def save_state(self, state: dict) -> bool:
+        """Save the current state dictionary to the the state file.
+
+        Args:
+            state (dict): parsed values from state_file
+        Returns:
+            bool: True for app success
+        """
+
+        state_file = self.get_state_file_path()
+        self.debug_print("Saving state: ")
+        self.print_redacted_state(state)
+
+        if not isinstance(state, dict):
+            raise ValueError(f"save_state requires a dictionary, got {type(state).__name__}")
+
+        state["app_version"] = self.get_app_json().get("app_version")
+
+        tpath = None
+        thandle = None
+        excepted = False
+        try:
+            thandle, tpath = tempfile.mkstemp(dir=os.path.dirname(state_file))
+            tfile = os.fdopen(thandle, "w")
+            tfile.write(json.dumps(state))
+            tfile.close()
+            thandle = 0
+        except Exception as e:
+            self.error_print(f"In save_state: Exception: {e!s}")  # noqa: PH100 FIXME(PPS-24369)
+            excepted = True
+            return ph_status.APP_ERROR
+        finally:
+            if thandle:
+                os.close(thandle)
+            if tpath:
+                if not excepted:
+                    try:
+                        # In python2.7, shutil.move doesn't work if the two files
+                        # are on different filesystems, like for example gluster volumes
+                        # on a cluster. shutil.copyfile doesn't have this problem,
+                        # so instead of a move, we do a copy and then delete of the source file
+                        # Prefer shutil.copyfile(), since shutil.copy() will attempt to chmod as well
+                        #  which can throw exceptions
+                        shutil.copyfile(tpath, state_file)
+                        set_app_file_perms(state_file)
+                    finally:
+                        os.unlink(tpath)
+
+        return ph_status.APP_SUCCESS
 
     def _get_error_details(self, resp_json):
         """ Function that parses the error json received from the device and placed into a json"""
@@ -1089,7 +1177,7 @@ class EWSOnPremConnector(BaseConnector):
         data = ews_soap.get_string(data)
         self.debug_print("REST Call request:")
         self.debug_print(f"Base URL: {self._base_url}")
-        self.debug_print(f"Data: REDACTED")
+        self.debug_print("Data: REDACTED")
         self.debug_print(f"Headers: {self._headers}")
         self.debug_print(f"Timeout: {self._timeout}")
 
@@ -1112,13 +1200,13 @@ class EWSOnPremConnector(BaseConnector):
         if r.status_code == 401:
             if self.auth_type == AUTH_TYPE_CLIENT_CRED:
                 self._state.pop("oauth_client_token", None)
-            self.debug_print(f"Current state before authentication again:")
+            self.debug_print("Current state before authentication again:")
             self.print_redacted_state(self._state)
             ret, message = self.set_authentication_method(config)
             if phantom.is_fail(ret):
                 return result.set_status(ret, message), resp_json
             try:
-                self.debug_print(f"Making REST Call again...")
+                self.debug_print("Making REST Call again...")
                 r = self._session.post(self._base_url, data=data, headers=self._headers, timeout=self._timeout, verify=True)
             except Exception as e:
                 error_text = self._get_error_message_from_exception(e)
@@ -1173,7 +1261,7 @@ class EWSOnPremConnector(BaseConnector):
         if resp_class == 'Error':
             return result.set_status(phantom.APP_ERROR, EWSONPREM_FROM_SERVER_ERROR.format(**(self._get_error_details(resp_message)))), resp_json
 
-        self.debug_print(f"State at the end of _make_rest_call:")
+        self.debug_print("State at the end of _make_rest_call:")
         self.print_redacted_state(self._state)
         return phantom.APP_SUCCESS, resp_message
 
