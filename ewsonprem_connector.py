@@ -1508,7 +1508,7 @@ class EWSOnPremConnector(BaseConnector):
             decoded_strings = [{'value': x[0], 'encoding': x[1]} for x in decoded_strings]
         except Exception as e:
             error_code, error_message = self._base_connector._get_error_message_from_exception(e)
-            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_message)
+            self.debug_print("Error code {0} while decoding string. Error Message: {1}".format(error_code, error_message))
             return def_name
 
         # convert to dict for safe access, if it's an empty list, the dict will be empty
