@@ -1509,7 +1509,6 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_message = self._base_connector._get_error_message_from_exception(e)
             err = "Error Code: {0}. Error Message: {1}".format(error_code, error_message)
-            self.debug_print("Decoding: {0}. {1}".format(encoded_strings, err))
             return def_name
 
         # convert to dict for safe access, if it's an empty list, the dict will be empty
