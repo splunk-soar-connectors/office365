@@ -32,24 +32,24 @@ import json
 import os
 import shutil
 import tempfile
+import traceback
 import uuid
 from copy import deepcopy
 from json import JSONDecodeError
-from typing import Optional, Any
+from typing import Any, Optional
 
 import encryption_helper
 import phantom.app as phantom
+import phantom.json_keys as ph_jsons
+import phantom.progress as ph_progress
+import phantom.redact as ph_redact
 import phantom.rules as ph_rules
 import phantom.status as ph_status
 import phantom.utils as ph_utils
-import phantom.json_keys as ph_jsons
-import phantom.redact as ph_redact
-import phantom.progress as ph_progress
-import traceback
 import requests
 import xmltodict
 from phantom.action_result import ActionResult
-from phantom.base_connector import BaseConnector, patched_session_request, ActionCancelException
+from phantom.base_connector import ActionCancelException, BaseConnector, patched_session_request
 from phantom_common.phfile import set_app_file_perms
 from requests.auth import AuthBase, HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
@@ -868,14 +868,12 @@ class EWSOnPremConnector(BaseConnector):
         self.auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
         self.debug_print(f"Authentication type: {self.auth_type}")
         self.rsh = RequestStateHandler(self.get_asset_id())
-        # self._state = self.load_state()
+        self._state = self.load_state()
+        self.debug_print("State file on initialize:")
+        self.print_redacted_state(self._state)
 
-        try:
-            self._state = self.load_state()
-            self.debug_print("State file on initialize:")
-            self.print_redacted_state(self._state)
-        except Exception as e:
-            self.debug_print(f"Exception occurred while loading state, exception: {e}")
+        if not self._state:
+            raise Exception("state dict is empty, which means that it wasn't loaded properly. ")
 
         if not isinstance(self._state, dict):
             self.debug_print("Resetting the state file with the default format")
@@ -3331,216 +3329,6 @@ class EWSOnPremConnector(BaseConnector):
             ret_val = self._trace_email(param)
 
         return ret_val
-
-    # _handle_action function
-    def _handle_action(self, in_json: str, handle: Optional[Any]) -> str:
-        # handle the action that is sent down
-        try:
-            if requests.Session.request != patched_session_request:
-                requests.Session.request = patched_session_request  # type: ignore
-
-            # handle
-            self._BaseConnector__handle = handle
-
-            # Load the input json that we got
-            self._BaseConnector__input_json = json.loads(in_json)
-
-            # get the input json into BaseConnector members
-            if ph_status.is_fail(self._load_input_json()):
-                # Return the stringized version of the json
-                return self._BaseConnector__conn_result.get_json_string()
-
-            # Get the array of parameters
-            param_array = self._BaseConnector__input_json[ph_jsons.APP_JSON_CONFIG_PARAMETERS]
-
-            if type(param_array) != list:
-                self.error_print("input parameters is not list")
-                self.set_status(ph_status.APP_ERROR, "input parameters is not list")
-                return self._BaseConnector__conn_result.get_json_string()
-
-            # Send the message that the config loaded properly
-            self.save_progress(ph_progress.APP_PROG_LOADED_CONFIG)
-
-            # Even if the parameter array is empty, we still have to call the handle action once.
-            # Add a param dictionary to the empty array, that way the loop below will exec once.
-            if not param_array:
-                param_array = [{}]
-
-            # Init the status to failure, the Derived class should only set the self::status if it is not creating
-            # any ActionResult()s. Otherwise the base connector calculates the self::status based on the collective
-            # status' of all the ActionResult()s that were added to self::
-            self.set_status(ph_status.APP_ERROR)
-
-            # Before calling derived class load the app json
-            if ph_status.is_fail(self._load_app_json()):
-                # Return the stringized version of the json
-                return self._BaseConnector__conn_result.get_json_string()
-
-            if ph_status.is_fail(self._validate_config()):
-                # Return the stringized version of the json
-                return self._BaseConnector__conn_result.get_json_string()
-
-            self.debug_print("Asset config validated")
-
-            if ph_status.is_fail(self._validate_app_config()):
-                # Return the stringized version of the json
-                return self._BaseConnector__conn_result.get_json_string()
-
-            self.debug_print("App config validated")
-
-            # get the action info
-            if ph_status.is_fail(self._parse_action_info()):
-                # Return the stringized version of the json
-                return self._BaseConnector__conn_result.get_json_string()
-
-            # All the validates are done, now init the ingestion dictionaries
-            self._init_ingestion_dicts()
-
-            # Now cleanse the parameters
-            ret_val, mod_parameters = self._cleanse_parameters(param_array)
-            if ph_status.is_fail(ret_val):
-                # Return the stringized version of the json
-                return self._BaseConnector__conn_result.get_json_string()
-
-            param_array = mod_parameters
-
-            # Call the initialize function, gives a chance to the connector to load up a file or connect to a
-            # server etc.
-            status_code = self.initialize()
-
-            # ONLY call the handle_action if the initialize succeeds
-            if ph_status.is_success(status_code):
-                # set the signal handler
-                self._set_signals()
-
-                # for the number of parameter set, call the handle_action function of the derived connector
-                all_action_start_time = time.time()
-                for i, curr_param in enumerate(param_array):
-                    # curr_param_context = dict(json.loads(curr_param.get(ph_jsons.APP_JSON_PARAM_CONTEXT,
-                    #                                                    json.dumps({'value_for': 'param_{0}'.format(i)}))))
-                    # curr_param_context = dict(curr_param.get(ph_jsons.APP_JSON_PARAM_CONTEXT, {'value_for': 'param_{0}'.format(i)}))
-                    curr_param_context = dict(curr_param.get(ph_jsons.APP_JSON_PARAM_CONTEXT, {}))
-
-                    # normalize the values in the param dictionary
-                    # Create an ActionResult to manage this
-                    action_result = ActionResult(dict(curr_param))
-                    self._set_current_param(curr_param)
-                    self._set_current_param_context(curr_param_context)
-
-                    if self.is_action_cancelled():
-                        message = "Skipping processing due to action cancelled"
-                        self.debug_print(message)
-                        action_result.set_status(ph_status.APP_ERROR, message)
-                        self.add_action_result(action_result)
-                        continue
-
-                    ret_val = self._validate_param(curr_param, action_result)
-                    if ph_status.is_fail(ret_val):
-                        self.error_print("Error validating curr param")
-                        self.add_action_result(action_result)
-                        continue
-
-                    ret_val = self.validate_parameters(curr_param)
-                    if ph_status.is_fail(ret_val):
-                        self.error_print("Error validating current param dictionary's parameters")
-                        continue
-
-                    self.debug_print(
-                        "Current param:",
-                        ph_redact.redact_fields_default(curr_param.copy()),
-                    )
-
-                    lock_info = self._BaseConnector__lock_info if self._BaseConnector__lock_info is not None else {}
-                    self.debug_print("_BaseConnector__lock_info:", lock_info)
-
-                    # Lock
-                    if ph_status.is_fail(self.lock(curr_param, action_result)):
-                        self.debug_print("Error validating curr param")
-                        self.add_action_result(action_result)
-                        continue
-
-                    start_time = time.time()
-                    try:
-                        # Call the connector's implemented handle function
-                        self.handle_action(curr_param)
-                    except ActionCancelException as e:
-                        # This exception should cancel the action completely
-                        self.debug_print(
-                            f"Action execution #{i + 1} ({self.get_action_name()}) failed. Elapsed: {time.time() - start_time} seconds"
-                        )
-                        self.error_print(
-                            f"AppConnector::handle_action Exception {e.__class__.__name__} occurred"
-                        )
-                        raise
-                    except Exception as e:
-                        self.error_print("AppConnector::handle_action exception occurred", e)
-                        action_result.set_status(
-                            ph_status.APP_ERROR, "handle_action exception occurred", e
-                        )
-                        self.add_action_result(action_result)
-
-                    self.debug_print(
-                        f"Action execution #{i + 1} ({self.get_action_name()}) finished. Elapsed: {time.time() - start_time} seconds"
-                    )
-
-                    if self._is_action_ingestion():
-                        self._handle_ingest_summary()
-
-                    # Unlock
-                    self.unlock()
-
-                self.debug_print(
-                    f"All actions ({self.get_action_name()}) finished. Elapsed: {time.time() - all_action_start_time} seconds"
-                )
-
-                self.telemetry_print(
-                    f"Executed action {self.get_action_name()} from app {self.get_app_name()}. Elapsed: {time.time() - all_action_start_time} seconds"
-                )
-
-                # Now we have to set the status of the complete connector run, it is dependant on the status of each
-                # action result and each call to handle_action can add more than one action_result, so better
-                # to calculate the overall status after all the handle_actions are done.
-                # This same function will set the summary too.
-                self._postprocess_action_results()
-            elif status_code is None:
-                self._BaseConnector__conn_result.set_status(
-                    ph_status.APP_ERROR,
-                    ph_status.APP_ERR_INITIALIZE_DID_NOT_RETURN_A_VALUE,
-                    classname=self.__class__.__name__,
-                )
-            elif ph_status.is_fail(status_code):
-                # Don't change the status here, just append to the message. Hopefully the derived connector has set
-                # the message to something useful
-                self._BaseConnector__conn_result.append_to_message(
-                    ph_status.APP_INITIALIZE_RETURNED_ERROR.format(
-                        classname=self.__class__.__name__
-                    )
-                )
-
-            # Call the finalize function, we call this even if initialize failed,
-            # gives a chance to the derived connector to set/change the overall
-            # status, summary, close any open connections, cleanup etc. if required.
-            self.finalize()
-
-            # Done with the action, now gather any artifacts that were created
-            self._save_artifacts_ingest()
-
-        except ActionCancelException as e:
-            self.error_print(f"Exception {e.__class__.__name__} occurred")
-        except Exception as e:
-            # Allow the connector to handle the exception
-            self.handle_exception(e)
-            # raise
-            # Add the exception details to the connector run result
-            self._BaseConnector__conn_result.add_exception(e)
-
-            if not self.enable_debug_dumps:
-                # dump the exception if the debug_dumps are disabled, else someone else (i.e. spawn) will
-                # be dumping it
-                print(f"Exception: {e!s}\n{traceback.format_exc()}")
-
-        # Return the stringized version of the json
-        return self._BaseConnector__conn_result.get_json_string()
 
 
 if __name__ == '__main__':
