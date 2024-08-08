@@ -986,6 +986,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             thandle, tpath = tempfile.mkstemp(dir=os.path.dirname(state_file))
             tfile = os.fdopen(thandle, "w")
+            self.debug_print("Writing to temp file in save_state()...")
             tfile.write(json.dumps(state))
             tfile.close()
             thandle = 0
@@ -1005,9 +1006,11 @@ class EWSOnPremConnector(BaseConnector):
                         # so instead of a move, we do a copy and then delete of the source file
                         # Prefer shutil.copyfile(), since shutil.copy() will attempt to chmod as well
                         #  which can throw exceptions
-                        shutil.copyfile(tpath, state_file)
+                        self.debug_print("Moving temp file in save_state()...")
+                        shutil.move(tpath, state_file)
                         set_app_file_perms(state_file)
-                    finally:
+                    except Exception as ex:
+                        self.debug_print(f"Exception occurred while unlinking the temp file: {ex}")
                         os.unlink(tpath)
 
         return ph_status.APP_SUCCESS
