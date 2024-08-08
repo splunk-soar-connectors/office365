@@ -155,6 +155,8 @@ class RequestStateHandler:
     def save_state(self, state):
         state = self._encrypt_state(state)
         state_file = self._get_state_file()
+        print("in request_handler")
+        print(state_file)
         try:
             with open(state_file, 'w+') as fp:
                 fp.write(json.dumps(state))
