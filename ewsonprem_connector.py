@@ -32,24 +32,20 @@ import json
 import os
 import shutil
 import tempfile
-import traceback
 import uuid
 from copy import deepcopy
 from json import JSONDecodeError
-from typing import Any, Optional
+from typing import Optional
 
 import encryption_helper
 import phantom.app as phantom
-import phantom.json_keys as ph_jsons
-import phantom.progress as ph_progress
-import phantom.redact as ph_redact
 import phantom.rules as ph_rules
 import phantom.status as ph_status
 import phantom.utils as ph_utils
 import requests
 import xmltodict
 from phantom.action_result import ActionResult
-from phantom.base_connector import ActionCancelException, BaseConnector, patched_session_request
+from phantom.base_connector import BaseConnector
 from phantom_common.phfile import set_app_file_perms
 from requests.auth import AuthBase, HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
