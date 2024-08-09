@@ -35,6 +35,7 @@ import tempfile
 import uuid
 from copy import deepcopy
 from json import JSONDecodeError
+from random import randint
 from typing import Optional
 
 import encryption_helper
@@ -864,12 +865,9 @@ class EWSOnPremConnector(BaseConnector):
         self.auth_type = config.get(EWS_JSON_AUTH_TYPE, AUTH_TYPE_AZURE)
         self.debug_print(f"Authentication type: {self.auth_type}")
         self.rsh = RequestStateHandler(self.get_asset_id())
-        self._state = self.load_state()
+        self._state = self.try_load_state()
         self.debug_print("State file on initialize:")
         self.print_redacted_state(self._state)
-
-        if not self._state:
-            raise Exception("state dict is empty, which means that it wasn't loaded properly. ")
 
         if not isinstance(self._state, dict):
             self.debug_print("Resetting the state file with the default format")
@@ -929,6 +927,22 @@ class EWSOnPremConnector(BaseConnector):
         self.debug_print("State file at the end of  initialize:")
         self.print_redacted_state(self._state)
         return phantom.APP_SUCCESS
+
+    def try_load_state(self) -> Optional[dict]:
+        self.debug_print("Trying to load the state...")
+        for i in range(10):
+            state = self.load_state()
+            if state:
+                return state
+
+            # State is empty, which means that there might have been an
+            # exception when reading the state file. Wait between 0.3s and 0.5s (random
+            # value to evade conflicts with other actions retrying to load the state)
+            # and retry loading
+            sleep_period = randint(3, 5) / 10
+            self.debug_print(f"Failed to load state, sleeping {sleep_period}s and running retry {i+1}/10.")
+            time.sleep(sleep_period)
+        return state
 
     def load_state(self) -> Optional[dict]:
         """Load the contents of the state file to the state dictionary.
