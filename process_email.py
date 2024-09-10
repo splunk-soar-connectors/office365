@@ -25,6 +25,7 @@ import string
 import tempfile
 from collections import OrderedDict
 from copy import deepcopy
+from email.generator import Generator
 from email.header import decode_header
 from html import unescape
 
@@ -35,7 +36,6 @@ import phantom.utils as ph_utils
 from bs4 import BeautifulSoup, UnicodeDammit
 from django.core.validators import URLValidator
 from requests.structures import CaseInsensitiveDict
-from email.generator import Generator
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added
