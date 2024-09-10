@@ -35,6 +35,7 @@ import phantom.utils as ph_utils
 from bs4 import BeautifulSoup, UnicodeDammit
 from django.core.validators import URLValidator
 from requests.structures import CaseInsensitiveDict
+from email.generator import Generator
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added
@@ -623,17 +624,19 @@ class ProcessEmail(object):
         if isinstance(part.get_payload(), list):
             try:
                 part_payload = part.get_payload()[0]
-                self._debug_print("payload content type: {0}".format(type(part_payload)))
-                with open(file_path, 'wb') as f:
-                    f.write(part_payload.as_string().encode('utf-8'))
+                self._debug_print(f"payload content type: {type(part_payload)}")
             except IndexError as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
-                self._base_connector.debug_print("Error occurred while accessing attachment payload. Error Details: {}".format(error_message))
-                with open(file_path, 'wb') as f:
-                    f.write(part_payload)
+                self._base_connector.debug_print(f"Attachment payload not found, hence ading empty file. Error Details: {error_message}")
+                return
+
+            try:
+                with open(file_path, 'w') as f:
+                    generator = Generator(f)
+                    generator.flatten(part_payload)
             except Exception as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
-                self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
+                self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_message}")
                 return
         else:
             part_payload = part.get_payload(decode=True)
