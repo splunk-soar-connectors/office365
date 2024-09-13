@@ -847,7 +847,7 @@ class EWSOnPremConnector(BaseConnector):
             self._base_url = self._base_url[:-1]
 
         # The host member extracts the host from the URL, is used in creating status messages
-        self._host = self._base_url[self._base_url.find("//") + 2:]
+        self._host = self._base_url[self._base_url.find("//") + 2:] # noqa
 
         self._impersonate = config[EWS_JSON_USE_IMPERSONATE]
 
@@ -3141,7 +3141,7 @@ class EWSOnPremConnector(BaseConnector):
             for email_dict in results:
                 email_dict["MessageId"] = email_dict["MessageId"].replace(">", "").replace("<", "")
 
-        results = results[mini: maxi + 1]
+        results = results[mini : maxi + 1] # noqa
         action_result.add_data(results)
 
         summary = action_result.update_summary({})
