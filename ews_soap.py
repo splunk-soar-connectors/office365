@@ -182,7 +182,7 @@ def xml_get_emails_data(email_ids):
         T.ExtendedFieldURI({"PropertyTag": EXTENDED_PROPERTY_BODY_TEXT, "PropertyType": "String"}),
         T.FieldURI({"FieldURI": "item:DateTimeReceived"}),
         T.FieldURI({"FieldURI": "item:LastModifiedTime"}),
-        T.FieldURI({"FieldURI": "item:Body"})
+        T.FieldURI({"FieldURI": "item:Body"}),
     )
 
     item_shape = M.ItemShape(T.BaseShape("Default"), T.IncludeMimeContent("true"), additional_properties)

@@ -788,7 +788,7 @@ class EWSOnPremConnector(BaseConnector):
         return phantom.APP_SUCCESS
 
     def _clean_the_state(self):
-        """This method cleans the state. """
+        """This method cleans the state."""
         self.debug_print("Cleaning the state")
         if self.auth_type != AUTH_TYPE_CLIENT_CRED:
             self._state.pop("oauth_client_token", None)
@@ -847,7 +847,7 @@ class EWSOnPremConnector(BaseConnector):
             self._base_url = self._base_url[:-1]
 
         # The host member extracts the host from the URL, is used in creating status messages
-        self._host = self._base_url[self._base_url.find("//") + 2:]
+        self._host = self._base_url[self._base_url.find("//") + 2 :]
 
         self._impersonate = config[EWS_JSON_USE_IMPERSONATE]
 
@@ -1639,7 +1639,7 @@ class EWSOnPremConnector(BaseConnector):
                 action_result.set_status(
                     phantom.APP_ERROR, "Could not extract header info from email object data. Does not seem to be valid email"
                 ),
-                None
+                None,
             )
 
         ret_val = {}
@@ -2047,7 +2047,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_matching_folder_path(self, folder_list, folder_name, folder_path, action_result):
         """The input folder is a list, meaning the folder name matched multiple folder
-            Given the folder path, this function will return the one that matches, or fail
+        Given the folder path, this function will return the one that matches, or fail
         """
 
         if not folder_list:
@@ -2122,10 +2122,13 @@ class EWSOnPremConnector(BaseConnector):
                 return ret_val, None
 
             if not folder:
-                return action_result.set_status(
-                    phantom.APP_ERROR,
-                    "Information for folder '{0}' not found in response, possibly not present".format(curr_valid_folder_path)
-                ), None
+                return (
+                    action_result.set_status(
+                        phantom.APP_ERROR,
+                        "Information for folder '{0}' not found in response, possibly not present".format(curr_valid_folder_path),
+                    ),
+                    None,
+                )
 
             folder_id = folder.get("t:FolderId", {}).get("@Id")
 
@@ -2572,10 +2575,9 @@ class EWSOnPremConnector(BaseConnector):
                 if not property_tag:
                     continue
 
-                if (
-                    property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()
-                    or property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()
-                ):
+                headers_lower = ews_soap.EXTENDED_PROPERTY_HEADERS.lower()
+                headers_resp_lower = ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()
+                if property_tag.lower() == headers_lower or property_tag.lower() == headers_resp_lower:
                     email_headers = self._extract_email_headers(value)
                     if email_headers is not None:
                         headers.update(email_headers)
@@ -2793,7 +2795,8 @@ class EWSOnPremConnector(BaseConnector):
 
         if len(failed_emails_parsing_list) == len(email_ids):
             return action_result.set_status(
-                phantom.APP_ERROR, "ErrorExp in _process_email_id for all the email IDs: {}".format(str(failed_emails_parsing_list)))
+                phantom.APP_ERROR, "ErrorExp in _process_email_id for all the email IDs: {}".format(str(failed_emails_parsing_list))
+            )
 
         if self._skipped_emails > 0:
             self.save_progress("Skipped emails: {}. (For more details, check the logs)".format(self._skipped_emails))
@@ -3138,7 +3141,7 @@ class EWSOnPremConnector(BaseConnector):
             for email_dict in results:
                 email_dict["MessageId"] = email_dict["MessageId"].replace(">", "").replace("<", "")
 
-        results = results[mini: maxi + 1]
+        results = results[mini : maxi + 1]
         action_result.add_data(results)
 
         summary = action_result.update_summary({})

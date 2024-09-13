@@ -314,7 +314,7 @@ class ProcessEmail(object):
             if links:
                 mailtos = [x["href"] for x in links if x["href"].startswith("mailto:")]
                 for curr_email in mailtos:
-                    domain = curr_email[curr_email.find("@") + 1:]
+                    domain = curr_email[curr_email.find("@") + 1 :]
                     if domain and (not self._is_ip(domain)):
                         if "?" in domain:
                             domain = domain[: domain.find("?")]
@@ -402,7 +402,7 @@ class ProcessEmail(object):
             emails.extend(re.findall(email_regexc2, file_data))
 
             for curr_email in emails:
-                domain = curr_email[curr_email.rfind("@") + 1:]
+                domain = curr_email[curr_email.rfind("@") + 1 :]
                 if domain and (not ph_utils.is_ip(domain)):
                     domains.add(domain)
 
@@ -1297,7 +1297,7 @@ class ProcessEmail(object):
 
         try:
             success, message, vault_id = ph_rules.vault_add(
-               container=container_id, file_location=local_file_path, file_name=file_name, metadata=vault_attach_dict
+                container=container_id, file_location=local_file_path, file_name=file_name, metadata=vault_attach_dict
             )
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
