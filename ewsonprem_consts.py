@@ -52,8 +52,10 @@ EWSONPREM_CONNECTIVITY_TEST_SUCCESS = "Connectivity test passed"
 EWSONPREM_SERVER_CONNECTIVITY_ERROR = "Connection failed"
 EWSONPREM_FROM_SERVER_ERROR = "API failed. Status code: {code}. Message: {message}"
 EWSONPREM_JSON_PARSE_ERROR = "Unable to parse reply, raw string reply: '{raw_text}'"
-EWSONPREM_STATE_FILE_CORRUPT_ERROR = "Error occurred while loading the state file due to its unexpected format. " \
+EWSONPREM_STATE_FILE_CORRUPT_ERROR = (
+    "Error occurred while loading the state file due to its unexpected format. "
     "Resetting the state file with the default format. Please test the connectivity"
+)
 MISSING_CLIENT_CREDS = "ERROR: client_id and client_secret are required parameters for OAuth Authentication, please specify them"
 
 DEFAULT_REQUEST_TIMEOUT = 60  # in seconds
@@ -64,11 +66,14 @@ EWS_LOGIN_URL = "https://login.windows.net"
 EWS_TRACE_URL = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace"
 EWS_ASSET_PARAM_CHECK_LIST_ERRORS = ["unauthorized_client", "invalid_client", "invalid_grant", "invalid_request"]
 
-EWS_MODIFY_CONFIG = "Toggling the impersonation configuration on the asset might help, or login user does not have privileges to the mailbox." \
+EWS_MODIFY_CONFIG = (
+    "Toggling the impersonation configuration on the asset might help, or login user does not have privileges to the mailbox."
     " Please check the asset configuration parameters"
+)
 
-EWS_ASSET_CORRUPTED = "ERROR: The token present in the state file is corrupted. Deleting the token. " \
-    "Please test the connectivity to generate a new token"
+EWS_ASSET_CORRUPTED = (
+    "ERROR: The token present in the state file is corrupted. Deleting the token. " "Please test the connectivity to generate a new token"
+)
 EWS_ENCRYPTION_ERROR = "Error occurred while encrypting the state file"
 EWS_INGEST_LATEST_EMAILS = "latest first"
 EWS_INGEST_OLDEST_EMAILS = "oldest first"
@@ -81,19 +86,21 @@ AUTH_TYPE_FEDERATED = "Federated"
 AUTH_TYPE_BASIC = "Basic"
 AUTH_TYPE_CLIENT_CRED = "OAuth (client credentials)"
 
-EWS_FED_REQUEST_XML = "<s:Envelope xmlns:s='http://www.w3.org/2003/05/soap-envelope' " \
-    "xmlns:wsse='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd' "\
-    "xmlns:u='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd'>" \
-    "<s:Header><wsse:Action s:mustUnderstand='1'>http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</wsse:Action>" \
-    "<wsse:messageID>urn:uuid:7f45785a-9691-451e-b3ff-30ab463af64c</wsse:messageID>" \
-    "<wsse:ReplyTo><wsse:Address>http://www.w3.org/2005/08/addressing/anonymous</wsse:Address></wsse:ReplyTo>" \
-    "<wsse:To s:mustUnderstand='1'>{ping_url}</wsse:To>" \
-    "<o:Security s:mustUnderstand='1' xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>" \
-    "<u:Timestamp><u:Created>{created_date}</u:Created><u:Expires>{expiry_date}</u:Expires></u:Timestamp><o:UsernameToken>" \
-    "<wsse:Username>{username}</wsse:Username><o:Password>{password}</o:Password></o:UsernameToken></o:Security></s:Header>" \
-    "<s:Body><trust:RequestSecurityToken xmlns:trust='http://docs.oasis-open.org/ws-sx/ws-trust/200512'>" \
-    "<wsp:AppliesTo xmlns:wsp='http://schemas.xmlsoap.org/ws/2004/09/policy'>" \
-    "<wsse:EndpointReference><wsse:Address>urn:federation:MicrosoftOnline</wsse:Address></wsse:EndpointReference></wsp:AppliesTo>" \
-    "<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>" \
-    "<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>" \
+EWS_FED_REQUEST_XML = (
+    "<s:Envelope xmlns:s='http://www.w3.org/2003/05/soap-envelope' "
+    "xmlns:wsse='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd' "
+    "xmlns:u='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd'>"
+    "<s:Header><wsse:Action s:mustUnderstand='1'>http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</wsse:Action>"
+    "<wsse:messageID>urn:uuid:7f45785a-9691-451e-b3ff-30ab463af64c</wsse:messageID>"
+    "<wsse:ReplyTo><wsse:Address>http://www.w3.org/2005/08/addressing/anonymous</wsse:Address></wsse:ReplyTo>"
+    "<wsse:To s:mustUnderstand='1'>{ping_url}</wsse:To>"
+    "<o:Security s:mustUnderstand='1' xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>"
+    "<u:Timestamp><u:Created>{created_date}</u:Created><u:Expires>{expiry_date}</u:Expires></u:Timestamp><o:UsernameToken>"
+    "<wsse:Username>{username}</wsse:Username><o:Password>{password}</o:Password></o:UsernameToken></o:Security></s:Header>"
+    "<s:Body><trust:RequestSecurityToken xmlns:trust='http://docs.oasis-open.org/ws-sx/ws-trust/200512'>"
+    "<wsp:AppliesTo xmlns:wsp='http://schemas.xmlsoap.org/ws/2004/09/policy'>"
+    "<wsse:EndpointReference><wsse:Address>urn:federation:MicrosoftOnline</wsse:Address></wsse:EndpointReference></wsp:AppliesTo>"
+    "<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>"
+    "<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>"
     "</trust:RequestSecurityToken></s:Body></s:Envelope>"
+)

@@ -71,7 +71,7 @@ from request_handler import RequestStateHandler  # noqa
 from request_handler import _get_dir_name_from_app_name
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
-os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
+os.sys.path.insert(0, "{}/dependencies/ews_dep".format(app_dir))  # noqa
 
 
 class RetVal3(tuple):
@@ -92,7 +92,7 @@ class OAuth2TokenAuth(AuthBase):
 
     def __call__(self, r):
         # modify and return the request
-        r.headers['Authorization'] = "{0} {1}".format(self._token_type, self._token)
+        r.headers["Authorization"] = "{0} {1}".format(self._token_type, self._token)
         return r
 
 
@@ -144,14 +144,14 @@ class EWSOnPremConnector(BaseConnector):
     def _handle_preprocess_scipts(self):
 
         config = self.get_config()
-        script = config.get('preprocess_script')
+        script = config.get("preprocess_script")
 
         self._preprocess_container = lambda x: x
 
         if script:
             try:  # Try to load in script to preprocess artifacts
                 import importlib.util
-                preprocess_methods = importlib.util.spec_from_loader('preprocess_methods', loader=None)
+                preprocess_methods = importlib.util.spec_from_loader("preprocess_methods", loader=None)
                 self._script_module = importlib.util.module_from_spec(preprocess_methods)
                 exec(script, self._script_module.__dict__)
             except Exception as e:
@@ -176,7 +176,7 @@ class EWSOnPremConnector(BaseConnector):
             dt_plus_str = "{0}Z".format(dt_plus.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
             ret_val = EWS_FED_REQUEST_XML.format(
-                ping_url=config[EWS_JSON_FED_PING_URL].split('?')[0],
+                ping_url=config[EWS_JSON_FED_PING_URL].split("?")[0],
                 created_date=dt_now_str,
                 expiry_date=dt_plus_str,
                 username=config[phantom.APP_JSON_USERNAME],
@@ -209,7 +209,7 @@ class EWSOnPremConnector(BaseConnector):
             return None, message
 
         # Now create the request to the server
-        headers = {'Content-Type': 'application/soap_xml; charset=utf8'}
+        headers = {"Content-Type": "application/soap_xml; charset=utf8"}
 
         url = config[EWS_JSON_FED_PING_URL]
 
@@ -230,8 +230,8 @@ class EWSOnPremConnector(BaseConnector):
 
         # process the xml response
         xml_response = r.text
-        start_pos = xml_response.find('<saml:Assertion')
-        end_pos = xml_response.find('</saml:Assertion>') + len('</saml:Assertion>')
+        start_pos = xml_response.find("<saml:Assertion")
+        end_pos = xml_response.find("</saml:Assertion>") + len("</saml:Assertion>")
 
         # validate that the saml assertion is present
         if start_pos == -1 or end_pos == -1:
@@ -240,25 +240,25 @@ class EWSOnPremConnector(BaseConnector):
         saml_assertion = xml_response[start_pos:end_pos]
 
         # base64 encode the assertion
-        saml_assertion_encoded = base64.encodebytes(saml_assertion.encode('utf8'))
+        saml_assertion_encoded = base64.encodebytes(saml_assertion.encode("utf8"))
 
         # Now work on sending th assertion, to get the token
-        url = '{0}/oauth2/token'.format(config[EWS_JSON_AUTH_URL])
+        url = "{0}/oauth2/token".format(config[EWS_JSON_AUTH_URL])
 
         # headers
         client_req_id = str(uuid.uuid4())
-        headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
+        headers = {"Accept": "application/json", "client-request-id": client_req_id, "return-client-request-id": "True"}
 
         # URL
         parsed_auth_url = urlparse(self._base_url)
 
         # Form data
         data = {
-            'resource': '{0}://{1}'.format(parsed_auth_url.scheme, parsed_auth_url.netloc),
-            'client_id': client_id,
-            'grant_type': 'urn:ietf:params:oauth:grant-type:saml1_1-bearer',
-            'assertion': saml_assertion_encoded,
-            'scope': 'openid'
+            "resource": "{0}://{1}".format(parsed_auth_url.scheme, parsed_auth_url.netloc),
+            "client_id": client_id,
+            "grant_type": "urn:ietf:params:oauth:grant-type:saml1_1-bearer",
+            "assertion": saml_assertion_encoded,
+            "scope": "openid"
         }
 
         try:
@@ -276,24 +276,24 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             return None, "Unable to parse auth token response as JSON. Error: {0}".format(self._get_error_message_from_exception(e))
 
-        if 'token_type' not in resp_json:
+        if "token_type" not in resp_json:
             return None, "token_type not found in response from server"
 
-        if 'access_token' not in resp_json:
+        if "access_token" not in resp_json:
             return None, "token not found in response from server"
 
         self.save_progress("Got Access Token")
 
-        return OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), ""
+        return OAuth2TokenAuth(resp_json["access_token"], resp_json["token_type"]), ""
 
     def _make_rest_calls_to_phantom(self, action_result, url):
 
         # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
         r = requests.get(url, verify=False)  # nosemgrep
         if not r:
-            message = 'Status Code: {0}'.format(r.status_code)
+            message = "Status Code: {0}".format(r.status_code)
             if r.text:
-                message = "{} Error from Server: {}".format(message, r.text.replace('{', '{{').replace('}', '}}'))
+                message = "{} Error from Server: {}".format(message, r.text.replace("{", "{{").replace("}", "}}"))
             return action_result.set_status(phantom.APP_ERROR, "Error retrieving system info, {0}".format(message)), None
 
         try:
@@ -305,12 +305,12 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_phantom_base_url_ews(self, action_result):
 
-        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, '{}rest/system_info'.format(self.get_phantom_base_url()))
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, "{}rest/system_info".format(self.get_phantom_base_url()))
 
         if phantom.is_fail(ret_val):
             return action_result.get_status(), None
 
-        phantom_base_url = resp_json.get('base_url')
+        phantom_base_url = resp_json.get("base_url")
         if not phantom_base_url:
             return action_result.set_status(
                 phantom.APP_ERROR, "Phantom Base URL is not configured, please configure it in System Settings"), None
@@ -322,12 +322,12 @@ class EWSOnPremConnector(BaseConnector):
     def _get_asset_name(self, action_result):
 
         ret_val, resp_json = self._make_rest_calls_to_phantom(
-            action_result, '{}rest/asset/{}'.format(self.get_phantom_base_url(), self.get_asset_id()))
+            action_result, "{}rest/asset/{}".format(self.get_phantom_base_url(), self.get_asset_id()))
 
         if phantom.is_fail(ret_val):
             return action_result.get_status(), None
 
-        asset_name = resp_json.get('name')
+        asset_name = resp_json.get("name")
         if not asset_name:
             return action_result.set_status(phantom.APP_ERROR, "Error retrieving asset name"), None
 
@@ -344,11 +344,11 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, asset_name = self._get_asset_name(action_result)
         if phantom.is_fail(ret_val):
             return action_result.get_status(), action_result.get_message()
-        self.save_progress('Using Phantom base URL as: {0}'.format(phantom_base_url))
+        self.save_progress("Using Phantom base URL as: {0}".format(phantom_base_url))
         app_json = self.get_app_json()
-        app_name = app_json['name']
+        app_name = app_json["name"]
         app_dir_name = _get_dir_name_from_app_name(app_name)
-        url_to_app_rest = "{0}/rest/handler/{1}_{2}/{3}".format(phantom_base_url, app_dir_name, app_json['appid'], asset_name)
+        url_to_app_rest = "{0}/rest/handler/{1}_{2}/{3}".format(phantom_base_url, app_dir_name, app_json["appid"], asset_name)
         return phantom.APP_SUCCESS, url_to_app_rest
 
     def _azure_int_auth_initial(self, client_id, client_secret):
@@ -362,80 +362,80 @@ class EWSOnPremConnector(BaseConnector):
 
         app_rest_url = message
 
-        request_url = 'https://login.microsoftonline.com/common/oauth2'
+        request_url = "https://login.microsoftonline.com/common/oauth2"
 
         proxy = {}
-        if 'HTTP_PROXY' in os.environ:
-            proxy['http'] = os.environ.get('HTTP_PROXY')
+        if "HTTP_PROXY" in os.environ:
+            proxy["http"] = os.environ.get("HTTP_PROXY")
 
-        if 'HTTPS_PROXY' in os.environ:
-            proxy['https'] = os.environ.get('HTTPS_PROXY')
+        if "HTTPS_PROXY" in os.environ:
+            proxy["https"] = os.environ.get("HTTPS_PROXY")
 
-        state['proxy'] = proxy
-        state['client_id'] = client_id
-        state['redirect_url'] = app_rest_url
-        state['request_url'] = request_url
+        state["proxy"] = proxy
+        state["client_id"] = client_id
+        state["redirect_url"] = app_rest_url
+        state["request_url"] = request_url
         # This handling is for the python version 3, working fine with both the python version 2 and 3
-        client_secret = client_secret.encode('ascii')
+        client_secret = client_secret.encode("ascii")
         client_secret = base64.b64encode(client_secret)
-        state['client_secret'] = client_secret.decode('ascii')
+        state["client_secret"] = client_secret.decode("ascii")
 
         self.rsh.save_state(state)
         self.save_progress("Redirect URI: {}".format(app_rest_url))
         params = {
-            'response_type': 'code',
-            'response_mode': 'query',
-            'client_id': client_id,
-            'state': asset_id,
-            'redirect_uri': app_rest_url
+            "response_type": "code",
+            "response_mode": "query",
+            "client_id": client_id,
+            "state": asset_id,
+            "redirect_uri": app_rest_url
         }
-        url = requests.Request('GET', '{}/authorize'.format(request_url), params=params).prepare().url
-        url = '{}&'.format(url)
+        url = requests.Request("GET", "{}/authorize".format(request_url), params=params).prepare().url
+        url = "{}&".format(url)
 
         self.save_progress("To continue, open this link in a new tab in your browser")
         self.save_progress(url)
         for _ in range(0, 60):
             time.sleep(5)
             state = self.rsh.load_state()
-            oauth_token = state.get('oauth_token')
+            oauth_token = state.get("oauth_token")
             if oauth_token:
                 break
-            elif state.get('error'):
+            elif state.get("error"):
                 self._reset_the_state()
                 return None, "Error retrieving OAuth token"
         else:
             return None, "Timed out waiting for login"
 
-        self._state['oauth_token'] = oauth_token
+        self._state["oauth_token"] = oauth_token
 
         # NOTE: This state is in the app directory, it is
         #  different from the app state (i.e. self._state)
 
         self.rsh.delete_state()
 
-        return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
+        return OAuth2TokenAuth(oauth_token["access_token"], oauth_token["token_type"]), ""
 
     def _azure_int_auth_refresh(self, client_id, client_secret):
 
-        oauth_token = self._state.get('oauth_token')
+        oauth_token = self._state.get("oauth_token")
 
         if not (oauth_token and oauth_token.get("refresh_token")):
             self._reset_the_state()
             return None, "Unable to get refresh token. Please run Test Connectivity again"
 
-        if client_id != self._state.get('client_id', ''):
+        if client_id != self._state.get("client_id", ""):
             self._reset_the_state()
             return None, "Client ID has been changed. Please run Test Connectivity again"
 
-        refresh_token = oauth_token['refresh_token']
+        refresh_token = oauth_token["refresh_token"]
 
-        request_url = 'https://login.microsoftonline.com/common/oauth2/token'
+        request_url = "https://login.microsoftonline.com/common/oauth2/token"
         body = {
-            'grant_type': 'refresh_token',
-            'resource': 'https://outlook.office365.com/',
-            'client_id': client_id,
-            'refresh_token': refresh_token,
-            'client_secret': client_secret
+            "grant_type": "refresh_token",
+            "resource": "https://outlook.office365.com/",
+            "client_id": client_id,
+            "refresh_token": refresh_token,
+            "client_secret": client_secret
         }
         try:
             r = requests.post(request_url, data=body, timeout=self._timeout)
@@ -451,8 +451,8 @@ class EWSOnPremConnector(BaseConnector):
         except Exception:
             return None, "Error retrieving OAuth Token"
 
-        self._state['oauth_token'] = oauth_token
-        return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
+        self._state["oauth_token"] = oauth_token
+        return OAuth2TokenAuth(oauth_token["access_token"], oauth_token["token_type"]), ""
 
     def _set_azure_int_auth(self, config):
 
@@ -472,7 +472,7 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print("Try to generate token from authorization code")
             ret = self._azure_int_auth_initial(client_id, client_secret)
             if ret[0]:
-                self._state['client_id'] = client_id
+                self._state["client_id"] = client_id
 
         return ret
 
@@ -482,10 +482,10 @@ class EWSOnPremConnector(BaseConnector):
         :param client_req_id: Request ID
         :return: status, domain/message
         """
-        headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
+        headers = {"Accept": "application/json", "client-request-id": client_req_id, "return-client-request-id": "True"}
 
         url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, username)
-        params = {'api-version': '1.0'}
+        params = {"api-version": "1.0"}
 
         try:
             r = self._session.get(url, params=params, headers=headers, timeout=self._timeout)
@@ -501,7 +501,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             return phantom.APP_ERROR, str(e)
 
-        domain = resp_json.get('domain_name')
+        domain = resp_json.get("domain_name")
         if not domain:
             return phantom.APP_ERROR, "Did not find domain in response. Cannot continue"
 
@@ -516,7 +516,7 @@ class EWSOnPremConnector(BaseConnector):
             if self._state.get("oauth_client_token", {}):
                 resp_json = self._state.get("oauth_client_token", {})
             if resp_json:
-                self._session.auth = OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type'])
+                self._session.auth = OAuth2TokenAuth(resp_json["access_token"], resp_json["token_type"])
         elif self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and not self._is_token_test_connectivity:
             self._is_token_test_connectivity = True
             return self.set_authentication_method(config)
@@ -540,7 +540,7 @@ class EWSOnPremConnector(BaseConnector):
         if not client_secret:
             return None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_SECRET)
 
-        oauth_token = self._state.get('oauth_token')
+        oauth_token = self._state.get("oauth_token")
         is_oauth_token = oauth_token and oauth_token.get("access_token") and oauth_token.get("refresh_token")
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and is_oauth_token and not self._is_client_id_changed:
             self.debug_print("Try to generate token from refresh token")
@@ -553,20 +553,20 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return None, domain
 
-        headers = {'client-request-id': client_req_id, 'return-client-request-id': 'True'}
+        headers = {"client-request-id": client_req_id, "return-client-request-id": "True"}
         url = "{0}/{1}/oauth2/token".format(EWS_LOGIN_URL, domain)
         params = None
 
         parsed_base_url = urlparse(self._base_url)
 
         data = {
-            'resource': '{0}://{1}'.format(parsed_base_url.scheme, parsed_base_url.netloc),
-            'client_id': client_id,
-            'username': username,
-            'password': password,
-            'grant_type': 'password',
-            'scope': 'openid',
-            'client_secret': client_secret
+            "resource": "{0}://{1}".format(parsed_base_url.scheme, parsed_base_url.netloc),
+            "client_id": client_id,
+            "username": username,
+            "password": password,
+            "grant_type": "password",
+            "scope": "openid",
+            "client_secret": client_secret
         }
 
         try:
@@ -583,22 +583,22 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             return None, str(e)
 
-        if 'token_type' not in resp_json:
+        if "token_type" not in resp_json:
             return None, "token_type not found in response from server"
 
-        if 'access_token' not in resp_json:
+        if "access_token" not in resp_json:
             return None, "token not found in response from server"
 
         self._state["oauth_token"] = resp_json
-        self._state['client_id'] = client_id
+        self._state["client_id"] = client_id
         self.save_progress("Got Access Token")
 
-        return OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), ""
+        return OAuth2TokenAuth(resp_json["access_token"], resp_json["token_type"]), ""
 
     def _check_password(self, config):
         if phantom.APP_JSON_PASSWORD not in list(config.keys()):
             return phantom.APP_ERROR, "Password not present in asset configuration"
-        return phantom.APP_SUCCESS, ''
+        return phantom.APP_SUCCESS, ""
 
     def _validate_integer(self, action_result, parameter, key, allow_zero=False):
         try:
@@ -694,8 +694,8 @@ class EWSOnPremConnector(BaseConnector):
         """
         oauth_token = self._state.get("oauth_client_token", {})
         if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY and oauth_token:
-            if oauth_token.get('access_token') and oauth_token.get('token_type'):
-                return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
+            if oauth_token.get("access_token") and oauth_token.get("token_type"):
+                return OAuth2TokenAuth(oauth_token["access_token"], oauth_token["token_type"]), ""
 
         client_id = config.get("client_id")
         client_secret = config.get("client_secret")
@@ -712,7 +712,7 @@ class EWSOnPremConnector(BaseConnector):
         url = "{0}/{1}/oauth2/token".format(EWS_LOGIN_URL, domain)
 
         parsed_base_url = urlparse(self._base_url)
-        headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}
+        headers = {"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"}
 
         data = {
             "client_id": client_id,
@@ -737,9 +737,9 @@ class EWSOnPremConnector(BaseConnector):
             return None, str(e)
 
         self.save_progress("Received access token")
-        self._state['oauth_client_token'] = oauth_token
-        self._state['client_id'] = client_id
-        return OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), ""
+        self._state["oauth_client_token"] = oauth_token
+        self._state["client_id"] = client_id
+        return OAuth2TokenAuth(oauth_token["access_token"], oauth_token["token_type"]), ""
 
     def _encrypt_client_token(self, state):
         """ This method encrypts the oauth client token.
@@ -814,20 +814,20 @@ class EWSOnPremConnector(BaseConnector):
                 return self.set_status(phantom.APP_ERROR, message)
 
         # The headers, initialize them here once and use them for all other REST calls
-        self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
+        self._headers = {"Content-Type": "text/xml; charset=utf-8", "Accept": "text/xml"}
 
         self._session = requests.Session()
 
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
 
-        message = ''
+        message = ""
         self._clean_the_state()
         is_oauth_token_missing = self.auth_type in [AUTH_TYPE_AZURE, AUTH_TYPE_AZURE_INTERACTIVE] and \
             not self._state.get("oauth_token", {}).get("access_token")
         is_oauth_client_token_missing = self.auth_type == AUTH_TYPE_CLIENT_CRED and \
             not self._state.get("oauth_client_token", {}).get("access_token")
-        self._is_client_id_changed = (self._state.get('client_id') and config.get("client_id")) and \
-            self._state.get('client_id') != config.get("client_id")
+        self._is_client_id_changed = (self._state.get("client_id") and config.get("client_id")) and \
+            self._state.get("client_id") != config.get("client_id")
         if self._is_client_id_changed or is_oauth_token_missing or is_oauth_client_token_missing:
             self._is_token_test_connectivity = self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY
             ret, message = self.set_authentication_method(config)
@@ -835,11 +835,11 @@ class EWSOnPremConnector(BaseConnector):
             if phantom.is_fail(ret):
                 return self.set_status(ret, message)
 
-        if self._base_url.endswith('/'):
+        if self._base_url.endswith("/"):
             self._base_url = self._base_url[:-1]
 
         # The host member extracts the host from the URL, is used in creating status messages
-        self._host = self._base_url[self._base_url.find('//') + 2:]
+        self._host = self._base_url[self._base_url.find("//") + 2:]
 
         self._impersonate = config[EWS_JSON_USE_IMPERSONATE]
 
@@ -847,7 +847,7 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret):
             return ret
 
-        self.set_validator('ipv6', self._is_ip)
+        self.set_validator("ipv6", self._is_ip)
         self._timeout = config.get("timeout", DEFAULT_REQUEST_TIMEOUT)
         ret_val, self._timeout = self._validate_integer(self, self._timeout, "Request Timeout")
         if phantom.is_fail(ret_val):
@@ -863,70 +863,70 @@ class EWSOnPremConnector(BaseConnector):
         if not resp_json:
             return error_details
 
-        error_details['message'] = resp_json.get('m:MessageText', 'Not Specified')
-        error_details['code'] = resp_json.get('m:ResponseCode', 'Not Specified')
+        error_details["message"] = resp_json.get("m:MessageText", "Not Specified")
+        error_details["code"] = resp_json.get("m:ResponseCode", "Not Specified")
 
         return error_details
 
     def _create_aqs(self, subject, sender, body):
-        aqs = {'subject': subject, 'from': sender, 'body': body}
-        return ' '.join('{}:"{}"'.format(key, value) for key, value in aqs.items() if value)
+        aqs = {"subject": subject, "from": sender, "body": body}
+        return " ".join('{}:"{}"'.format(key, value) for key, value in aqs.items() if value)
 
     # TODO: Should change these function to be parameterized, instead of one per type of request
     def _check_get_attachment_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:GetAttachmentResponse"]["m:ResponseMessages"]["m:GetAttachmentResponseMessage"]
 
     def _check_getitem_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:GetItemResponse"]["m:ResponseMessages"]["m:GetItemResponseMessage"]
 
     def _check_find_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:FindItemResponse']['m:ResponseMessages']['m:FindItemResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:FindItemResponse"]["m:ResponseMessages"]["m:FindItemResponseMessage"]
 
     def _check_delete_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:DeleteItemResponse"]["m:ResponseMessages"]["m:DeleteItemResponseMessage"]
 
     def _check_update_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:UpdateItemResponse"]["m:ResponseMessages"]["m:UpdateItemResponseMessage"]
 
     def _check_copy_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:CopyItemResponse"]["m:ResponseMessages"]["m:CopyItemResponseMessage"]
 
     def _check_markasjunk_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:MarkAsJunkResponse']['m:ResponseMessages']['m:MarkAsJunkResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:MarkAsJunkResponse"]["m:ResponseMessages"]["m:MarkAsJunkResponseMessage"]
 
     def _check_move_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:MoveItemResponse"]["m:ResponseMessages"]["m:MoveItemResponseMessage"]
 
     def _check_expand_dl_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:ExpandDLResponse"]["m:ResponseMessages"]["m:ExpandDLResponseMessage"]
 
     def _check_findfolder_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:FindFolderResponse']['m:ResponseMessages']['m:FindFolderResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:FindFolderResponse"]["m:ResponseMessages"]["m:FindFolderResponseMessage"]
 
     def _check_getfolder_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:GetFolderResponse']['m:ResponseMessages']['m:GetFolderResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:GetFolderResponse"]["m:ResponseMessages"]["m:GetFolderResponseMessage"]
 
     def _check_resolve_names_response(self, resp_json):
-        resp_body = resp_json['s:Envelope']['s:Body']
-        return resp_body['m:ResolveNamesResponse']['m:ResponseMessages']['m:ResolveNamesResponseMessage']
+        resp_body = resp_json["s:Envelope"]["s:Body"]
+        return resp_body["m:ResolveNamesResponse"]["m:ResponseMessages"]["m:ResolveNamesResponseMessage"]
 
     def _parse_fault_node(self, result, fault_node):
 
-        fault_code = fault_node.get('faultcode', {}).get('#text', 'Not specified')
-        fault_string = fault_node.get('faultstring', {}).get('#text', 'Not specified')
+        fault_code = fault_node.get("faultcode", {}).get("#text", "Not specified")
+        fault_string = fault_node.get("faultstring", {}).get("#text", "Not specified")
 
-        return result.set_status(phantom.APP_ERROR, 'Error occurred, Code: {0} Detail: {1}'.format(fault_code, fault_string))
+        return result.set_status(phantom.APP_ERROR, "Error occurred, Code: {0} Detail: {1}".format(fault_code, fault_string))
 
     def _clean_xml(self, input_xml):
 
@@ -935,7 +935,7 @@ class EWSOnPremConnector(BaseConnector):
         # that its own msxml library deems as invalid
         # https://support.microsoft.com/en-us/kb/315580
         replace_regex = r"&#x([0-8]|[b-cB-C]|[e-fE-F]|1[0-9]|1[a-fA-F]);"
-        clean_xml, number_of_substitutes = re.subn(replace_regex, '', input_xml)
+        clean_xml, number_of_substitutes = re.subn(replace_regex, "", input_xml)
 
         self.debug_print("Cleaned xml with {0} substitutions".format(number_of_substitutes))
 
@@ -943,7 +943,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_http_error_details(self, r):
 
-        if 'text/xml' in r.headers.get('Content-Type', ''):
+        if "text/xml" in r.headers.get("Content-Type", ""):
             # Try a xmltodict parse
             try:
                 resp_json = xmltodict.parse(self._clean_xml(r.text))
@@ -956,7 +956,7 @@ class EWSOnPremConnector(BaseConnector):
                 return "Unable to parse error details"
 
             try:
-                return resp_json['s:Envelope']['s:Body']['s:Fault']['detail']['e:Message']['#text']
+                return resp_json["s:Envelope"]["s:Body"]["s:Fault"]["detail"]["e:Message"]["#text"]
             except Exception:
                 pass
 
@@ -987,7 +987,7 @@ class EWSOnPremConnector(BaseConnector):
 
             password = config[phantom.APP_JSON_PASSWORD]
             username = config[phantom.APP_JSON_USERNAME]
-            username = username.replace('/', '\\')
+            username = username.replace("/", "\\")
 
             self._session.auth = HTTPBasicAuth(username, password)
             self.save_progress("Using HTTP Basic authentication")
@@ -1023,10 +1023,10 @@ class EWSOnPremConnector(BaseConnector):
             error_text = self._get_error_message_from_exception(e)
             return result.set_status(phantom.APP_ERROR, EWSONPREM_SERVER_CONNECTIVITY_ERROR, error_text), resp_json
 
-        if hasattr(result, 'add_debug_data'):
-            result.add_debug_data({'r_status_code': r.status_code})
-            result.add_debug_data({'r_text': r.text if r else 'r is None'})
-            result.add_debug_data({'r_headers': r.headers})
+        if hasattr(result, "add_debug_data"):
+            result.add_debug_data({"r_status_code": r.status_code})
+            result.add_debug_data({"r_text": r.text if r else "r is None"})
+            result.add_debug_data({"r_headers": r.headers})
 
         if r.status_code == 401:
             if self.auth_type == AUTH_TYPE_CLIENT_CRED:
@@ -1065,7 +1065,7 @@ class EWSOnPremConnector(BaseConnector):
             return result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json
 
         # Check if there is a fault node present
-        fault_node = resp_json.get('s:Envelope', {}).get('s:Body', {}).get('s:Fault')
+        fault_node = resp_json.get("s:Envelope", {}).get("s:Body", {}).get("s:Fault")
 
         if fault_node:
             return self._parse_fault_node(result, fault_node), None
@@ -1081,9 +1081,9 @@ class EWSOnPremConnector(BaseConnector):
         if not isinstance(resp_message, dict):
             return phantom.APP_SUCCESS, resp_message
 
-        resp_class = resp_message.get('@ResponseClass', '')
+        resp_class = resp_message.get("@ResponseClass", "")
 
-        if resp_class == 'Error':
+        if resp_class == "Error":
             return result.set_status(phantom.APP_ERROR, EWSONPREM_FROM_SERVER_ERROR.format(**(self._get_error_details(resp_message)))), resp_json
 
         return phantom.APP_SUCCESS, resp_message
@@ -1128,27 +1128,27 @@ class EWSOnPremConnector(BaseConnector):
 
             curr_range = "{0}-{1}".format(curr_step_value, curr_step_value + step_size - 1)
 
-            input_xml = ews_soap.xml_get_children_info(user, parent_folder_id=parent_folder_info['id'], query_range=curr_range)
+            input_xml = ews_soap.xml_get_children_info(user, parent_folder_id=parent_folder_info["id"], query_range=curr_range)
 
             ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
 
             if phantom.is_fail(ret_val):
                 return action_result.get_status(), None
 
-            total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
+            total_items = resp_json.get("m:RootFolder", {}).get("@TotalItemsInView", "0")
 
-            if total_items == '0':
+            if total_items == "0":
                 # total_items gives the total items in the view, not just items returned in the current call
                 return action_result.set_status(phantom.APP_ERROR, "Children not found, possibly not present."), None
 
             folders = []
-            if resp_json.get('m:RootFolder', {}).get('t:Folders', {}):
-                folders_list = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder', [])
+            if resp_json.get("m:RootFolder", {}).get("t:Folders", {}):
+                folders_list = resp_json.get("m:RootFolder", {}).get("t:Folders", {}).get("t:Folder", [])
                 if not isinstance(folders_list, list):
                     folders_list = [folders_list]
                 folders.extend(folders_list)
 
-                search_folders_list = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:SearchFolder', [])
+                search_folders_list = resp_json.get("m:RootFolder", {}).get("t:Folders", {}).get("t:SearchFolder", [])
                 if not isinstance(search_folders_list, list):
                     search_folders_list = [search_folders_list]
                 folders.extend(search_folders_list)
@@ -1157,10 +1157,10 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None
 
             folder_infos.extend([{
-                'id': x['t:FolderId']['@Id'],
-                'display_name': x['t:DisplayName'],
-                'children_count': x['t:ChildFolderCount'],
-                'folder_path': self._extract_folder_path(x.get('t:ExtendedProperty'))} for x in folders])
+                "id": x["t:FolderId"]["@Id"],
+                "display_name": x["t:DisplayName"],
+                "children_count": x["t:ChildFolderCount"],
+                "folder_path": self._extract_folder_path(x.get("t:ExtendedProperty"))} for x in folders])
 
             curr_folder_len = len(folders)
             if curr_folder_len < step_size:
@@ -1189,8 +1189,8 @@ class EWSOnPremConnector(BaseConnector):
             return input_dict
 
         for k, v in list(input_dict.items()):
-            if k.find(':') != -1:
-                new_key = k.replace(':', '_')
+            if k.find(":") != -1:
+                new_key = k.replace(":", "_")
                 input_dict[new_key] = v
                 del input_dict[k]
             if isinstance(v, dict):
@@ -1209,7 +1209,7 @@ class EWSOnPremConnector(BaseConnector):
     def _validate_range(self, email_range, action_result):
 
         try:
-            mini, maxi = (int(x) for x in email_range.split('-'))
+            mini, maxi = (int(x) for x in email_range.split("-"))
         except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Unable to parse the range. Please specify the range as min_offset-max_offset")
 
@@ -1252,7 +1252,7 @@ class EWSOnPremConnector(BaseConnector):
         folder_infos.append(folder_info)
 
         if not ignore_subfolders:
-            if int(parent_folder_info['children_count']) != 0:
+            if int(parent_folder_info["children_count"]) != 0:
                 ret_val, child_folder_infos = self._get_child_folder_infos(user, action_result, parent_folder_info=parent_folder_info)
                 if phantom.is_fail(ret_val):
                     return action_result.get_status(), None
@@ -1262,11 +1262,11 @@ class EWSOnPremConnector(BaseConnector):
 
         num_folder_ids = len(folder_infos)
 
-        self.save_progress('Will be searching in {0} folder{1}', num_folder_ids, 's' if num_folder_ids > 1 else '')
+        self.save_progress("Will be searching in {0} folder{1}", num_folder_ids, "s" if num_folder_ids > 1 else "")
 
         for i, folder_info in enumerate(folder_infos):
 
-            folder_id = folder_info['id']
+            folder_id = folder_info["id"]
 
             ar_folder = ActionResult()
             if aqs:
@@ -1282,19 +1282,19 @@ class EWSOnPremConnector(BaseConnector):
                 self.debug_print("Rest call failed: {0}".format(ar_folder.get_message()))
                 continue
 
-            resp_json = resp_json.get('m:RootFolder')
+            resp_json = resp_json.get("m:RootFolder")
 
             if not resp_json:
-                self.debug_print('Result does not contain RootFolder key')
+                self.debug_print("Result does not contain RootFolder key")
                 continue
 
-            items = resp_json.get('t:Items')
+            items = resp_json.get("t:Items")
 
             if items is None:
                 self.debug_print("There are no items in the response")
                 continue
 
-            items = resp_json.get('t:Items', {}).get('t:Message', [])
+            items = resp_json.get("t:Items", {}).get("t:Message", [])
 
             if not isinstance(items, list):
                 items = [items]
@@ -1303,8 +1303,8 @@ class EWSOnPremConnector(BaseConnector):
 
             for curr_item in items:
                 self._cleanse_key_names(curr_item)
-                curr_item['folder'] = folder_info['display_name']
-                curr_item['folder_path'] = folder_info.get('folder_path')
+                curr_item["folder"] = folder_info["display_name"]
+                curr_item["folder_path"] = folder_info.get("folder_path")
 
                 if flag:
                     msg_items.append(curr_item)
@@ -1354,12 +1354,12 @@ class EWSOnPremConnector(BaseConnector):
         folder_path = param.get(EWSONPREM_JSON_FOLDER)
 
         self._target_user = user
-        ignore_subfolders = param.get('ignore_subfolders', False)
+        ignore_subfolders = param.get("ignore_subfolders", False)
 
         # self.save_progress("Searching in {0}\\{1}{2}".format(
         #     self._clean_str(user),
-        #     folder_path if folder_path else 'All Folders',
-        #     ' (and the children)' if (not ignore_subfolders) else ''))
+        #     folder_path if folder_path else "All Folders",
+        #     " (and the children)" if (not ignore_subfolders) else ""))
 
         email_range = param.get(EWSONPREM_JSON_RANGE, "0-10")
 
@@ -1385,7 +1385,7 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        action_result.update_summary({'emails_matched': items_matched})
+        action_result.update_summary({"emails_matched": items_matched})
         # Set the Status
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -1405,12 +1405,12 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print("Unable to query Email container", error_text)
             return None
 
-        if resp_json.get('count', 0) <= 0:
+        if resp_json.get("count", 0) <= 0:
             self.debug_print("No container matched")
             return None
 
         try:
-            container_id = resp_json.get('data', [])[0]['id']
+            container_id = resp_json.get("data", [])[0]["id"]
         except Exception as e:
             error_text = self._get_error_message_from_exception(e)
             self.debug_print("Container results, not proper", error_text)
@@ -1428,7 +1428,7 @@ class EWSOnPremConnector(BaseConnector):
         except ValueError as e:
             error_text = self._get_error_message_from_exception(e)
             return RetVal3(action_result.set_status(
-                phantom.APP_ERROR, 'Validation failed for the container_id. {0}'.format(error_text)), email_data, email_id)
+                phantom.APP_ERROR, "Validation failed for the container_id. {0}".format(error_text)), email_data, email_id)
 
         if phantom.is_fail(ret_val):
             return RetVal3(action_result.set_status(phantom.APP_ERROR, str(resp_data)), email_data, email_id)
@@ -1436,8 +1436,8 @@ class EWSOnPremConnector(BaseConnector):
         # Keep pylint happy
         resp_data = dict(resp_data)
 
-        email_data = resp_data.get('data', {}).get('raw_email')
-        email_id = resp_data['source_data_identifier']
+        email_data = resp_data.get("data", {}).get("raw_email")
+        email_id = resp_data["source_data_identifier"]
 
         if not email_data:
             return RetVal3(action_result.set_status(
@@ -1452,7 +1452,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             success, message, file_info = ph_rules.vault_info(vault_id=vault_id)
             file_info = list(file_info)[0]
-            file_path = file_info.get('path')
+            file_path = file_info.get("path")
         except Exception as e:
             error_text = self._get_error_message_from_exception(e)
             self.debug_print(error_text)
@@ -1476,14 +1476,14 @@ class EWSOnPremConnector(BaseConnector):
 
     def _decode_subject(self, subject, charset):
         # Decode subject unicode
-        decoded_subject = ''
-        subject = subject.split('?=\r\n\t=')
+        decoded_subject = ""
+        subject = subject.split("?=\r\n\t=")
         for sub in subject:
-            if '?UTF-8?B?' in sub:
-                sub = sub.replace('?UTF-8?B?', '').replace('?=', '')
+            if "?UTF-8?B?" in sub:
+                sub = sub.replace("?UTF-8?B?", "").replace("?=", "")
                 sub = base64.b64decode(sub)
-            elif '?UTF-8?Q?' in sub:
-                sub = sub.replace('?UTF-8?Q?', '').replace('?=', '')
+            elif "?UTF-8?Q?" in sub:
+                sub = sub.replace("?UTF-8?Q?", "").replace("?=", "")
                 sub = quopri.decodestring(sub)
             sub = sub.decode(charset)
             decoded_subject = "{}{}".format(decoded_subject, sub)
@@ -1495,8 +1495,8 @@ class EWSOnPremConnector(BaseConnector):
         # try to find all the decoded strings, we could have multiple decoded strings
         # or a single decoded string between two normal strings separated by \r\n
         # YEAH...it could get that messy
-        input_str = input_str.replace('\r\n', '')
-        encoded_strings = re.findall(r'=\?.*\?=', input_str, re.I)
+        input_str = input_str.replace("\r\n", "")
+        encoded_strings = re.findall(r"=\?.*\?=", input_str, re.I)
 
         # return input_str as is, no need to do any conversion
         if not encoded_strings:
@@ -1505,7 +1505,7 @@ class EWSOnPremConnector(BaseConnector):
         # get the decoded strings
         try:
             decoded_strings = [decode_header(x)[0] for x in encoded_strings]
-            decoded_strings = [{'value': x[0], 'encoding': x[1]} for x in decoded_strings]
+            decoded_strings = [{"value": x[0], "encoding": x[1]} for x in decoded_strings]
         except Exception as e:
             error_code, error_message = self._base_connector._get_error_message_from_exception(e)
             self.debug_print("Error code {0} while decoding string. Error Message: {1}".format(error_code, error_message))
@@ -1522,8 +1522,8 @@ class EWSOnPremConnector(BaseConnector):
                 # nothing to replace with
                 continue
 
-            value = decoded_string.get('value')
-            encoding = decoded_string.get('encoding')
+            value = decoded_string.get("value")
+            encoding = decoded_string.get("encoding")
 
             if not encoding or not value:
                 # nothing to replace with
@@ -1537,7 +1537,7 @@ class EWSOnPremConnector(BaseConnector):
                 input_str = input_str.replace(encoded_string, value)
             except Exception:
                 try:
-                    if encoding != 'utf-8':
+                    if encoding != "utf-8":
                         value = str(value, encoding)
                 except Exception:
                     pass
@@ -1561,7 +1561,7 @@ class EWSOnPremConnector(BaseConnector):
                 charset = mail.get_content_charset()
 
         if not charset:
-            charset = 'utf-8'
+            charset = "utf-8"
 
         if not email_headers:
             return {}
@@ -1575,26 +1575,26 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print("Error occurred while converting the header tuple into a dictionary. {}".format(error_text))
 
         # Decode unicode subject
-        # if '?UTF-8?' in headers['Subject']:
-        #     chars = 'utf-8'
-        #     headers['Subject'] = self._decode_subject(headers['Subject'], chars)
+        # if "?UTF-8?" in headers["Subject"]:
+        #     chars = "utf-8"
+        #     headers["Subject"] = self._decode_subject(headers["Subject"], chars)
 
         # Handle received separately
         received_headers = list()
         try:
-            received_headers = [self._get_string(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+            received_headers = [self._get_string(x[1], charset) for x in email_headers if x[0].lower() == "received"]
         except Exception as e:
             error_text = self._get_error_message_from_exception(e)
             self.debug_print("Error occurred while handling the received header tuple separately. {}".format(error_text))
 
         if received_headers:
-            headers['Received'] = received_headers
+            headers["Received"] = received_headers
 
         # handle the subject string, if required add a new key
-        subject = headers.get('Subject')
+        subject = headers.get("Subject")
         if subject:
             if isinstance(subject, str):
-                headers['decodedSubject'] = self._decode_uni_string(subject, subject)
+                headers["decodedSubject"] = self._decode_uni_string(subject, subject)
 
         return headers
 
@@ -1606,7 +1606,7 @@ class EWSOnPremConnector(BaseConnector):
             return RetVal2(action_result.set_status(
                 phantom.APP_ERROR, "Unable to create email object from data. Does not seem to be valid email"), None)
 
-        headers = mail.__dict__.get('_headers')
+        headers = mail.__dict__.get("_headers")
 
         if not headers:
             return RetVal2(action_result.set_status(
@@ -1705,26 +1705,26 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         if (not rfc822_format):
-            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain rfc822 data')
+            return action_result.set_status(phantom.APP_ERROR, "Result does not contain rfc822 data")
         """
 
-        message = resp_json.get('m_Items', {}).get('t_Message', {})
+        message = resp_json.get("m_Items", {}).get("t_Message", {})
 
         # Remove mime content because it can be very large
-        if 't_MimeContent' in message:
-            message.pop('t_MimeContent')
+        if "t_MimeContent" in message:
+            message.pop("t_MimeContent")
 
         action_result.add_data(message)
 
-        recipients_mailbox = message.get('t_ToRecipients', {}).get('t_Mailbox')
+        recipients_mailbox = message.get("t_ToRecipients", {}).get("t_Mailbox")
 
         if recipients_mailbox and (not isinstance(recipients_mailbox, list)):
-            message['t_ToRecipients']['t_Mailbox'] = [recipients_mailbox]
+            message["t_ToRecipients"]["t_Mailbox"] = [recipients_mailbox]
 
         summary = {
-            'subject': message.get('t_Subject'),
-            'create_time': message.get('t_DateTimeCreated'),
-            'sent_time': message.get('t_DateTimeSent')
+            "subject": message.get("t_Subject"),
+            "create_time": message.get("t_DateTimeCreated"),
+            "sent_time": message.get("t_DateTimeSent")
         }
 
         action_result.update_summary(summary)
@@ -1741,7 +1741,7 @@ class EWSOnPremConnector(BaseConnector):
         container_id = param.get(EWS_JSON_CONTAINER_ID)
         vault_id = param.get(EWS_JSON_VAULT_ID)
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
-        use_current_container = param.get('use_current_container')
+        use_current_container = param.get("use_current_container")
         target_container_id = None
         flag = False
         email_id = None
@@ -1831,8 +1831,8 @@ class EWSOnPremConnector(BaseConnector):
 
         email_id = param[EWSONPREM_JSON_ID]
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
-        category = param.get('category')
-        subject = param.get('subject')
+        category = param.get("category")
+        subject = param.get("subject")
 
         if subject is None and category is None:
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
@@ -1854,12 +1854,12 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         try:
-            change_key = resp_json['m:Items']['t:Message']['t:ItemId']['@ChangeKey']
+            change_key = resp_json["m:Items"]["t:Message"]["t:ItemId"]["@ChangeKey"]
         except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Unable to get the change key of the email to update")
 
         if category is not None:
-            category = [x.strip() for x in category.split(',')]
+            category = [x.strip() for x in category.split(",")]
 
         try:
             data = ews_soap.get_update_email(email_id, change_key, category, subject)
@@ -1874,7 +1874,7 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status()
 
         if not resp_json:
-            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
+            return action_result.set_status(phantom.APP_ERROR, "Result does not contain RootFolder key")
         try:
             data = ews_soap.xml_get_emails_data([email_id])
         except Exception as e:
@@ -1889,25 +1889,25 @@ class EWSOnPremConnector(BaseConnector):
 
         self._cleanse_key_names(resp_json)
 
-        message = resp_json.get('m_Items', {}).get('t_Message', {})
+        message = resp_json.get("m_Items", {}).get("t_Message", {})
 
-        categories = message.get('t_Categories', {}).get('t_String')
+        categories = message.get("t_Categories", {}).get("t_String")
         if categories:
             if not isinstance(categories, list):
                 categories = [categories]
-            message['t_Categories'] = categories
+            message["t_Categories"] = categories
 
         action_result.add_data(message)
 
-        recipients_mailbox = message.get('t_ToRecipients', {}).get('t_Mailbox')
+        recipients_mailbox = message.get("t_ToRecipients", {}).get("t_Mailbox")
 
         if recipients_mailbox and (not isinstance(recipients_mailbox, list)):
-            message['t_ToRecipients']['t_Mailbox'] = [recipients_mailbox]
+            message["t_ToRecipients"]["t_Mailbox"] = [recipients_mailbox]
 
         summary = {
-            'subject': message.get('t_Subject'),
-            'create_time': message.get('t_DateTimeCreated'),
-            'sent_time': message.get('t_DateTimeSent')
+            "subject": message.get("t_Subject"),
+            "create_time": message.get("t_DateTimeCreated"),
+            "sent_time": message.get("t_DateTimeSent")
         }
 
         action_result.update_summary(summary)
@@ -1932,7 +1932,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             self.add_action_result(action_result)
             error_text = self._get_error_message_from_exception(e)
-            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. {0}'.format(error_text))
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. {0}".format(error_text))
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_delete_response)
 
@@ -1943,7 +1943,7 @@ class EWSOnPremConnector(BaseConnector):
 
         if not resp_json:
             self.add_action_result(action_result)
-            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
+            return action_result.set_status(phantom.APP_ERROR, "Result does not contain RootFolder key")
 
         if not isinstance(resp_json, list):
             resp_json = [resp_json]
@@ -1954,9 +1954,9 @@ class EWSOnPremConnector(BaseConnector):
             curr_param.update({"id": msg_id})
             curr_ar = self.add_action_result(ActionResult(curr_param))
 
-            resp_class = resp_message.get('@ResponseClass', '')
+            resp_class = resp_message.get("@ResponseClass", "")
 
-            if resp_class == 'Error':
+            if resp_class == "Error":
                 curr_ar.set_status(phantom.APP_ERROR, EWSONPREM_FROM_SERVER_ERROR.format(**(self._get_error_details(resp_message))))
                 continue
             curr_ar.set_status(phantom.APP_SUCCESS, "Email deleted successfully")
@@ -1967,25 +1967,25 @@ class EWSOnPremConnector(BaseConnector):
     def _clean_str(self, string):
 
         if not string:
-            return ''
+            return ""
 
-        return string.replace('{', '-').replace('}', '-')
+        return string.replace("{", "-").replace("}", "-")
 
     def _extract_folder_path(self, extended_property):
 
         if not extended_property:
-            return ''
+            return ""
 
         # As of right now, the folder path is the only extended property
         # that the app extracts, so parse the value directly, once the app starts
-        # parsing other extended properties, the 't:ExtendedFieldURI dictionary will
+        # parsing other extended properties, the "t:ExtendedFieldURI dictionary will
         # require to be parsed and validated
-        value = extended_property.get('t:Value')
+        value = extended_property.get("t:Value")
 
         if not value:
-            return ''
+            return ""
 
-        value = value.lstrip('\\')
+        value = value.lstrip("\\")
 
         # I don't know why exchange gives back the path with
         # '\\' separators since '\' is a valid char allowed in a folder name
@@ -1995,7 +1995,7 @@ class EWSOnPremConnector(BaseConnector):
         # value = value.replace('\\', '/')
 
         if not value:
-            return ''
+            return ""
 
         try:
             str(value)
@@ -2007,11 +2007,11 @@ class EWSOnPremConnector(BaseConnector):
     def _get_root_folder_id(self, action_result, is_public_folder=False):
 
         if is_public_folder:
-            root_folder_id = 'publicfoldersroot'
+            root_folder_id = "publicfoldersroot"
         else:
-            root_folder_id = 'root'
+            root_folder_id = "root"
 
-        folder_info = {'id': root_folder_id, 'display_name': root_folder_id, 'children_count': -1, 'folder_path': ''}
+        folder_info = {"id": root_folder_id, "display_name": root_folder_id, "children_count": -1, "folder_path": ""}
 
         return phantom.APP_SUCCESS, folder_info
 
@@ -2024,7 +2024,7 @@ class EWSOnPremConnector(BaseConnector):
             return action_result(phantom.APP_ERROR, "Unable to find info about folder '{0}'. Returned info list empty".format(folder_name)), None
 
         for curr_folder in folder_list:
-            curr_folder_path = self._extract_folder_path(curr_folder.get('t:ExtendedProperty'))
+            curr_folder_path = self._extract_folder_path(curr_folder.get("t:ExtendedProperty"))
 
             if UnicodeDammit(curr_folder_path).unicode_markup == UnicodeDammit(folder_path).unicode_markup:
                 return phantom.APP_SUCCESS, curr_folder
@@ -2035,26 +2035,26 @@ class EWSOnPremConnector(BaseConnector):
     def _get_folder_info(self, user, folder_path, action_result, is_public_folder=False):
         # hindsight is always 20-20, set the folder path separator to be '/', thinking folder names allow '\' as a char.
         # turns out even '/' is supported by office365, so let the action escape the '/' char if it's part of the folder name
-        folder_path = folder_path.replace('\\/', self.REPLACE_CONST)
-        folder_names = folder_path.split('/')
+        folder_path = folder_path.replace("\\/", self.REPLACE_CONST)
+        folder_names = folder_path.split("/")
 
         folder_names = list(filter(None, folder_names))
         if not folder_names:
             return action_result.set_status(phantom.APP_ERROR, "Please provide a valid value for folder path"), None
 
         for i, folder_name in enumerate(folder_names):
-            folder_names[i] = folder_name.replace(self.REPLACE_CONST, '/')
+            folder_names[i] = folder_name.replace(self.REPLACE_CONST, "/")
 
         if is_public_folder:
-            parent_folder_id = 'publicfoldersroot'
+            parent_folder_id = "publicfoldersroot"
         else:
-            parent_folder_id = 'root'
+            parent_folder_id = "root"
 
         for i, folder_name in enumerate(folder_names):
 
-            curr_valid_folder_path = '\\'.join(folder_names[:i + 1])
+            curr_valid_folder_path = "\\".join(folder_names[:i + 1])
 
-            self.save_progress('Getting info about {0}\\{1}'.format(self._clean_str(user), curr_valid_folder_path))
+            self.save_progress("Getting info about {0}\\{1}".format(self._clean_str(user), curr_valid_folder_path))
 
             input_xml = ews_soap.xml_get_children_info(user, child_folder_name=folder_name, parent_folder_id=parent_folder_id)
 
@@ -2063,13 +2063,13 @@ class EWSOnPremConnector(BaseConnector):
             if phantom.is_fail(ret_val):
                 return ret_val, None
 
-            total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
+            total_items = resp_json.get("m:RootFolder", {}).get("@TotalItemsInView", "0")
 
-            if total_items == '0':
+            if total_items == "0":
                 return action_result.set_status(
                     phantom.APP_ERROR, "Folder '{0}' not found, possibly not present".format(curr_valid_folder_path)), None
 
-            folder = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
+            folder = resp_json.get("m:RootFolder", {}).get("t:Folders", {}).get("t:Folder")
 
             if not folder:
                 return action_result.set_status(
@@ -2091,7 +2091,7 @@ class EWSOnPremConnector(BaseConnector):
                     "Information for folder '{0}' not found in response, possibly not present".format(curr_valid_folder_path)
                 ), None
 
-            folder_id = folder.get('t:FolderId', {}).get('@Id')
+            folder_id = folder.get("t:FolderId", {}).get("@Id")
 
             if not folder_id:
                 return action_result.set_status(
@@ -2101,10 +2101,10 @@ class EWSOnPremConnector(BaseConnector):
 
             parent_folder_id = folder_id
             folder_info = {
-                'id': folder_id,
-                'display_name': folder.get('t:DisplayName'),
-                'children_count': folder.get('t:ChildFolderCount'),
-                'folder_path': self._extract_folder_path(folder.get('t:ExtendedProperty'))
+                "id": folder_id,
+                "display_name": folder.get("t:DisplayName"),
+                "children_count": folder.get("t:ChildFolderCount"),
+                "folder_path": self._extract_folder_path(folder.get("t:ExtendedProperty"))
             }
 
         return phantom.APP_SUCCESS, folder_info
@@ -2118,9 +2118,9 @@ class EWSOnPremConnector(BaseConnector):
 
         message_id = param[EWSONPREM_JSON_ID]
 
-        move_email = param.get('move_to_junk_folder', param.get('move_from_junk_folder', False))
+        move_email = param.get("move_to_junk_folder", param.get("move_from_junk_folder", False))
 
-        is_junk = True if action == 'block' else False
+        is_junk = True if action == "block" else False
 
         if EWSONPREM_JSON_EMAIL in param:
             self._target_user = param[EWSONPREM_JSON_EMAIL]
@@ -2141,12 +2141,12 @@ class EWSOnPremConnector(BaseConnector):
 
         if move_email:
             try:
-                new_email_id = resp_json['m:MovedItemId']['@Id']
+                new_email_id = resp_json["m:MovedItemId"]["@Id"]
             except Exception:
                 return action_result.set_status(phantom.APP_SUCCESS, "Unable to get moved Email ID")
 
-            action_result.add_data({'new_email_id': new_email_id})
-            action_result.update_summary({'new_email_id': new_email_id})
+            action_result.add_data({"new_email_id": new_email_id})
+            action_result.update_summary({"new_email_id": new_email_id})
 
             if new_email_id != message_id:
                 # Looks like the email was actually moved
@@ -2189,18 +2189,18 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status()
 
         try:
-            data = ews_soap.get_copy_email(message_id, folder_info['id'])
+            data = ews_soap.get_copy_email(message_id, folder_info["id"])
         except Exception as e:
             error_text = self._get_error_message_from_exception(e)
-            return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. {0}'.format(error_text))
+            return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. {0}".format(error_text))
         response_checker = self._check_copy_response
 
         if action == "move":
             try:
-                data = ews_soap.get_move_email(message_id, folder_info['id'])
+                data = ews_soap.get_move_email(message_id, folder_info["id"])
             except Exception as e:
                 error_text = self._get_error_message_from_exception(e)
-                return action_result.set_status(phantom.APP_ERROR, 'Parameter validation failed for the ID. {0}'.format(error_text))
+                return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the ID. {0}".format(error_text))
             response_checker = self._check_move_response
 
         ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
@@ -2210,19 +2210,19 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status()
 
         if not resp_json:
-            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
+            return action_result.set_status(phantom.APP_ERROR, "Result does not contain RootFolder key")
 
         new_email_id = None
 
-        action_verb = 'copied' if action == "copy" else 'moved'
+        action_verb = "copied" if action == "copy" else "moved"
 
         try:
-            new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
+            new_email_id = resp_json["m:Items"]["t:Message"]["t:ItemId"]["@Id"]
         except Exception:
             return action_result.set_status(
                 phantom.APP_SUCCESS, "Email {0} successfully, but its message ID could not be retrieved".format(action_verb))
 
-        action_result.add_data({'new_email_id': new_email_id})
+        action_result.add_data({"new_email_id": new_email_id})
 
         # Set the Status
         return action_result.set_status(phantom.APP_SUCCESS, "Email {0} successfully".format(action_verb))
@@ -2245,35 +2245,35 @@ class EWSOnPremConnector(BaseConnector):
         # Process errors
         if phantom.is_fail(ret_val):
             message = action_result.get_message()
-            if 'ErrorNameResolutionNoResults' in message:
-                message = 'No email found. The input parameter might not be a valid alias or email.'
+            if "ErrorNameResolutionNoResults" in message:
+                message = "No email found. The input parameter might not be a valid alias or email."
 
             return action_result.set_status(phantom.APP_ERROR, message)
 
         if not resp_json:
-            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
+            return action_result.set_status(phantom.APP_ERROR, "Result does not contain RootFolder key")
 
-        resolution_set = resp_json.get('m:ResolutionSet', {}).get('t:Resolution')
+        resolution_set = resp_json.get("m:ResolutionSet", {}).get("t:Resolution")
 
         if not resolution_set:
-            return action_result.set_summary({'total_entries': 0})
+            return action_result.set_summary({"total_entries": 0})
 
         if not isinstance(resolution_set, list):
             resolution_set = [resolution_set]
 
-        action_result.update_summary({'total_entries': len(resolution_set)})
+        action_result.update_summary({"total_entries": len(resolution_set)})
 
         for curr_resolution in resolution_set:
 
             self._cleanse_key_names(curr_resolution)
 
-            contact = curr_resolution.get('t_Contact')
+            contact = curr_resolution.get("t_Contact")
             if contact:
-                email_addresses = contact.get('t_EmailAddresses', {}).get('t_Entry', [])
+                email_addresses = contact.get("t_EmailAddresses", {}).get("t_Entry", [])
                 if email_addresses:
                     if not isinstance(email_addresses, list):
                         email_addresses = [email_addresses]
-                    contact['t_EmailAddresses'] = email_addresses
+                    contact["t_EmailAddresses"] = email_addresses
 
             action_result.add_data(curr_resolution)
 
@@ -2299,28 +2299,28 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
 
             message = action_result.get_message()
-            if 'ErrorNameResolutionNoResults' in message:
-                message = '{} The input parameter might not be a distribution list.'.format(message)
+            if "ErrorNameResolutionNoResults" in message:
+                message = "{} The input parameter might not be a distribution list.".format(message)
                 action_result.add_data({"t_EmailAddress": group})
             return action_result.set_status(phantom.APP_ERROR, message)
 
         if not resp_json:
-            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
+            return action_result.set_status(phantom.APP_ERROR, "Result does not contain RootFolder key")
 
-        mailboxes = resp_json.get('m:DLExpansion', {}).get('t:Mailbox')
+        mailboxes = resp_json.get("m:DLExpansion", {}).get("t:Mailbox")
 
         if not mailboxes:
-            action_result.set_summary({'total_entries': 0})
+            action_result.set_summary({"total_entries": 0})
             return action_result.set_status(phantom.APP_SUCCESS)
 
         if not isinstance(mailboxes, list):
             mailboxes = [mailboxes]
 
-        action_result.update_summary({'total_entries': len(mailboxes)})
+        action_result.update_summary({"total_entries": len(mailboxes)})
 
         for mailbox in mailboxes:
-            if param.get('recursive', False) and "DL" in mailbox['t:MailboxType']:
-                param[EWSONPREM_JSON_GROUP] = mailbox['t:EmailAddress']
+            if param.get("recursive", False) and "DL" in mailbox["t:MailboxType"]:
+                param[EWSONPREM_JSON_GROUP] = mailbox["t:EmailAddress"]
                 self._expand_dl(param)
             self._cleanse_key_names(mailbox)
             action_result.add_data(mailbox)
@@ -2334,7 +2334,7 @@ class EWSOnPremConnector(BaseConnector):
     def _get_rfc822_format(self, resp_json, action_result):
 
         try:
-            mime_content = resp_json['m:Items']['t:Message']['t:MimeContent']['#text']
+            mime_content = resp_json["m:Items"]["t:Message"]["t:MimeContent"]["#text"]
         except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Email MimeContent missing in response.")
 
@@ -2352,17 +2352,17 @@ class EWSOnPremConnector(BaseConnector):
         attach_meta_info = dict()
 
         try:
-            attach_meta_info['attachmentId'] = attachment['t:AttachmentId']['@Id']
+            attach_meta_info["attachmentId"] = attachment["t:AttachmentId"]["@Id"]
         except Exception:
             pass
 
         try:
-            attach_meta_info['attachmentType'] = curr_key[2:].replace('Attachment', '').lower()
+            attach_meta_info["attachmentType"] = curr_key[2:].replace("Attachment", "").lower()
         except Exception:
             pass
 
-        attach_meta_info['parentInternetMessageId'] = parent_internet_message_id
-        attach_meta_info['parentGuid'] = parent_guid
+        attach_meta_info["parentInternetMessageId"] = parent_internet_message_id
+        attach_meta_info["parentGuid"] = parent_guid
 
         # attachmentID, attachmentType
         for k, v in six.iteritems(attachment):
@@ -2382,13 +2382,13 @@ class EWSOnPremConnector(BaseConnector):
         email_headers_ret = list()
         attach_meta_info_ret = list()
 
-        if 'm:Items' not in resp_json:
+        if "m:Items" not in resp_json:
             k = list(resp_json.keys())[0]
-            resp_json['m:Items'] = resp_json.pop(k)
+            resp_json["m:Items"] = resp_json.pop(k)
 
         # Get the attachments
         try:
-            attachments = resp_json['m:Items']['t:Message']['t:Attachments']
+            attachments = resp_json["m:Items"]["t:Message"]["t:Attachments"]
         except Exception:
             return RetVal3(phantom.APP_SUCCESS)
 
@@ -2396,11 +2396,11 @@ class EWSOnPremConnector(BaseConnector):
 
         internet_message_id = None
         try:
-            internet_message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
+            internet_message_id = resp_json["m:Items"]["t:Message"]["t:InternetMessageId"]
         except Exception:
             internet_message_id = None
 
-        email_guid = resp_json['emailGuid']
+        email_guid = resp_json["emailGuid"]
 
         for curr_key in list(attachments.keys()):
 
@@ -2411,7 +2411,7 @@ class EWSOnPremConnector(BaseConnector):
 
             for curr_attachment in attachment_data:
 
-                attachment_ids.append(curr_attachment['t:AttachmentId']['@Id'])
+                attachment_ids.append(curr_attachment["t:AttachmentId"]["@Id"])
                 # Add the info that we have right now
                 curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment, curr_key, internet_message_id, email_guid)
                 if curr_attach_meta_info:
@@ -2436,7 +2436,7 @@ class EWSOnPremConnector(BaseConnector):
         for curr_attachment_data in resp_json:
 
             try:
-                curr_attachment_data = curr_attachment_data['m:Attachments']
+                curr_attachment_data = curr_attachment_data["m:Attachments"]
             except Exception as e:
                 error_text = self._get_error_message_from_exception(e)
                 self.debug_print("Could not parse the attachments response", error_text)
@@ -2444,7 +2444,7 @@ class EWSOnPremConnector(BaseConnector):
             if curr_attachment_data is None:
                 self.debug_print("Could not parse the attachments response")
                 continue
-            curr_attachment_data['emailGuid'] = str(uuid.uuid4())
+            curr_attachment_data["emailGuid"] = str(uuid.uuid4())
             ret_val, data = self._extract_ext_properties(curr_attachment_data, internet_message_id, email_guid)
 
             if data:
@@ -2459,11 +2459,11 @@ class EWSOnPremConnector(BaseConnector):
                 # But update it with the call to the xml_get_attachments_data(..) There might be more info
                 # that has to be updated
                 curr_attach_meta_info = self._get_attachment_meta_info(
-                    curr_attachment_data['m:Items'], 't:FileAttachment', internet_message_id, email_guid)
+                    curr_attachment_data["m:Items"], "t:FileAttachment", internet_message_id, email_guid)
                 if curr_attach_meta_info:
                     # find the attachment in the list and update it
                     matched_meta_info = list(
-                        [x for x in attach_meta_info_ret if x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2')]
+                        [x for x in attach_meta_info_ret if x.get("attachmentId", "foo1") == curr_attach_meta_info.get("attachmentId", "foo2")]
                     )
                     if matched_meta_info:
                         matched_meta_info[0].update(curr_attach_meta_info)
@@ -2482,7 +2482,7 @@ class EWSOnPremConnector(BaseConnector):
         email_headers = list(email_part.items())
 
         headers = {}
-        charset = 'utf-8'
+        charset = "utf-8"
 
         try:
             [headers.update({x[0]: self._get_string(x[1], charset)}) for x in email_headers]
@@ -2493,28 +2493,28 @@ class EWSOnPremConnector(BaseConnector):
         # Handle received separately
         try:
             received_headers = list()
-            received_headers = [self._get_string(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+            received_headers = [self._get_string(x[1], charset) for x in email_headers if x[0].lower() == "received"]
         except Exception as e:
             error_text = self._get_error_message_from_exception(e)
             self.debug_print("Error occurred while handling the received header tuple separately. {}".format(error_text))
 
         if received_headers:
-            headers['Received'] = received_headers
+            headers["Received"] = received_headers
 
         return headers
 
     def _extract_ext_properties(self, resp_json, parent_internet_message_id=None, parent_guid=None):
 
-        if 'm:Items' not in resp_json:
+        if "m:Items" not in resp_json:
             k = list(resp_json.keys())[0]
-            resp_json['m:Items'] = resp_json.pop(k)
+            resp_json["m:Items"] = resp_json.pop(k)
 
         headers = dict()
         extended_properties = list()
 
         # Get the Extended Properties
         try:
-            extended_properties = resp_json['m:Items']['t:Message']['t:ExtendedProperty']
+            extended_properties = resp_json["m:Items"]["t:Message"]["t:ExtendedProperty"]
         except Exception:
             pass
 
@@ -2524,8 +2524,8 @@ class EWSOnPremConnector(BaseConnector):
 
             for curr_ext_property in extended_properties:
 
-                property_tag = curr_ext_property.get('t:ExtendedFieldURI', {}).get('@PropertyTag')
-                value = curr_ext_property.get('t:Value')
+                property_tag = curr_ext_property.get("t:ExtendedFieldURI", {}).get("@PropertyTag")
+                value = curr_ext_property.get("t:Value")
 
                 if not property_tag:
                     continue
@@ -2537,49 +2537,49 @@ class EWSOnPremConnector(BaseConnector):
                         headers.update(email_headers)
                         continue
                 if property_tag == ews_soap.EXTENDED_PROPERTY_BODY_TEXT:
-                    headers.update({'bodyText': value})
+                    headers.update({"bodyText": value})
 
         # now parse the body in the main resp_json
         try:
-            body_text = resp_json['m:Items']['t:Message']['t:Body']['#text']
+            body_text = resp_json["m:Items"]["t:Message"]["t:Body"]["#text"]
         except Exception:
             body_text = None
 
         try:
-            body_type = resp_json['m:Items']['t:Message']['t:Body']['@BodyType']
+            body_type = resp_json["m:Items"]["t:Message"]["t:Body"]["@BodyType"]
         except Exception:
             body_type = None
 
         if body_text is not None:
             if body_type is not None:
-                body_key = "body{0}".format(body_type.title().replace(' ', ''))
+                body_key = "body{0}".format(body_type.title().replace(" ", ""))
                 headers.update({body_key: body_text})
 
         # In some cases the message id is not part of the headers, in this case
         # copy the message id from the envelope to the header
         headers_ci = CaseInsensitiveDict(headers)
-        message_id = headers_ci.get('message-id')
+        message_id = headers_ci.get("message-id")
         if message_id is None:
             try:
-                message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
-                headers['Message-ID'] = message_id
+                message_id = resp_json["m:Items"]["t:Message"]["t:InternetMessageId"]
+                headers["Message-ID"] = message_id
             except Exception:
                 pass
 
         if parent_internet_message_id is not None:
-            headers['parentInternetMessageId'] = parent_internet_message_id
+            headers["parentInternetMessageId"] = parent_internet_message_id
 
         if parent_guid is not None:
-            headers['parentGuid'] = parent_guid
+            headers["parentGuid"] = parent_guid
 
-        headers['emailGuid'] = resp_json['emailGuid']
+        headers["emailGuid"] = resp_json["emailGuid"]
 
         return phantom.APP_SUCCESS, headers
 
     def _parse_email(self, resp_json, email_id, target_container_id, flag=False):
 
         try:
-            mime_content = resp_json['m:Items']['t:Message']['t:MimeContent']['#text']
+            mime_content = resp_json["m:Items"]["t:Message"]["t:MimeContent"]["#text"]
         except Exception:
             return phantom.APP_ERROR, "Email MimeContent missing in response."
 
@@ -2595,7 +2595,7 @@ class EWSOnPremConnector(BaseConnector):
 
         email_header_list = list()
         attach_meta_info_list = list()
-        resp_json['emailGuid'] = str(uuid.uuid4())
+        resp_json["emailGuid"] = str(uuid.uuid4())
 
         ret_val, data = self._extract_ext_properties(resp_json)
 
@@ -2664,7 +2664,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._target_user = poll_user
 
-        folder_path = config.get(EWS_JSON_POLL_FOLDER, 'Inbox')
+        folder_path = config.get(EWS_JSON_POLL_FOLDER, "Inbox")
 
         is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
@@ -2673,7 +2673,7 @@ class EWSOnPremConnector(BaseConnector):
             return ret_val, None
 
         manner = config[EWS_JSON_INGEST_MANNER]
-        folder_id = folder_info['id']
+        folder_id = folder_info["id"]
 
         order = "Ascending"
         if manner == EWS_INGEST_LATEST_EMAILS:
@@ -2693,23 +2693,23 @@ class EWSOnPremConnector(BaseConnector):
             # return error
             return ret_val, None
 
-        resp_json = resp_json.get('m:RootFolder')
+        resp_json = resp_json.get("m:RootFolder")
 
         if not resp_json:
-            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain required RootFolder key'), None
+            return action_result.set_status(phantom.APP_ERROR, "Result does not contain required RootFolder key"), None
 
-        items = resp_json.get('t:Items')
+        items = resp_json.get("t:Items")
 
         if items is None:
             self.debug_print("Items is None")
-            return action_result.set_status(phantom.APP_SUCCESS, 'Result does not contain items key. Possibly no emails in folder'), None
+            return action_result.set_status(phantom.APP_SUCCESS, "Result does not contain items key. Possibly no emails in folder"), None
 
-        items = resp_json.get('t:Items', {}).get('t:Message', [])
+        items = resp_json.get("t:Items", {}).get("t:Message", [])
 
         if not isinstance(items, list):
             items = [items]
 
-        email_infos = [{'id': x['t:ItemId']['@Id'], 'last_modified_time': x['t:LastModifiedTime']} for x in items]
+        email_infos = [{"id": x["t:ItemId"]["@Id"], "last_modified_time": x["t:LastModifiedTime"]} for x in items]
 
         return phantom.APP_SUCCESS, email_infos
 
@@ -2721,7 +2721,7 @@ class EWSOnPremConnector(BaseConnector):
         if email_ids is None:
             return action_result.set_status(phantom.APP_ERROR, "Did not get access to email IDs")
 
-        self.save_progress("Got {0} email{1}".format(len(email_ids), '' if len(email_ids) == 1 else 's'))
+        self.save_progress("Got {0} email{1}".format(len(email_ids), "" if len(email_ids) == 1 else "s"))
 
         failed_emails_parsing_list = []
         for i, email_id in enumerate(email_ids):
@@ -2753,9 +2753,9 @@ class EWSOnPremConnector(BaseConnector):
 
         fips_enabled = is_fips_enabled()
         if fips_enabled:
-            self.debug_print('FIPS is enabled')
+            self.debug_print("FIPS is enabled")
         else:
-            self.debug_print('FIPS is not enabled')
+            self.debug_print("FIPS is not enabled")
         return fips_enabled
 
     def _poll_now(self, param):
@@ -2799,7 +2799,7 @@ class EWSOnPremConnector(BaseConnector):
             if not email_infos:
                 return action_result.set_status(phantom.APP_SUCCESS, "No emails found for the ingestion process")
 
-            email_ids = [x['id'] for x in email_infos]
+            email_ids = [x["id"] for x in email_infos]
         else:
             self.save_progress("POLL NOW Getting the single email id")
 
@@ -2814,7 +2814,7 @@ class EWSOnPremConnector(BaseConnector):
 
         config = self.get_config()
 
-        emails_after_key = 'last_ingested_format' if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS else 'last_email_format'
+        emails_after_key = "last_ingested_format" if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS else "last_email_format"
 
         date_time_string = self._state.get(emails_after_key)
 
@@ -2837,8 +2837,8 @@ class EWSOnPremConnector(BaseConnector):
     def _manage_data_duplication(self, email_infos, email_index, max_emails, total_ingested, limit):
         # Define current time to store as starting reference for the next run of scheduled | interval polling
         utc_now = datetime.utcnow()
-        self._state['last_ingested_format'] = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
-        self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
+        self._state["last_ingested_format"] = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        self._state["last_email_format"] = email_infos[email_index]["last_modified_time"]
 
         # deepcopy is used for self._state, because otherwise self._encrypt_client_token()
         # and self.rsh._encrypt_state() will modify self._state by reference and the encrypted
@@ -2856,7 +2856,7 @@ class EWSOnPremConnector(BaseConnector):
             if total_ingested >= limit:
                 return None, None
             next_cycle_repeat_data = 0
-            last_modified_time = email_infos[email_index]['last_modified_time']
+            last_modified_time = email_infos[email_index]["last_modified_time"]
             for x in reversed(email_infos):
                 if x["last_modified_time"] == last_modified_time:
                     next_cycle_repeat_data += 1
@@ -2892,7 +2892,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # handle poll_now i.e. scheduled poll
         # Get the email ids that we will be querying for, different set for first run
-        if self._state.get('first_run', True):
+        if self._state.get("first_run", True):
             # set the config to _not_ first run
             max_emails = first_run_max_emails
             self.save_progress("First time Ingestion detected.")
@@ -2921,7 +2921,7 @@ class EWSOnPremConnector(BaseConnector):
             # The last email is the latest in the list returned
             email_index = 0 if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS else -1
 
-            email_ids = [x['id'] for x in email_infos]
+            email_ids = [x["id"] for x in email_infos]
             ret_val = self._process_email_ids(email_ids, action_result)
 
             if phantom.is_fail(ret_val):
@@ -2932,15 +2932,15 @@ class EWSOnPremConnector(BaseConnector):
                 break
 
         # Save the state file data only if the ingestion gets successfully completed
-        if self._state.get('first_run', True):
-            self._state['first_run'] = False
+        if self._state.get("first_run", True):
+            self._state["first_run"] = False
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_trace_error_details(self, response):
 
         self.debug_print("Response text: {}".format(response.text))
-        if 'json' in response.headers.get('Content-Type', ''):
+        if "json" in response.headers.get("Content-Type", ""):
             try:
                 r_json = json.loads(response.text)
                 error_code = r_json["error"]["code"] or response.status_code
@@ -2958,13 +2958,13 @@ class EWSOnPremConnector(BaseConnector):
             for element in soup(["script", "style", "footer", "nav"]):
                 element.extract()
             error_text = soup.text
-            split_lines = error_text.split('\n')
+            split_lines = error_text.split("\n")
             split_lines = [x.strip() for x in split_lines if x.strip()]
-            error_text = '\n'.join(split_lines)
-            error_text = error_text.replace('{', '{{').replace('}', '}}')
+            error_text = "\n".join(split_lines)
+            error_text = error_text.replace("{", "{{").replace("}", "}}")
         except Exception:
             error_text = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
-                response.status_code, response.text.replace('{', '{{').replace('}', '}}'))
+                response.status_code, response.text.replace("{", "{{").replace("}", "}}"))
 
         if len(error_text) > 500:
             error_text = "Error while connecting to the server"
@@ -2976,15 +2976,15 @@ class EWSOnPremConnector(BaseConnector):
         :return: filter_str: Filter string
         """
 
-        sender_address = param.get('sender_address', '')
-        recipient_address = param.get('recipient_address', '')
-        status = param.get('status', '')
-        start_date = param.get('start_date', '')
-        end_date = param.get('end_date', '')
-        from_ip = param.get('from_ip', '')
-        to_ip = param.get('to_ip', '')
-        internet_message_id = param.get('internet_message_id', '')
-        message_trace_id = param.get('message_trace_id', '')
+        sender_address = param.get("sender_address", "")
+        recipient_address = param.get("recipient_address", "")
+        status = param.get("status", "")
+        start_date = param.get("start_date", "")
+        end_date = param.get("end_date", "")
+        from_ip = param.get("from_ip", "")
+        to_ip = param.get("to_ip", "")
+        internet_message_id = param.get("internet_message_id", "")
+        message_trace_id = param.get("message_trace_id", "")
 
         if (start_date and not end_date) or (end_date and not start_date):
             return action_result.set_status(phantom.APP_ERROR, "Please specify both the 'start date' and 'end date' parameters"), {}
@@ -2992,26 +2992,26 @@ class EWSOnPremConnector(BaseConnector):
         params = {}
         if sender_address:
             sender_list = list(filter(None, [x.strip() for x in sender_address.split(",")]))
-            params['SenderAddress'] = "'{}'".format(",".join(set(sender_list)))
+            params["SenderAddress"] = "'{}'".format(",".join(set(sender_list)))
         if recipient_address:
             recipient_list = list(filter(None, [x.strip() for x in recipient_address.split(",")]))
-            params['RecipientAddress'] = "'{}'".format(",".join(set(recipient_list)))
+            params["RecipientAddress"] = "'{}'".format(",".join(set(recipient_list)))
         if status:
             status_list = list(filter(None, [x.strip() for x in status.split(",")]))
             status_list = ["" if x.lower() == "none" else x for x in status_list]
-            params['Status'] = "'{}'".format(",".join(set(status_list)))
+            params["Status"] = "'{}'".format(",".join(set(status_list)))
         if start_date:
-            params['StartDate'] = "datetime'{}'".format(start_date)
+            params["StartDate"] = "datetime'{}'".format(start_date)
         if end_date:
-            params['EndDate'] = "datetime'{}'".format(end_date)
+            params["EndDate"] = "datetime'{}'".format(end_date)
         if from_ip:
-            params['FromIP'] = "'{}'".format(from_ip)
+            params["FromIP"] = "'{}'".format(from_ip)
         if to_ip:
-            params['ToIP'] = "'{}'".format(to_ip)
+            params["ToIP"] = "'{}'".format(to_ip)
         if internet_message_id:
-            params['MessageId'] = "'{}'".format(internet_message_id)
+            params["MessageId"] = "'{}'".format(internet_message_id)
         if message_trace_id:
-            params['MessageTraceId'] = "guid'{}'".format(message_trace_id)
+            params["MessageTraceId"] = "guid'{}'".format(message_trace_id)
 
         filter_str = ""
         for key, value in params.items():
@@ -3041,14 +3041,14 @@ class EWSOnPremConnector(BaseConnector):
             ret_val = self._validate_range(email_range, action_result)
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
-            mini, maxi = (int(x) for x in email_range.split('-'))
+            mini, maxi = (int(x) for x in email_range.split("-"))
 
         config = self.get_config()
         if phantom.APP_JSON_PASSWORD not in config:
             return action_result.set_status(phantom.APP_ERROR, "Password is required for the 'trace email' action")
 
         password = config[phantom.APP_JSON_PASSWORD]
-        username = config[phantom.APP_JSON_USERNAME].replace('/', '\\')
+        username = config[phantom.APP_JSON_USERNAME].replace("/", "\\")
         auth = HTTPBasicAuth(username, password)
 
         trace_url = EWS_TRACE_URL
@@ -3079,15 +3079,15 @@ class EWSOnPremConnector(BaseConnector):
 
             parameter = {"$format": "Json"}
 
-        if param.get('widget_filter', False):
+        if param.get("widget_filter", False):
             for email_dict in results:
-                email_dict['MessageId'] = email_dict['MessageId'].replace('>', '').replace('<', '')
+                email_dict["MessageId"] = email_dict["MessageId"].replace(">", "").replace("<", "")
 
         results = results[mini:maxi + 1]
         action_result.add_data(results)
 
         summary = action_result.update_summary({})
-        summary['emails_found'] = len(results)
+        summary["emails_found"] = len(results)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -3112,11 +3112,11 @@ class EWSOnPremConnector(BaseConnector):
         elif action == self.ACTION_ID_COPY_EMAIL:
             ret_val = self._copy_move_email(param)
         elif action == self.ACTION_ID_MOVE_EMAIL:
-            ret_val = self._copy_move_email(param, action='move')
+            ret_val = self._copy_move_email(param, action="move")
         elif action == self.ACTION_ID_BLOCK_SENDER:
-            ret_val = self._mark_as_junk(param, action='block')
+            ret_val = self._mark_as_junk(param, action="block")
         elif action == self.ACTION_ID_UNBLOCK_SENDER:
-            ret_val = self._mark_as_junk(param, action='unblock')
+            ret_val = self._mark_as_junk(param, action="unblock")
         elif action == self.ACTION_ID_EXPAND_DL:
             ret_val = self._expand_dl(param)
         elif action == self.ACTION_ID_RESOLVE_NAME:
@@ -3131,7 +3131,7 @@ class EWSOnPremConnector(BaseConnector):
         return ret_val
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     import argparse
     import sys
@@ -3144,10 +3144,10 @@ if __name__ == '__main__':
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('input_test_json', help='Input Test JSON file')
-    argparser.add_argument('-u', '--username', help='username', required=False)
-    argparser.add_argument('-p', '--password', help='password', required=False)
-    argparser.add_argument('-v', '--verify', action='store_true', help='verify', required=False, default=False)
+    argparser.add_argument("input_test_json", help="Input Test JSON file")
+    argparser.add_argument("-u", "--username", help="username", required=False)
+    argparser.add_argument("-p", "--password", help="password", required=False)
+    argparser.add_argument("-v", "--verify", action="store_true", help="verify", required=False, default=False)
 
     args = argparser.parse_args()
     session_id = None
@@ -3160,6 +3160,7 @@ if __name__ == '__main__':
 
         # User specified a username but not a password, so ask
         import getpass
+
         password = getpass.getpass("Password: ")
 
     if username and password:
@@ -3167,21 +3168,21 @@ if __name__ == '__main__':
             print("Accessing the Login page")
             phantom_url = "{}login".format(BaseConnector._get_phantom_base_url())
             r = requests.get(phantom_url, verify=verify, timeout=DEFAULT_REQUEST_TIMEOUT)
-            csrftoken = r.cookies['csrftoken']
+            csrftoken = r.cookies["csrftoken"]
 
             data = dict()
-            data['username'] = username
-            data['password'] = password
-            data['csrfmiddlewaretoken'] = csrftoken
+            data["username"] = username
+            data["password"] = password
+            data["csrfmiddlewaretoken"] = csrftoken
 
             headers = dict()
-            headers['Cookie'] = 'csrftoken={}'.format(csrftoken)
-            headers['Referer'] = phantom_url
+            headers["Cookie"] = "csrftoken={}".format(csrftoken)
+            headers["Referer"] = phantom_url
 
             print("Logging into Platform to get the session id")
             r2 = requests.post(phantom_url, verify=verify,
                                data=data, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
-            session_id = r2.cookies['sessionid']
+            session_id = r2.cookies["sessionid"]
         except Exception as e:
             print("Unable to get session id from the platform. Error: {}".format(e))
             sys.exit(1)
@@ -3194,21 +3195,21 @@ if __name__ == '__main__':
         connector = EWSOnPremConnector()
         connector.print_progress_message = True
 
-        data = in_json.get('data')
-        raw_email = in_json.get('raw_email')
+        data = in_json.get("data")
+        raw_email = in_json.get("raw_email")
 
         # if neither present then treat it as a normal action test json
         if not data and not raw_email:
             print(json.dumps(in_json, indent=4))
 
             if session_id is not None:
-                in_json['user_session_token'] = session_id
+                in_json["user_session_token"] = session_id
             result = connector._handle_action(json.dumps(in_json), None)
             print(result)
             sys.exit(0)
 
         if data:
-            raw_email = data.get('raw_email')
+            raw_email = data.get("raw_email")
 
         if raw_email:
             config = {
