@@ -970,7 +970,7 @@ class ProcessEmail(object):
         container_data = dict(self._parsed_mail)
 
         # delete the header info, we dont make it a part of the container json
-        del(container_data[PROC_EMAIL_JSON_EMAIL_HEADERS])
+        del container_data[PROC_EMAIL_JSON_EMAIL_HEADERS]
         container.update(_container_common)
         self._container['source_data_identifier'] = email_id
         self._container['name'] = container_name
