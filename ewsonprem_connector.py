@@ -2173,7 +2173,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # finally, see if impersonation has been enabled/disabled for this action
         # as of right now copy or move email is the only action that allows over-ride
-        impersonate = not(param.get(EWS_JSON_DONT_IMPERSONATE, False))
+        impersonate = not param.get(EWS_JSON_DONT_IMPERSONATE, False)
 
         # Use a different email if specified
         impersonate_email = param.get(EWS_JSON_IMPERSONATE_EMAIL)
