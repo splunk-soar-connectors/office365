@@ -183,10 +183,10 @@ class ProcessEmail(object):
         # Check before splicing, find returns -1 if not found
         # _and_ you will end up splicing on -1 (incorrectly)
         if "<" in url:
-            url = url[:url.find("<")]
+            url = url[: url.find("<")]
 
         if ">" in url:
-            url = url[:url.find(">")]
+            url = url[: url.find(">")]
 
         return url.strip(r"\'|\"")
 
@@ -317,7 +317,7 @@ class ProcessEmail(object):
                     domain = curr_email[curr_email.find("@") + 1:]
                     if domain and (not self._is_ip(domain)):
                         if "?" in domain:
-                            domain = domain[:domain.find("?")]
+                            domain = domain[: domain.find("?")]
                         domains.add(domain)
 
         return
@@ -1089,11 +1089,7 @@ class ProcessEmail(object):
         else:
             ret_val, message, cid = self._base_connector.save_container(container)
             self._base_connector.debug_print(
-                "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
-                    ret_val,
-                    message,
-                    cid
-                )
+                "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, cid)
             )
             if phantom.is_fail(ret_val):
                 container["artifacts"] = artifacts
@@ -1104,12 +1100,7 @@ class ProcessEmail(object):
         for artifact in artifacts:
             artifact["container_id"] = cid
         ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
-        self._base_connector.debug_print(
-            "save_artifacts returns, value: {0}, reason: {1}".format(
-                ret_val,
-                message
-            )
-        )
+        self._base_connector.debug_print("save_artifacts returns, value: {0}, reason: {1}".format(ret_val, message))
 
         container["artifacts"] = artifacts
 
@@ -1155,10 +1146,7 @@ class ProcessEmail(object):
         if message and "duplicate container found" in message.lower():
             # Save artifacts because duplicate container found
             using_dummy = True
-            container = {
-                "id": container_id,
-                "artifacts": artifacts
-            }
+            container = {"id": container_id, "artifacts": artifacts}
             ret_val, message, container_id = self._save_ingested(container, using_dummy)
 
             self._base_connector.debug_print("In process_email 2 artifact json:", container["artifacts"])
@@ -1180,9 +1168,7 @@ class ProcessEmail(object):
         last_file = len(files) - 1
         for i, curr_file in enumerate(files):
             run_automation = True if i == last_file else False
-            ret_val, added_to_vault = self._handle_file(
-                curr_file, vault_ids, container_id, vault_artifacts_added, run_automation
-            )
+            ret_val, added_to_vault = self._handle_file(curr_file, vault_ids, container_id, vault_artifacts_added, run_automation)
 
             if added_to_vault:
                 vault_artifacts_added += 1
@@ -1311,10 +1297,7 @@ class ProcessEmail(object):
 
         try:
             success, message, vault_id = ph_rules.vault_add(
-                container=container_id,
-                file_location=local_file_path,
-                file_name=file_name,
-                metadata=vault_attach_dict
+               container=container_id, file_location=local_file_path, file_name=file_name, metadata=vault_attach_dict
             )
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
@@ -1333,11 +1316,7 @@ class ProcessEmail(object):
             cef_artifact.update({"fileName": file_name})
 
         if vault_id:
-            cef_artifact.update({
-                "vaultId": vault_id,
-                "cs6": vault_id,
-                "cs6Label": "Vault ID"
-            })
+            cef_artifact.update({"vaultId": vault_id, "cs6": vault_id, "cs6Label": "Vault ID"})
 
             # now get the rest of the hashes and add them to the cef artifact
             self._add_vault_hashes_to_dictionary(cef_artifact, vault_id, container_id)
@@ -1411,7 +1390,7 @@ class ProcessEmail(object):
         # if fips is not enabled, we should continue with our existing md5 usage for generating SDIs
         # to not impact existing customers
         if not fips_enabled:
-            return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode("utf-8")).hexdigest()   # nosemgrep
+            return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode("utf-8")).hexdigest()  # nosemgrep
 
         return hashlib.sha256(UnicodeDammit(input_dict_str).unicode_markup.encode("utf-8")).hexdigest()
 

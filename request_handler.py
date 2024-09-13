@@ -33,7 +33,7 @@ def _get_dir_name_from_app_name(app_name):
     return app_name
 
 
-class Office365RequestHandler():
+class Office365RequestHandler:
     def __init__(self, request, path_parts):
         self._request = request
         self._path_parts = path_parts
@@ -60,7 +60,7 @@ class Office365RequestHandler():
             "redirect_uri": redirect_uri,
             "client_id": client_id,
             "code": code,
-            "client_secret": client_secret
+            "client_secret": client_secret,
         }
         try:
             # Ignoring request-sensitive-data semgrep check as it is a false positive
@@ -111,8 +111,7 @@ class RequestStateHandler:
                 for token_name in token_list:
                     if state["oauth_token"].get(token_name):
                         state["oauth_token"][token_name] = encryption_helper.encrypt(  # pylint: disable=E1101
-                            state["oauth_token"][token_name],
-                            self._asset_id
+                            state["oauth_token"][token_name], self._asset_id
                         )
         except Exception:
             state.pop("oauth_token")
@@ -126,8 +125,7 @@ class RequestStateHandler:
                 for token_name in token_list:
                     if state["oauth_token"].get(token_name):
                         state["oauth_token"][token_name] = encryption_helper.decrypt(  # pylint: disable=E1101
-                            state["oauth_token"][token_name],
-                            self._asset_id
+                            state["oauth_token"][token_name], self._asset_id
                         )
         except Exception:
             message = "Error while decrypting"
