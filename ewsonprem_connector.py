@@ -822,12 +822,15 @@ class EWSOnPremConnector(BaseConnector):
 
         message = ''
         self._clean_the_state()
-        is_oauth_token_missing = self.auth_type in [AUTH_TYPE_AZURE, AUTH_TYPE_AZURE_INTERACTIVE] and \
-            not self._state.get("oauth_token", {}).get("access_token")
-        is_oauth_client_token_missing = self.auth_type == AUTH_TYPE_CLIENT_CRED and \
-            not self._state.get("oauth_client_token", {}).get("access_token")
-        self._is_client_id_changed = (self._state.get('client_id') and config.get("client_id")) and \
-            self._state.get('client_id') != config.get("client_id")
+        is_oauth_token_missing = self.auth_type in [AUTH_TYPE_AZURE, AUTH_TYPE_AZURE_INTERACTIVE] and not self._state.get("oauth_token", {}).get(
+            "access_token"
+        )
+        is_oauth_client_token_missing = self.auth_type == AUTH_TYPE_CLIENT_CRED and not self._state.get("oauth_client_token", {}).get(
+            "access_token"
+        )
+        self._is_client_id_changed = (self._state.get("client_id") and config.get("client_id")) and self._state.get("client_id") != config.get(
+            "client_id"
+        )
         if self._is_client_id_changed or is_oauth_token_missing or is_oauth_client_token_missing:
             self._is_token_test_connectivity = self.get_action_identifier() == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY
             ret, message = self.set_authentication_method(config)
@@ -2838,8 +2841,8 @@ class EWSOnPremConnector(BaseConnector):
     def _manage_data_duplication(self, email_infos, email_index, max_emails, total_ingested, limit):
         # Define current time to store as starting reference for the next run of scheduled | interval polling
         utc_now = datetime.utcnow()
-        self._state['last_ingested_format'] = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
-        self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
+        self._state["last_ingested_format"] = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        self._state["last_email_format"] = email_infos[email_index]["last_modified_time"]
 
         # deepcopy is used for self._state, because otherwise self._encrypt_client_token()
         # and self.rsh._encrypt_state() will modify self._state by reference and the encrypted
