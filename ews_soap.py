@@ -103,7 +103,7 @@ def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction):
 
     elements.append(sort_order)
 
-    # Treat it as a 'inbox'
+    # Treat it as a "inbox"
     parent_folder_ids = M.ParentFolderIds(
         T.DistinguishedFolderId({"Id": folder_id}, T.Mailbox(T.EmailAddress(UnicodeDammit(user).unicode_markup.encode("utf-8").decode("utf-8"))))
     )
@@ -133,8 +133,8 @@ def get_expand_dl(email):
     https://msdn.microsoft.com/en-us/library/office/aa494152(v=exchg.150).aspx
     """
 
-    # All documentation says that Mailbox should be a 'T', but that just throws an error
-    # it has to be an 'M' for things to work
+    # All documentation says that Mailbox should be a "T", but that just throws an error
+    # it has to be an "M" for things to work
     return M.ExpandDL(M.Mailbox(T.EmailAddress(UnicodeDammit(email).unicode_markup.encode("utf-8").decode("utf-8"))))
 
 
@@ -243,7 +243,7 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
     Link for Restriction node
     https://msdn.microsoft.com/en-us/library/office/aa563791(v=exchg.150).aspx
 
-    Link for the FieldURI's
+    Link for the FieldURI"s
     https://msdn.microsoft.com/en-us/library/office/aa494315(v=exchg.150).aspx
 
     Link to article that explains how all this fits in
@@ -391,6 +391,7 @@ def xml_get_root_folder_id(user, root_folder_id="root"):
                 {"Id": root_folder_id}, T.Mailbox(T.EmailAddress(UnicodeDammit(user).unicode_markup.encode("utf-8").decode("utf-8")))
             )
         )
+
         traversal = {"Traversal": "Deep"}
 
     return M.FindFolder(traversal, folder_shape, par_folder_id)
@@ -464,7 +465,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id="root",
     """
     if (restriction is not None):
         return M.FindFolder(
-                {'Traversal': 'Deep'},
+                {"Traversal": "Deep"},
                 folder_shape,
                 restriction,
                 par_folder_id)

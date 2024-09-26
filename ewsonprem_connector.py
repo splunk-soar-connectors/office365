@@ -610,6 +610,7 @@ class EWSOnPremConnector(BaseConnector):
                 action_result.set_status(phantom.APP_ERROR, "Please provide a non-zero positive integer in the '{0}' parameter".format(key)),
                 None,
             )
+
         elif allow_zero and parameter < 0:
             return (
                 action_result.set_status(
@@ -846,7 +847,7 @@ class EWSOnPremConnector(BaseConnector):
             self._base_url = self._base_url[:-1]
 
         # The host member extracts the host from the URL, is used in creating status messages
-        self._host = self._base_url[self._base_url.find("//") + 2 :]
+        self._host = self._base_url[self._base_url.find("//") + 2 :]  # noqa
 
         self._impersonate = config[EWS_JSON_USE_IMPERSONATE]
 
@@ -1373,8 +1374,8 @@ class EWSOnPremConnector(BaseConnector):
 
         # self.save_progress("Searching in {0}\\{1}{2}".format(
         #     self._clean_str(user),
-        #     folder_path if folder_path else 'All Folders',
-        #     ' (and the children)' if (not ignore_subfolders) else ''))
+        #     folder_path if folder_path else "All Folders",
+        #     " (and the children)" if (not ignore_subfolders) else ""))
 
         email_range = param.get(EWSONPREM_JSON_RANGE, "0-10")
 
@@ -1532,8 +1533,7 @@ class EWSOnPremConnector(BaseConnector):
             decoded_strings = [{"value": x[0], "encoding": x[1]} for x in decoded_strings]
         except Exception as e:
             error_code, error_message = self._base_connector._get_error_message_from_exception(e)
-            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_message)
-            self._debug_print("Decoding: {0}. {1}".format(encoded_strings, err))
+            self.debug_print("Error code {0} while decoding string. Error Message: {1}".format(error_code, error_message))
             return def_name
 
         # convert to dict for safe access, if it's an empty list, the dict will be empty
@@ -1600,9 +1600,9 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print("Error occurred while converting the header tuple into a dictionary. {}".format(error_text))
 
         # Decode unicode subject
-        # if '?UTF-8?' in headers['Subject']:
-        #     chars = 'utf-8'
-        #     headers['Subject'] = self._decode_subject(headers['Subject'], chars)
+        # if "?UTF-8?" in headers["Subject"]:
+        #     chars = "utf-8"
+        #     headers["Subject"] = self._decode_subject(headers["Subject"], chars)
 
         # Handle received separately
         received_headers = list()
@@ -1735,7 +1735,7 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         if (not rfc822_format):
-            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain rfc822 data')
+            return action_result.set_status(phantom.APP_ERROR, "Result does not contain rfc822 data")
         """
 
         message = resp_json.get("m_Items", {}).get("t_Message", {})
@@ -2008,7 +2008,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # As of right now, the folder path is the only extended property
         # that the app extracts, so parse the value directly, once the app starts
-        # parsing other extended properties, the 't:ExtendedFieldURI dictionary will
+        # parsing other extended properties, the "t:ExtendedFieldURI dictionary will
         # require to be parsed and validated
         value = extended_property.get("t:Value")
 
@@ -2216,7 +2216,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # finally, see if impersonation has been enabled/disabled for this action
         # as of right now copy or move email is the only action that allows over-ride
-        impersonate = not (param.get(EWS_JSON_DONT_IMPERSONATE, False))
+        impersonate = not param.get(EWS_JSON_DONT_IMPERSONATE, False)
 
         # Use a different email if specified
         impersonate_email = param.get(EWS_JSON_IMPERSONATE_EMAIL)
@@ -2575,10 +2575,9 @@ class EWSOnPremConnector(BaseConnector):
                 if not property_tag:
                     continue
 
-                if (
-                    property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()
-                    or property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()
-                ):
+                headers_lower = ews_soap.EXTENDED_PROPERTY_HEADERS.lower()
+                headers_resp_lower = ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()
+                if property_tag.lower() == headers_lower or property_tag.lower() == headers_resp_lower:
                     email_headers = self._extract_email_headers(value)
                     if email_headers is not None:
                         headers.update(email_headers)
@@ -3142,7 +3141,7 @@ class EWSOnPremConnector(BaseConnector):
             for email_dict in results:
                 email_dict["MessageId"] = email_dict["MessageId"].replace(">", "").replace("<", "")
 
-        results = results[mini : maxi + 1]
+        results = results[mini : maxi + 1]  # noqa
         action_result.add_data(results)
 
         summary = action_result.update_summary({})
