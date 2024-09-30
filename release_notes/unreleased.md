@@ -1,1 +1,2 @@
 **Unreleased**
+* Updated dependencies due to security vulnerabilities [PAPP-34747]
