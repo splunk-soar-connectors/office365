@@ -1,1 +1,1 @@
-* Fix to ingest email attachments in a parent email to vault
+* Fix to ingest email attachments in a parent email to vault [PAPP-34114]
