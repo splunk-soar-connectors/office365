@@ -2,11 +2,11 @@
 # EWS for Office 365
 
 Publisher: Splunk  
-Connector Version: 2.15.4  
+Connector Version: 2.15.5  
 Product Vendor: Microsoft  
 Product Name: Office 365  
 Product Version Supported (regex): ".\*"  
-Minimum Product Version: 6.2.1  
+Minimum Product Version: 6.2.2  
 
 This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service
 
