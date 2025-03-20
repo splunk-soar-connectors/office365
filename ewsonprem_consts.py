@@ -1,6 +1,6 @@
 # File: ewsonprem_consts.py
 #
-# Copyright (c) 2016-2024 Splunk Inc.
+# Copyright (c) 2016-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ EWS_MODIFY_CONFIG = (
 )
 
 EWS_ASSET_CORRUPTED = (
-    "ERROR: The token present in the state file is corrupted. Deleting the token. " "Please test the connectivity to generate a new token"
+    "ERROR: The token present in the state file is corrupted. Deleting the token. Please test the connectivity to generate a new token"
 )
 EWS_ENCRYPTION_ERROR = "Error occurred while encrypting the state file"
 EWS_INGEST_LATEST_EMAILS = "latest first"
