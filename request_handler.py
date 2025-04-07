@@ -1,6 +1,6 @@
 # File: request_handler.py
 #
-# Copyright (c) 2016-2024 Splunk Inc.
+# Copyright (c) 2016-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -64,11 +64,11 @@ class Office365RequestHandler:
         }
         try:
             # Ignoring request-sensitive-data semgrep check as it is a false positive
-            r = requests.post("{}/token".format(request_url), data=body, proxies=proxy, timeout=60)  # nosemgrep
+            r = requests.post(f"{request_url}/token", data=body, proxies=proxy, timeout=60)  # nosemgrep
             r.raise_for_status()
             resp_json = r.json()
         except Exception as e:
-            return False, self._return_error("Error retrieving OAuth Token: {}".format(str(e)), 401)
+            return False, self._return_error(f"Error retrieving OAuth Token: {e!s}", 401)
         state["oauth_token"] = resp_json
         self._rsh.save_state(state)
 
@@ -93,7 +93,7 @@ class Office365RequestHandler:
 
             return HttpResponse("You can now close this page", content_type="text/plain")
         except Exception as e:
-            return self._return_error("Error handling request: {}".format(str(e)), 400)
+            return self._return_error(f"Error handling request: {e!s}", 400)
 
 
 class RequestStateHandler:
@@ -135,7 +135,7 @@ class RequestStateHandler:
 
     def _get_state_file(self):
         dirpath = os.path.split(__file__)[0]
-        state_file = "{0}/{1}_state.json".format(dirpath, self._asset_id)
+        state_file = f"{dirpath}/{self._asset_id}_state.json"
         return state_file
 
     def delete_state(self):
@@ -162,7 +162,7 @@ class RequestStateHandler:
         state_file = self._get_state_file()
         state = {}
         try:
-            with open(state_file, "r") as fp:
+            with open(state_file) as fp:
                 in_json = fp.read()
                 state = json.loads(in_json)
         except Exception:

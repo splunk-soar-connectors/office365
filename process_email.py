@@ -1,6 +1,6 @@
 # File: process_email.py
 #
-# Copyright (c) 2016-2024 Splunk Inc.
+# Copyright (c) 2016-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import phantom.utils as ph_utils
 from bs4 import BeautifulSoup, UnicodeDammit
 from django.core.validators import URLValidator
 from requests.structures import CaseInsensitiveDict
+
 
 _container_common = {"run_automation": False}  # Don't run any playbooks, when this artifact is added
 
@@ -122,10 +123,8 @@ ip_regexc = re.compile(IP_REGEX)
 ipv6_regexc = re.compile(IPV6_REGEX)
 
 
-class ProcessEmail(object):
-
+class ProcessEmail:
     def __init__(self):
-
         self._base_connector = None
         self._config = dict()
         self._email_id_contains = list()
@@ -139,7 +138,6 @@ class ProcessEmail(object):
         self._tmp_dirs = list()
 
     def _get_file_contains(self, file_path):
-
         contains = []
         ext = os.path.splitext(file_path)[1]
         contains.extend(FILE_EXTENSIONS.get(ext, []))
@@ -151,7 +149,6 @@ class ProcessEmail(object):
         return contains
 
     def _is_ip(self, input_ip):
-
         if ph_utils.is_ip(input_ip):
             return True
 
@@ -161,7 +158,6 @@ class ProcessEmail(object):
         return False
 
     def is_ipv6(self, input_ip):
-
         try:
             socket.inet_pton(socket.AF_INET6, input_ip)
         except Exception:  # not a valid v6 address
@@ -170,14 +166,12 @@ class ProcessEmail(object):
         return True
 
     def _debug_print(self, *args):
-
         if self._base_connector and (hasattr(self._base_connector, "debug_print")):
             self._base_connector.debug_print(*args)
 
         return
 
     def _clean_url(self, url):
-
         url = url.strip("\r\n")
 
         # Check before splicing, find returns -1 if not found
@@ -207,7 +201,6 @@ class ProcessEmail(object):
 
         # need to loop through each match, instead
         for curr_match in re.finditer(uri_regexc, file_data):
-
             start_pos = curr_match.start()
             curr_uri = self._clean_url(curr_match.group(0))
             if not curr_uri.endswith("="):
@@ -246,7 +239,6 @@ class ProcessEmail(object):
         return ret_uris
 
     def _extract_urls_domains(self, file_data, urls, domains):
-
         if not self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS] and not self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
             return
 
@@ -255,7 +247,7 @@ class ProcessEmail(object):
             soup = BeautifulSoup(file_data, "html.parser")
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
-            self._debug_print("Error occurred while extracting domains of the URLs. {0}".format(error_message))
+            self._debug_print(f"Error occurred while extracting domains of the URLs. {error_message}")
             return
 
         uris = []
@@ -314,7 +306,7 @@ class ProcessEmail(object):
             if links:
                 mailtos = [x["href"] for x in links if x["href"].startswith("mailto:")]
                 for curr_email in mailtos:
-                    domain = curr_email[curr_email.find("@") + 1 :]  # noqa
+                    domain = curr_email[curr_email.find("@") + 1 :]
                     if domain and (not self._is_ip(domain)):
                         if "?" in domain:
                             domain = domain[: domain.find("?")]
@@ -323,7 +315,6 @@ class ProcessEmail(object):
         return
 
     def _get_ips(self, file_data, ips):
-
         # First extract what looks like an IP from the file, this is a faster operation
         ips_in_mail = re.findall(ip_regexc, file_data)
         ip6_in_mail = re.findall(ipv6_regexc, file_data)
@@ -343,7 +334,6 @@ class ProcessEmail(object):
                 ips |= set(ips_in_mail)
 
     def _decode_if_base64(self, file_data):
-
         if "mail text" in magic.from_buffer(file_data):
             return file_data
 
@@ -361,7 +351,6 @@ class ProcessEmail(object):
         return file_data
 
     def _sanitize_dict(self, obj):
-
         if isinstance(obj, str):
             return obj.replace("\x00", "")
         if isinstance(obj, list):
@@ -373,7 +362,6 @@ class ProcessEmail(object):
         return obj
 
     def _handle_body(self, body, parsed_mail, body_index, email_id):
-
         local_file_path = body["file_path"]
         charset = body.get("charset", "utf-8")
         if not charset:
@@ -402,7 +390,7 @@ class ProcessEmail(object):
             emails.extend(re.findall(email_regexc2, file_data))
 
             for curr_email in emails:
-                domain = curr_email[curr_email.rfind("@") + 1 :]  # noqa
+                domain = curr_email[curr_email.rfind("@") + 1 :]
                 if domain and (not ph_utils.is_ip(domain)):
                     domains.add(domain)
 
@@ -419,11 +407,9 @@ class ProcessEmail(object):
         return phantom.APP_SUCCESS
 
     def _add_artifacts(self, cef_key, input_set, artifact_name, start_index, artifacts):
-
         added_artifacts = 0
         input_set = self._sanitize_dict(input_set)
         for entry in input_set:
-
             # ignore empty entries
             if not entry:
                 continue
@@ -440,7 +426,6 @@ class ProcessEmail(object):
         return added_artifacts
 
     def _parse_email_headers_as_inline(self, file_data, parsed_mail, charset, email_id):
-
         # remove the 'Forwarded Message' from the email text and parse it
         p = re.compile(r".*Forwarded Message.*\n(.*)", re.IGNORECASE)
         email_text = p.sub(r"\1", file_data.strip())
@@ -456,10 +441,8 @@ class ProcessEmail(object):
         return phantom.APP_SUCCESS
 
     def _add_email_header_artifacts(self, email_header_artifacts, start_index, artifacts):
-
         added_artifacts = 0
         for artifact in email_header_artifacts:
-
             artifact["source_data_identifier"] = start_index + added_artifacts
             if artifact:
                 artifact = self._sanitize_dict(artifact)
@@ -469,7 +452,6 @@ class ProcessEmail(object):
         return added_artifacts
 
     def _create_artifacts(self, parsed_mail):
-
         # get all the artifact data in their own list objects
         ips = parsed_mail[PROC_EMAIL_JSON_IPS]
         hashes = parsed_mail[PROC_EMAIL_JSON_HASHES]
@@ -503,7 +485,6 @@ class ProcessEmail(object):
         return phantom.APP_SUCCESS
 
     def _decode_uni_string(self, input_str, def_name):
-
         # try to find all the decoded strings, we could have multiple decoded strings
         # or a single decoded string between two normal strings separated by \r\n
         # YEAH...it could get that messy
@@ -519,14 +500,13 @@ class ProcessEmail(object):
             decoded_strings = [{"value": x[0], "encoding": x[1]} for x in decoded_strings]
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
-            self._debug_print("Decoding: {0}. {1}".format(encoded_strings, error_message))
+            self._debug_print(f"Decoding: {encoded_strings}. {error_message}")
             return def_name
 
         # convert to dict for safe access, if it's an empty list, the dict will be empty
         decoded_strings = dict(enumerate(decoded_strings))
 
         for i, encoded_string in enumerate(encoded_strings):
-
             decoded_string = decoded_strings.get(i)
 
             if not decoded_string:
@@ -552,9 +532,8 @@ class ProcessEmail(object):
         return input_str
 
     def _get_container_name(self, parsed_mail, email_id):
-
         # Create the default name
-        def_cont_name = "Email ID: {0}".format(email_id)
+        def_cont_name = f"Email ID: {email_id}"
 
         # get the subject from the parsed mail
         subject = parsed_mail.get(PROC_EMAIL_JSON_SUBJECT)
@@ -566,7 +545,6 @@ class ProcessEmail(object):
         return self._base_connector._decode_uni_string(subject, def_cont_name)
 
     def _handle_if_body(self, content_disp, content_id, content_type, part, bodies, file_path):
-
         process_as_body = False
 
         # if content disposition is None then assume that it is
@@ -607,7 +585,6 @@ class ProcessEmail(object):
             attach_meta_info = {"headers": dict(headers)}
 
         for curr_attach in self._attachments_from_ews:
-
             if curr_attach.get("should_ignore", False):
                 continue
 
@@ -646,32 +623,31 @@ class ProcessEmail(object):
                         self._base_connector.debug_print("Payload not found, hence adding empty file")
                     else:
                         f.write(part_payload)
-            except IOError as e:
+            except OSError as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
                 try:
                     if "File name too long" in error_message:
                         new_file_name = "ph_long_file_name_temp"
                         file_path = "{}{}".format(file_path.rstrip(file_name.replace("<", "").replace(">", "").replace(" ", "")), new_file_name)
-                        self._base_connector.debug_print("Original filename: {}".format(file_name))
-                        self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
+                        self._base_connector.debug_print(f"Original filename: {file_name}")
+                        self._base_connector.debug_print(f"Modified filename: {new_file_name}")
                         with open(file_path, "wb") as uncompressed_file:
                             uncompressed_file.write(part_payload)
                     else:
-                        self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
+                        self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_message}")
                         return
                 except Exception as e:
                     error_message = self._base_connector._get_error_message_from_exception(e)
-                    self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
+                    self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_message}")
                     return
             except Exception as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
-                self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
+                self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_message}")
                 return
 
         files.append({"file_name": file_name, "file_path": file_path, "meta_info": attach_meta_info})
 
     def _handle_part(self, part, part_index, tmp_dir, extract_attach, parsed_mail):
-
         bodies = parsed_mail[PROC_EMAIL_JSON_BODIES]
 
         # get the file_name
@@ -682,8 +658,8 @@ class ProcessEmail(object):
 
         if file_name is None:
             # init name and extension to default values
-            name = "part_{0}".format(part_index)
-            extension = ".{0}".format(part_index)
+            name = f"part_{part_index}"
+            extension = f".{part_index}"
 
             # Try to create an extension from the content type if possible
             if content_type is not None:
@@ -693,11 +669,11 @@ class ProcessEmail(object):
             if content_id is not None:
                 name = content_id
 
-            file_name = "{0}{1}".format(name, extension)
+            file_name = f"{name}{extension}"
         else:
             file_name = self._base_connector._decode_uni_string(file_name, file_name)
         # Remove any chars that we don't want in the name
-        file_path = "{0}/{1}_{2}".format(tmp_dir, part_index, file_name.replace("<", "").replace(">", "").replace(" ", ""))
+        file_path = "{}/{}_{}".format(tmp_dir, part_index, file_name.replace("<", "").replace(">", "").replace(" ", ""))
 
         # is the part representing the body of the email
         status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
@@ -709,7 +685,6 @@ class ProcessEmail(object):
         return phantom.APP_SUCCESS
 
     def _update_headers(self, headers):
-
         # compare the various values of the passed header (param: headers)
         # to the header that the class got self._headers_from_ews
         if not self._headers_from_ews:
@@ -729,7 +704,6 @@ class ProcessEmail(object):
         return headers
 
     def _get_email_headers_from_part(self, part, charset=None):
-
         email_headers = list(part.items())
 
         # TODO: the next 2 ifs can be condensed to use "or"
@@ -748,7 +722,7 @@ class ProcessEmail(object):
             [headers.update({x[0]: self._base_connector._get_string(x[1], charset)}) for x in email_headers]
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
-            self._base_connector.debug_print("Error occurred while converting the header tuple into a dictionary. {}".format(error_message))
+            self._base_connector.debug_print(f"Error occurred while converting the header tuple into a dictionary. {error_message}")
 
         # Handle received separately
         received_headers = list()
@@ -756,7 +730,7 @@ class ProcessEmail(object):
             received_headers = [self._base_connector._get_string(x[1], charset) for x in email_headers if x[0].lower() == "received"]
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
-            self._base_connector.debug_print("Error occurred while handling the received header tuple separately. {}".format(error_message))
+            self._base_connector.debug_print(f"Error occurred while handling the received header tuple separately. {error_message}")
 
         if received_headers:
             headers["Received"] = received_headers
@@ -785,7 +759,6 @@ class ProcessEmail(object):
         return headers
 
     def _parse_email_headers(self, parsed_mail, part, charset=None, add_email_id=None):
-
         email_header_artifacts = parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS]
 
         headers = self._get_email_headers_from_part(part, charset)
@@ -819,7 +792,6 @@ class ProcessEmail(object):
             cef_artifact["emailHeaders"] = dict(headers)
 
         for curr_key in list(cef_artifact["emailHeaders"].keys()):
-
             if curr_key.lower().startswith("body"):
                 curr_value = cef_artifact["emailHeaders"].pop(curr_key)
                 if self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False):
@@ -867,7 +839,6 @@ class ProcessEmail(object):
         return len(email_header_artifacts)
 
     def _json_cleaned(self, input_data):
-
         # try to add it to a dictionary and json.dumps it
         try:
             json.dumps({"json_data": input_data})
@@ -877,7 +848,6 @@ class ProcessEmail(object):
         return False, input_data
 
     def _handle_mail_object(self, mail, email_id, rfc822_email, tmp_dir, start_time_epoch):
-
         self._parsed_mail = OrderedDict()
 
         # Create a tmp directory for this email, will extract all files here
@@ -905,8 +875,8 @@ class ProcessEmail(object):
         if extract_eml:
             extension = ".eml"
             file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]
-            file_name = "{0}{1}".format(self._base_connector._decode_uni_string(file_name, file_name), extension)
-            file_path = "{0}/{1}".format(tmp_dir, file_name)
+            file_name = f"{self._base_connector._decode_uni_string(file_name, file_name)}{extension}"
+            file_path = f"{tmp_dir}/{file_name}"
             try:
                 with open(file_path, "wb") as f:
                     f.write(rfc822_email.encode())
@@ -914,14 +884,14 @@ class ProcessEmail(object):
                 error_message = self._base_connector._get_error_message_from_exception(e)
                 try:
                     new_file_name = "ph_temp_email_file.eml"
-                    file_path = "{0}/{1}".format(tmp_dir, new_file_name)
-                    self._base_connector.debug_print("Original filename: {}".format(file_name))
-                    self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
+                    file_path = f"{tmp_dir}/{new_file_name}"
+                    self._base_connector.debug_print(f"Original filename: {file_name}")
+                    self._base_connector.debug_print(f"Modified filename: {new_file_name}")
                     with open(file_path, "wb") as uncompressed_file:
                         uncompressed_file.write(rfc822_email.encode())
                 except Exception as e:
                     error_message = self._base_connector._get_error_message_from_exception(e)
-                    self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_message))
+                    self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_message}")
                     return
             files.append({"file_name": file_name, "file_path": file_path})
 
@@ -942,7 +912,7 @@ class ProcessEmail(object):
                     ret_val = self._handle_part(part, i, tmp_dir, extract_attach, self._parsed_mail)
                 except Exception as e:
                     error_message = self._base_connector._get_error_message_from_exception(e)
-                    self._debug_print("Error occurred in _handle_part # {0}. {1}".format(i, error_message))
+                    self._debug_print(f"Error occurred in _handle_part # {i}. {error_message}")
                     continue
 
                 if phantom.is_fail(ret_val):
@@ -951,7 +921,7 @@ class ProcessEmail(object):
         else:
             self._parse_email_headers(self._parsed_mail, mail, add_email_id=email_id)
             # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(mail.items())
-            file_path = "{0}/part_1.text".format(tmp_dir)
+            file_path = f"{tmp_dir}/part_1.text"
             with open(file_path, "wb") as f:
                 f.write(mail.get_payload(decode=True))
             bodies.append({"file_path": file_path, "charset": mail.get_content_charset()})
@@ -993,7 +963,7 @@ class ProcessEmail(object):
                 self._handle_body(body, self._parsed_mail, i, email_id)
             except Exception as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
-                self._debug_print("Error occurred in _handle_body # {0}. {1}".format(i, error_message))
+                self._debug_print(f"Error occurred in _handle_body # {i}. {error_message}")
                 continue
 
         # Files
@@ -1004,7 +974,6 @@ class ProcessEmail(object):
         return phantom.APP_SUCCESS
 
     def _set_email_id_contains(self, email_id):
-
         if not self._base_connector:
             return
 
@@ -1022,7 +991,6 @@ class ProcessEmail(object):
         return
 
     def _int_process_email(self, rfc822_email, email_id, start_time_epoch):
-
         mail = email.message_from_string(rfc822_email)
 
         ret_val = phantom.APP_SUCCESS
@@ -1034,7 +1002,7 @@ class ProcessEmail(object):
             ret_val = self._handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
-            message = "Error occurred in _handle_mail_object. {0}".format(error_message)
+            message = f"Error occurred in _handle_mail_object. {error_message}"
             self._debug_print(message)
 
             return phantom.APP_ERROR, message, []
@@ -1044,7 +1012,6 @@ class ProcessEmail(object):
         return ret_val, "Email Parsed", results
 
     def process_email(self, base_connector, rfc822_email, email_id, config, epoch, container_id=None, email_headers=None, attachments_data=None):
-
         self._base_connector = base_connector
         self._config = config
 
@@ -1071,7 +1038,7 @@ class ProcessEmail(object):
             self._parse_results(results, container_id)
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
-            message = "Parsing results failed. {0}".format(error_message)
+            message = f"Parsing results failed. {error_message}"
             self._debug_print(message)
             return phantom.APP_ERROR, message
         finally:
@@ -1081,16 +1048,13 @@ class ProcessEmail(object):
         return phantom.APP_SUCCESS, "Email Processed"
 
     def _save_ingested(self, container, using_dummy):
-
         artifacts = container.pop("artifacts")
 
         if using_dummy:
             cid = container["id"]
         else:
             ret_val, message, cid = self._base_connector.save_container(container)
-            self._base_connector.debug_print(
-                "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, cid)
-            )
+            self._base_connector.debug_print(f"save_container (with artifacts) returns, value: {ret_val}, reason: {message}, id: {cid}")
             if phantom.is_fail(ret_val):
                 container["artifacts"] = artifacts
                 return ret_val, message, cid
@@ -1100,7 +1064,7 @@ class ProcessEmail(object):
         for artifact in artifacts:
             artifact["container_id"] = cid
         ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
-        self._base_connector.debug_print("save_artifacts returns, value: {0}, reason: {1}".format(ret_val, message))
+        self._base_connector.debug_print(f"save_artifacts returns, value: {ret_val}, reason: {message}")
 
         container["artifacts"] = artifacts
 
@@ -1139,7 +1103,7 @@ class ProcessEmail(object):
         self._base_connector.debug_print("In process_email 1 artifact json:", container["artifacts"])
 
         if phantom.is_fail(ret_val):
-            message = "Failed to save ingested artifacts, error msg: {0}".format(message)
+            message = f"Failed to save ingested artifacts, error msg: {message}"
             self._base_connector.debug_print(message)
             return
 
@@ -1152,7 +1116,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print("In process_email 2 artifact json:", container["artifacts"])
 
             if phantom.is_fail(ret_val):
-                message = "Failed to save ingested artifacts, error msg: {0}".format(message)
+                message = f"Failed to save ingested artifacts, error msg: {message}"
                 self._base_connector.debug_print(message)
                 return
 
@@ -1176,7 +1140,6 @@ class ProcessEmail(object):
         return
 
     def _parse_results(self, results, container_id=None):
-
         param = self._base_connector.get_current_param()
 
         container_count = EWS_DEFAULT_CONTAINER_COUNT
@@ -1188,9 +1151,7 @@ class ProcessEmail(object):
 
         results = results[:container_count]
         for result in results:
-
             if container_id is None:
-
                 container = result.get("container")
 
                 if not container:
@@ -1204,7 +1165,6 @@ class ProcessEmail(object):
             # run a loop to first set the sdi which will create the hash
             artifacts = result.get("artifacts", [])
             for j, artifact in enumerate(artifacts):
-
                 if not artifact:
                     continue
 
@@ -1216,7 +1176,6 @@ class ProcessEmail(object):
             len_artifacts = len(artifacts)
 
             for j, artifact in enumerate(artifacts):
-
                 if not artifact:
                     continue
 
@@ -1239,7 +1198,6 @@ class ProcessEmail(object):
         return self._base_connector.set_status(phantom.APP_SUCCESS)
 
     def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
-
         try:
             success, message, vault_info = ph_rules.vault_info(vault_id=vault_id, container_id=container_id)
             vault_info = list(vault_info)
@@ -1275,7 +1233,6 @@ class ProcessEmail(object):
         return phantom.APP_SUCCESS, "Mapped hash values"
 
     def _handle_file(self, curr_file, vault_ids, container_id, artifact_id, run_automation=False):
-
         file_name = curr_file.get("file_name")
 
         local_file_path = curr_file["file_path"]
@@ -1288,7 +1245,7 @@ class ProcessEmail(object):
         if not file_name:
             file_name = os.path.basename(local_file_path)
 
-        self._base_connector.debug_print("Vault file name: {0}".format(file_name))
+        self._base_connector.debug_print(f"Vault file name: {file_name}")
 
         vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
         vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
@@ -1307,7 +1264,7 @@ class ProcessEmail(object):
         # self._base_connector.debug_print("vault_ret_dict", vault_ret_dict)
 
         if not success:
-            self._base_connector.debug_print("Failed to add file to Vault: {0}".format(message))
+            self._base_connector.debug_print(f"Failed to add file to Vault: {message}")
             return phantom.APP_ERROR, phantom.APP_ERROR
 
         # add the vault id artifact to the container
@@ -1339,12 +1296,11 @@ class ProcessEmail(object):
             cef_artifact["parentSourceDataIdentifier"] = self._guid_to_hash.get(parent_guid)
 
         ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
-        self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
+        self._base_connector.debug_print(f"save_artifact returns, value: {ret_val}, reason: {status_string}, id: {artifact_id}")
 
         return phantom.APP_SUCCESS, ret_val
 
     def _set_sdi(self, input_dict):
-
         if "source_data_identifier" in input_dict:
             del input_dict["source_data_identifier"]
 
@@ -1373,7 +1329,6 @@ class ProcessEmail(object):
         return phantom.APP_SUCCESS
 
     def _create_dict_hash(self, input_dict):
-
         input_dict_str = None
 
         if not input_dict:
@@ -1383,7 +1338,7 @@ class ProcessEmail(object):
             input_dict_str = json.dumps(input_dict, sort_keys=True)
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
-            self._base_connector.debug_print("Error occurred in _create_dict_hash. {0}".format(error_message))
+            self._base_connector.debug_print(f"Error occurred in _create_dict_hash. {error_message}")
             return None
 
         fips_enabled = self._base_connector._get_fips_enabled()

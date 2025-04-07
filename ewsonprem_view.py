@@ -1,6 +1,6 @@
 # File: ewsonprem_view.py
 #
-# Copyright (c) 2016-2024 Splunk Inc.
+# Copyright (c) 2016-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ from bs4 import BeautifulSoup
 
 
 def _clean_email_text(email_text):
-
     if not email_text:
         return email_text
 
@@ -30,7 +29,6 @@ def _clean_email_text(email_text):
 
 
 def _process_data(data):
-
     email_body = data.get("t_Body", {}).get("#text")
     data["email_body"] = email_body
 
@@ -54,7 +52,6 @@ def _process_data(data):
 
 
 def _get_ctx_result_resolve_names(result):
-
     ctx_result = {}
 
     ctx_result["summary"] = result.get_summary()
@@ -89,7 +86,6 @@ def _get_ctx_result_resolve_names(result):
 
 
 def _get_ctx_result(result):
-
     ctx_result = {}
 
     ctx_result["summary"] = result.get_summary()
@@ -118,11 +114,9 @@ def _get_ctx_result(result):
 
 
 def display_email(provides, all_app_runs, context):
-
     context["results"] = results = []
     for summary, action_results in all_app_runs:
         for result in action_results:
-
             ctx_result = _get_ctx_result(result)
             if not ctx_result:
                 continue
@@ -133,11 +127,9 @@ def display_email(provides, all_app_runs, context):
 
 
 def display_resolve_names(provides, all_app_runs, context):
-
     context["results"] = results = []
     for summary, action_results in all_app_runs:
         for result in action_results:
-
             ctx_result = _get_ctx_result_resolve_names(result)
             if not ctx_result:
                 continue
