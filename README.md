@@ -1,7 +1,7 @@
 # EWS for Office 365
 
 Publisher: Splunk \
-Connector Version: 2.15.5 \
+Connector Version: 2.15.6 \
 Product Vendor: Microsoft \
 Product Name: Office 365 \
 Minimum Product Version: 6.2.2
