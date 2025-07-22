@@ -16,7 +16,7 @@
     "product_name": "Office 365",
     "product_version_regex": ".*",
     "min_phantom_version": "6.2.2",
-    "python_version": "3",
+    "python_version": ["3.9", "3.13"],
     "fips_compliant": true,
     "latest_tested_versions": [
         "Cloud April 27, 2023"
