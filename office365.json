@@ -3726,7 +3726,7 @@
             },
             {
                 "module": "compressed_rtf",
-                "input_file": "wheels/py3/compressed_rtf-1.0.6-py3-none-any.whl"
+                "input_file": "wheels/py3/compressed_rtf-1.0.7-py3-none-any.whl"
             },
             {
                 "module": "convert_outlook_msg_file",
@@ -3750,7 +3750,7 @@
             },
             {
                 "module": "compressed_rtf",
-                "input_file": "wheels/py3/compressed_rtf-1.0.6-py3-none-any.whl"
+                "input_file": "wheels/py3/compressed_rtf-1.0.7-py3-none-any.whl"
             },
             {
                 "module": "convert_outlook_msg_file",
