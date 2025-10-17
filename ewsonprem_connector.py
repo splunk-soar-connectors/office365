@@ -1627,6 +1627,7 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.get_status(), None
 
+        headers = None
         try:
             if mail:
                 headers = self._get_email_headers_from_mail(mail, charset)
