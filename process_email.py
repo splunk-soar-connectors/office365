@@ -183,15 +183,41 @@ class ProcessEmail:
             url = url[: url.find(">")]
 
         return url.strip(r"\'|\"")
-
+    
     def _sanitize_filename(self, filename):
-        # Replace characters that are problematic in file paths
+        MAX_FILENAME_BYTES = 255
+        DEFAULT_FILENAME = "email_default.eml"
+        
+        # Replace backslashes and forward slashes with underscores.
         sanitized = re.sub(r'[\\/]', "_", filename)
-        # Limit length if needed
-        if len(sanitized) > 200:
-            base, ext = os.path.splitext(sanitized)
-            sanitized = base[:195] + ext
+
+        # Replace null bytes.
+        sanitized = sanitized.replace('\0', '')
+
+        # Replace whitespace with underscores.
+        sanitized = re.sub(r'\s+', '_', sanitized)
+
+        # Replace angle brackets and spaces.
+        sanitized = sanitized.replace("<", "").replace(">", "")
+
+        if not filename:
+            return DEFAULT_FILENAME
+
+
+        if len(sanitized.encode('utf-8')) <= MAX_FILENAME_BYTES:
+            return sanitized
+
+        base, ext = os.path.splitext(sanitized)
+        max_base_bytes = MAX_FILENAME_BYTES - len(ext) - 4 # TODO: verify and remove 4 bytes kept as margin for error. 
+
+        sanitized = ""
+        while len(sanitized) < len(base) and len(sanitized.encode('utf-8') + base[len(sanitized)].encode('utf-8')) < max_base_bytes:
+            sanitized += base[len(sanitized)]
+
+        sanitized = sanitized + ext
+
         return sanitized
+
 
     def _find_uris_in_text(self, file_data):
         """Because of the possibility of a soft break, we need to find the uris _and_ the position
@@ -643,7 +669,7 @@ class ProcessEmail:
             except OSError as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
                 try:
-                    if "File name too long" in error_message:
+                    if "File name too long" in error_message: #TODO: verify we don't enter this block after adding sanitization
                         new_file_name = "ph_long_file_name_temp"
                         file_path = "{}{}".format(file_path.rstrip(file_name.replace("<", "").replace(">", "").replace(" ", "")), new_file_name)
                         self._base_connector.debug_print(f"Original filename: {file_name}")
@@ -689,8 +715,10 @@ class ProcessEmail:
             file_name = f"{name}{extension}"
         else:
             file_name = self._base_connector._decode_uni_string(file_name, file_name)
-        # Remove any chars that we don't want in the name
-        file_path = "{}/{}_{}".format(tmp_dir, part_index, file_name.replace("<", "").replace(">", "").replace(" ", ""))
+        
+        file_name = self._sanitize_filename(file_name)
+        
+        file_path = "{}/{}_{}".format(tmp_dir, part_index, file_name)
 
         # is the part representing the body of the email
         status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
