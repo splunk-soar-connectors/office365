@@ -2565,7 +2565,7 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print(f"Unable to decode Email Mime Content. {error_text}")
             return phantom.APP_ERROR, "Unable to decode Email Mime Content"
 
-        epoch = self._get_email_epoch(resp_json)  # pylint: disable=assignment-from-none
+        epoch = self._get_email_epoch(resp_json)
 
         email_header_list = list()
         attach_meta_info_list = list()

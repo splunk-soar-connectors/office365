@@ -184,6 +184,39 @@ class ProcessEmail:
 
         return url.strip(r"\'|\"")
 
+    def _sanitize_filename(self, filename):
+        MAX_FILENAME_BYTES = 255
+        DEFAULT_FILENAME = "email_default.eml"
+
+        # Replace backslashes and forward slashes with underscores.
+        sanitized = re.sub(r"[\\/]", "_", filename)
+
+        # Replace null bytes.
+        sanitized = sanitized.replace("\0", "")
+
+        # Replace whitespace with underscores.
+        sanitized = re.sub(r"\s+", "_", sanitized)
+
+        # Replace angle brackets and spaces.
+        sanitized = sanitized.replace("<", "").replace(">", "")
+
+        if not filename:
+            return DEFAULT_FILENAME
+
+        if len(sanitized.encode("utf-8")) <= MAX_FILENAME_BYTES:
+            return sanitized
+
+        base, ext = os.path.splitext(sanitized)
+        max_base_bytes = MAX_FILENAME_BYTES - len(ext) - 4  # TODO: verify and remove 4 bytes kept as margin for error.
+
+        sanitized = ""
+        while len(sanitized) < len(base) and len(sanitized.encode("utf-8") + base[len(sanitized)].encode("utf-8")) < max_base_bytes:
+            sanitized += base[len(sanitized)]
+
+        sanitized = sanitized + ext
+
+        return sanitized
+
     def _find_uris_in_text(self, file_data):
         """Because of the possibility of a soft break, we need to find the uris _and_ the position
         Also the function has to take into account the fact that the 1st soft broken line can be the
@@ -428,6 +461,14 @@ class ProcessEmail:
     def _parse_email_headers_as_inline(self, file_data, parsed_mail, charset, email_id):
         # remove the 'Forwarded Message' from the email text and parse it
         p = re.compile(r".*Forwarded Message.*\n(.*)", re.IGNORECASE)
+
+        if isinstance(file_data, bytes):
+            try:
+                self._base_connector.debug_print("Decoding bytes to UTF-8")
+                file_data = file_data.decode("utf-8", errors="replace")
+            except Exception as e:
+                self._base_connector.debug_print("Failed to decode bytes to UTF-8", e)
+
         email_text = p.sub(r"\1", file_data.strip())
         mail = email.message_from_string(email_text)
 
@@ -626,7 +667,7 @@ class ProcessEmail:
             except OSError as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
                 try:
-                    if "File name too long" in error_message:
+                    if "File name too long" in error_message:  # TODO: verify we don't enter this block after adding sanitization
                         new_file_name = "ph_long_file_name_temp"
                         file_path = "{}{}".format(file_path.rstrip(file_name.replace("<", "").replace(">", "").replace(" ", "")), new_file_name)
                         self._base_connector.debug_print(f"Original filename: {file_name}")
@@ -672,8 +713,10 @@ class ProcessEmail:
             file_name = f"{name}{extension}"
         else:
             file_name = self._base_connector._decode_uni_string(file_name, file_name)
-        # Remove any chars that we don't want in the name
-        file_path = "{}/{}_{}".format(tmp_dir, part_index, file_name.replace("<", "").replace(">", "").replace(" ", ""))
+
+        file_name = self._sanitize_filename(file_name)
+
+        file_path = f"{tmp_dir}/{part_index}_{file_name}"
 
         # is the part representing the body of the email
         status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
@@ -876,12 +919,16 @@ class ProcessEmail:
             extension = ".eml"
             file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]
             file_name = f"{self._base_connector._decode_uni_string(file_name, file_name)}{extension}"
+            self._base_connector.debug_print(f"file name before sanitize: {file_name}")
+            file_name = self._sanitize_filename(file_name)
+            self._base_connector.debug_print(f"file name after sanitize: {file_name}")
             file_path = f"{tmp_dir}/{file_name}"
             try:
                 with open(file_path, "wb") as f:
                     f.write(rfc822_email.encode())
             except Exception as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
+                self._base_connector.debug_print(f"Error occurred while adding file. Error Details: {error_message}")
                 try:
                     new_file_name = "ph_temp_email_file.eml"
                     file_path = f"{tmp_dir}/{new_file_name}"
