@@ -1081,7 +1081,7 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        ret_val, email_infos = self._get_email_infos_to_process(0, 1, action_result)
+        ret_val, _email_infos = self._get_email_infos_to_process(0, 1, action_result)
 
         # Process errors
         if phantom.is_fail(ret_val):
@@ -1405,7 +1405,7 @@ class EWSOnPremConnector(BaseConnector):
         email_id = None
         resp_data = {}
         try:
-            ret_val, resp_data, status_code = self.get_container_info(container_id)
+            ret_val, resp_data, _status_code = self.get_container_info(container_id)
         except ValueError as e:
             error_text = self._get_error_message_from_exception(e)
             return RetVal3(
@@ -1436,7 +1436,7 @@ class EWSOnPremConnector(BaseConnector):
         file_path = None
 
         try:
-            success, message, file_info = ph_rules.vault_info(vault_id=vault_id)
+            _success, _message, file_info = ph_rules.vault_info(vault_id=vault_id)
             file_info = next(iter(file_info))
             file_path = file_info.get("path")
         except Exception as e:
@@ -2311,9 +2311,6 @@ class EWSOnPremConnector(BaseConnector):
         # Set the Status
         return action_result.set_status(phantom.APP_SUCCESS)
 
-    def _get_email_epoch(self, resp_json):
-        return None
-
     def _get_rfc822_format(self, resp_json, action_result):
         try:
             mime_content = resp_json["m:Items"]["t:Message"]["t:MimeContent"]["#text"]
@@ -2565,18 +2562,16 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print(f"Unable to decode Email Mime Content. {error_text}")
             return phantom.APP_ERROR, "Unable to decode Email Mime Content"
 
-        epoch = self._get_email_epoch(resp_json)
-
         email_header_list = list()
         attach_meta_info_list = list()
         resp_json["emailGuid"] = str(uuid.uuid4())
 
-        ret_val, data = self._extract_ext_properties(resp_json)
+        _, data = self._extract_ext_properties(resp_json)
 
         if data:
             email_header_list.append(data)
 
-        ret_val, attach_email_headers, attach_meta_info = self._extract_ext_properties_from_attachments(resp_json)
+        _, attach_email_headers, attach_meta_info = self._extract_ext_properties_from_attachments(resp_json)
 
         if attach_email_headers:
             email_header_list.extend(attach_email_headers)
@@ -2601,11 +2596,10 @@ class EWSOnPremConnector(BaseConnector):
         process_email = ProcessEmail()
         return process_email.process_email(
             self,
-            rfc822_email,
-            email_id,
-            config,
-            epoch,
-            target_container_id,
+            rfc822_email=rfc822_email,
+            email_id=email_id,
+            config=config,
+            container_id=target_container_id,
             email_headers=email_header_list,
             attachments_data=attach_meta_info_list,
         )

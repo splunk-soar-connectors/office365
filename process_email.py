@@ -719,7 +719,7 @@ class ProcessEmail:
         file_path = f"{tmp_dir}/{part_index}_{file_name}"
 
         # is the part representing the body of the email
-        status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
+        _status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
         if not process_further:
             return phantom.APP_SUCCESS
         # This is an attachment and it"s not an email
@@ -1058,7 +1058,9 @@ class ProcessEmail:
 
         return ret_val, "Email Parsed", results
 
-    def process_email(self, base_connector, rfc822_email, email_id, config, epoch, container_id=None, email_headers=None, attachments_data=None):
+    def process_email(
+        self, base_connector, rfc822_email, email_id, config, epoch=None, container_id=None, email_headers=None, attachments_data=None
+    ):
         self._base_connector = base_connector
         self._config = config
 
@@ -1110,7 +1112,7 @@ class ProcessEmail:
 
         for artifact in artifacts:
             artifact["container_id"] = cid
-        ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
+        ret_val, message, _ids = self._base_connector.save_artifacts(artifacts)
         self._base_connector.debug_print(f"save_artifacts returns, value: {ret_val}, reason: {message}")
 
         container["artifacts"] = artifacts
@@ -1246,7 +1248,7 @@ class ProcessEmail:
 
     def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
         try:
-            success, message, vault_info = ph_rules.vault_info(vault_id=vault_id, container_id=container_id)
+            _success, _message, vault_info = ph_rules.vault_info(vault_id=vault_id, container_id=container_id)
             vault_info = list(vault_info)
         except Exception:
             return phantom.APP_ERROR, "Vault ID not found"
