@@ -1,6 +1,6 @@
 # File: process_email.py
 #
-# Copyright (c) 2016-2025 Splunk Inc.
+# Copyright (c) 2016-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -185,38 +185,33 @@ class ProcessEmail:
         return url.strip(r"\'|\"")
 
     def _sanitize_filename(self, filename):
-        MAX_FILENAME_BYTES = 253 # conservative limit. max is 255 bytes.
+        MAX_FILENAME_BYTES = 253  # conservative limit. max is 255 bytes.
         DEFAULT_FILENAME = "email_default.eml"
         # Replace backslashes and forward slashes with underscores.
-        sanitized = re.sub(r'[\\/]', "_", filename)
+        sanitized = re.sub(r"[\\/]", "_", filename)
 
         # Replace null bytes.
-        sanitized = sanitized.replace('\0', '')
+        sanitized = sanitized.replace("\0", "")
 
         # Replace whitespace with underscores.
-        sanitized = re.sub(r'\s+', '_', sanitized)
+        sanitized = re.sub(r"\s+", "_", sanitized)
 
         # Replace angle brackets and spaces.
         sanitized = sanitized.replace("<", "").replace(">", "")
 
-        if not filename:
+        if not sanitized:
             return DEFAULT_FILENAME
 
-
-        if len(sanitized.encode('utf-8')) <= MAX_FILENAME_BYTES:
+        if len(sanitized.encode("utf-8")) <= MAX_FILENAME_BYTES:
             return sanitized
 
         base, ext = os.path.splitext(sanitized)
-        max_base_bytes = MAX_FILENAME_BYTES - len(ext.encode('utf-8'))
+        max_base_bytes = MAX_FILENAME_BYTES - len(ext.encode("utf-8"))
 
-        sanitized = ""
-        while len(sanitized) < len(base) and len(sanitized.encode('utf-8') + base[len(sanitized)].encode('utf-8')) < max_base_bytes:
-            sanitized += base[len(sanitized)]
-
-        sanitized = sanitized + ext
+        base_b = base.encode("utf-8")
+        sanitized = base_b[:max_base_bytes].decode("utf-8", "ignore") + ext
 
         return sanitized
-
 
     def _find_uris_in_text(self, file_data):
         """Because of the possibility of a soft break, we need to find the uris _and_ the position
@@ -423,8 +418,6 @@ class ProcessEmail:
             except UnicodeDecodeError:
                 self._base_connector.debug_print("Failed to decode bytes to UTF-8, falling back to UnicodeDammit")
                 file_data = UnicodeDammit(file_data).unicode_markup
-            except Exception as e:
-                self._base_connector.debug_print("Failed to decode bytes to UTF-8. Error: ", str(e))
 
         self._parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
 
@@ -700,10 +693,10 @@ class ProcessEmail:
             file_name = self._base_connector._decode_uni_string(file_name, file_name)
 
         file_name = self._sanitize_filename(file_name)
-        file_path = "{}/{}_{}".format(tmp_dir, part_index, file_name)
+        file_path = f"{tmp_dir}/{part_index}_{file_name}"
 
         # is the part representing the body of the email
-        status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
+        _status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
         if not process_further:
             return phantom.APP_SUCCESS
         # This is an attachment and it"s not an email
@@ -903,7 +896,6 @@ class ProcessEmail:
             extension = ".eml"
             file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]
             file_name = f"{self._base_connector._decode_uni_string(file_name, file_name)}{extension}"
-            self._base_connector.debug_print(f"file name before sanitize: {file_name}")
             file_name = self._sanitize_filename(file_name)
             self._base_connector.debug_print(f"file name after sanitize: {file_name}")
             file_path = f"{tmp_dir}/{file_name}"
@@ -912,7 +904,6 @@ class ProcessEmail:
                     f.write(rfc822_email.encode())
             except Exception as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
-                self._base_connector.debug_print(f"Error occurred while adding file. Error Details: {error_message}")
                 try:
                     new_file_name = "ph_temp_email_file.eml"
                     file_path = f"{tmp_dir}/{new_file_name}"
@@ -1094,7 +1085,7 @@ class ProcessEmail:
 
         for artifact in artifacts:
             artifact["container_id"] = cid
-        ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
+        ret_val, message, _ids = self._base_connector.save_artifacts(artifacts)
         self._base_connector.debug_print(f"save_artifacts returns, value: {ret_val}, reason: {message}")
 
         container["artifacts"] = artifacts
@@ -1230,7 +1221,7 @@ class ProcessEmail:
 
     def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
         try:
-            success, message, vault_info = ph_rules.vault_info(vault_id=vault_id, container_id=container_id)
+            _success, _message, vault_info = ph_rules.vault_info(vault_id=vault_id, container_id=container_id)
             vault_info = list(vault_info)
         except Exception:
             return phantom.APP_ERROR, "Vault ID not found"
