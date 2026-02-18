@@ -1,5 +1,5 @@
 Splunk SOAR App: EWS for Office 365
-Copyright (c) 2016-2025 Splunk Inc.
+Copyright (c) 2016-2026 Splunk Inc.
 Third Party Software Attributions:
 
 @@@@============================================================================
@@ -35,7 +35,7 @@ SOFTWARE.
 
 Library: compressed-rtf - 1.0.7
 Homepage: https://github.com/delimitry/compressed_rtf
-License: UNKNOWN
+License: MIT
 License Text:
 
 The MIT License (MIT)
