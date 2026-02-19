@@ -10,13 +10,13 @@
     "type": "email",
     "main_module": "ewsonprem_connector.py",
     "app_version": "2.15.6",
-    "utctime_updated": "2024-09-30T09:32:46.000000Z",
+    "utctime_updated": "2026-02-18T20:43:40.197781Z",
     "package_name": "phantom_office365",
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
     "product_version_regex": ".*",
     "min_phantom_version": "6.2.2",
-    "python_version": "3.9,3.13",
+    "python_version": "3.9, 3.13",
     "fips_compliant": true,
     "latest_tested_versions": [
         "Cloud April 27, 2023"
