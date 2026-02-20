@@ -184,6 +184,35 @@ class ProcessEmail:
 
         return url.strip(r"\'|\"")
 
+    def _sanitize_filename(self, filename):
+        MAX_FILENAME_BYTES = 253  # conservative limit. max is 255 bytes.
+        DEFAULT_FILENAME = "email_default.eml"
+        # Replace backslashes and forward slashes with underscores.
+        sanitized = re.sub(r"[\\/]", "_", filename)
+
+        # Replace null bytes.
+        sanitized = sanitized.replace("\0", "")
+
+        # Replace whitespace with underscores.
+        sanitized = re.sub(r"\s+", "_", sanitized)
+
+        # Replace angle brackets and spaces.
+        sanitized = sanitized.replace("<", "").replace(">", "")
+
+        if not sanitized:
+            return DEFAULT_FILENAME
+
+        if len(sanitized.encode("utf-8")) <= MAX_FILENAME_BYTES:
+            return sanitized
+
+        base, ext = os.path.splitext(sanitized)
+        max_base_bytes = MAX_FILENAME_BYTES - len(ext.encode("utf-8"))
+
+        base_b = base.encode("utf-8")
+        sanitized = base_b[:max_base_bytes].decode("utf-8", "ignore") + ext
+
+        return sanitized
+
     def _find_uris_in_text(self, file_data):
         """Because of the possibility of a soft break, we need to find the uris _and_ the position
         Also the function has to take into account the fact that the 1st soft broken line can be the
@@ -382,6 +411,14 @@ class ProcessEmail:
         # base64 decode it if possible
         file_data = self._decode_if_base64(file_data)
 
+        if isinstance(file_data, bytes):
+            try:
+                self._base_connector.debug_print("Decoding bytes to UTF-8")
+                file_data = file_data.decode("utf-8")
+            except UnicodeDecodeError:
+                self._base_connector.debug_print("Failed to decode bytes to UTF-8, falling back to UnicodeDammit")
+                file_data = UnicodeDammit(file_data).unicode_markup
+
         self._parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
 
         if self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]:
@@ -427,9 +464,8 @@ class ProcessEmail:
 
     def _parse_email_headers_as_inline(self, file_data, parsed_mail, charset, email_id):
         # remove the 'Forwarded Message' from the email text and parse it
-        p = re.compile(r".*Forwarded Message.*\n(.*)", re.IGNORECASE)
-        email_text = p.sub(r"\1", file_data.strip())
-        mail = email.message_from_string(email_text)
+        email_text = re.sub(r"(?im)^.*forwarded message.*\r?\n", "", file_data, count=1)
+        mail = email.message_from_string(email_text.strip())
 
         # Get the array
         # email_headers = parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS]
@@ -623,23 +659,6 @@ class ProcessEmail:
                         self._base_connector.debug_print("Payload not found, hence adding empty file")
                     else:
                         f.write(part_payload)
-            except OSError as e:
-                error_message = self._base_connector._get_error_message_from_exception(e)
-                try:
-                    if "File name too long" in error_message:
-                        new_file_name = "ph_long_file_name_temp"
-                        file_path = "{}{}".format(file_path.rstrip(file_name.replace("<", "").replace(">", "").replace(" ", "")), new_file_name)
-                        self._base_connector.debug_print(f"Original filename: {file_name}")
-                        self._base_connector.debug_print(f"Modified filename: {new_file_name}")
-                        with open(file_path, "wb") as uncompressed_file:
-                            uncompressed_file.write(part_payload)
-                    else:
-                        self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_message}")
-                        return
-                except Exception as e:
-                    error_message = self._base_connector._get_error_message_from_exception(e)
-                    self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_message}")
-                    return
             except Exception as e:
                 error_message = self._base_connector._get_error_message_from_exception(e)
                 self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_message}")
@@ -672,11 +691,12 @@ class ProcessEmail:
             file_name = f"{name}{extension}"
         else:
             file_name = self._base_connector._decode_uni_string(file_name, file_name)
-        # Remove any chars that we don't want in the name
-        file_path = "{}/{}_{}".format(tmp_dir, part_index, file_name.replace("<", "").replace(">", "").replace(" ", ""))
+
+        file_name = self._sanitize_filename(file_name)
+        file_path = f"{tmp_dir}/{part_index}_{file_name}"
 
         # is the part representing the body of the email
-        status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
+        _status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
         if not process_further:
             return phantom.APP_SUCCESS
         # This is an attachment and it"s not an email
@@ -876,6 +896,8 @@ class ProcessEmail:
             extension = ".eml"
             file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]
             file_name = f"{self._base_connector._decode_uni_string(file_name, file_name)}{extension}"
+            file_name = self._sanitize_filename(file_name)
+            self._base_connector.debug_print(f"file name after sanitize: {file_name}")
             file_path = f"{tmp_dir}/{file_name}"
             try:
                 with open(file_path, "wb") as f:
@@ -1063,7 +1085,7 @@ class ProcessEmail:
 
         for artifact in artifacts:
             artifact["container_id"] = cid
-        ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
+        ret_val, message, _ids = self._base_connector.save_artifacts(artifacts)
         self._base_connector.debug_print(f"save_artifacts returns, value: {ret_val}, reason: {message}")
 
         container["artifacts"] = artifacts
@@ -1199,7 +1221,7 @@ class ProcessEmail:
 
     def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
         try:
-            success, message, vault_info = ph_rules.vault_info(vault_id=vault_id, container_id=container_id)
+            _success, _message, vault_info = ph_rules.vault_info(vault_id=vault_id, container_id=container_id)
             vault_info = list(vault_info)
         except Exception:
             return phantom.APP_ERROR, "Vault ID not found"

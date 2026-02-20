@@ -1081,7 +1081,7 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        ret_val, email_infos = self._get_email_infos_to_process(0, 1, action_result)
+        ret_val, _email_infos = self._get_email_infos_to_process(0, 1, action_result)
 
         # Process errors
         if phantom.is_fail(ret_val):
@@ -1405,7 +1405,7 @@ class EWSOnPremConnector(BaseConnector):
         email_id = None
         resp_data = {}
         try:
-            ret_val, resp_data, status_code = self.get_container_info(container_id)
+            ret_val, resp_data, _status_code = self.get_container_info(container_id)
         except ValueError as e:
             error_text = self._get_error_message_from_exception(e)
             return RetVal3(
@@ -1436,7 +1436,7 @@ class EWSOnPremConnector(BaseConnector):
         file_path = None
 
         try:
-            success, message, file_info = ph_rules.vault_info(vault_id=vault_id)
+            _success, _message, file_info = ph_rules.vault_info(vault_id=vault_id)
             file_info = next(iter(file_info))
             file_path = file_info.get("path")
         except Exception as e:
@@ -2571,12 +2571,12 @@ class EWSOnPremConnector(BaseConnector):
         attach_meta_info_list = list()
         resp_json["emailGuid"] = str(uuid.uuid4())
 
-        ret_val, data = self._extract_ext_properties(resp_json)
+        _ret_val, data = self._extract_ext_properties(resp_json)
 
         if data:
             email_header_list.append(data)
 
-        ret_val, attach_email_headers, attach_meta_info = self._extract_ext_properties_from_attachments(resp_json)
+        _ret_val, attach_email_headers, attach_meta_info = self._extract_ext_properties_from_attachments(resp_json)
 
         if attach_email_headers:
             email_header_list.extend(attach_email_headers)
