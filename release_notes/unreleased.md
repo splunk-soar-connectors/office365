@@ -1,3 +1,1 @@
 **Unreleased**
-
-* Improved filename sanitization to enforce 255-byte limit. [PAPP-36985]
