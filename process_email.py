@@ -927,7 +927,9 @@ class ProcessEmail:
                 self._parse_email_headers(self._parsed_mail, part, add_email_id=add_email_id)
 
                 # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
-                not_eml = part.get("Content-Type").find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) and part.get("Content-Disposition") != "attachment"
+                not_eml = (part.get("Content-Type") or "").find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) and part.get(
+                    "Content-Disposition"
+                ) != "attachment"
                 if part.is_multipart() and not_eml:
                     continue
                 try:

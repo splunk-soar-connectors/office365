@@ -2398,7 +2398,11 @@ class EWSOnPremConnector(BaseConnector):
                 attachment_data = [attachment_data]
 
             for curr_attachment in attachment_data:
-                attachment_ids.append(curr_attachment["t:AttachmentId"]["@Id"])
+                curr_attachment_id = curr_attachment.get("t:AttachmentId", {}).get("@Id") if isinstance(curr_attachment, dict) else None
+                if not curr_attachment_id:
+                    self.debug_print("Skipping attachment entry without an AttachmentId")
+                    continue
+                attachment_ids.append(curr_attachment_id)
                 # Add the info that we have right now
                 curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment, curr_key, internet_message_id, email_guid)
                 if curr_attach_meta_info:
@@ -2731,6 +2735,14 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(
                 phantom.APP_ERROR, f"ErrorExp in _process_email_id for all the email IDs: {failed_emails_parsing_list!s}"
             )
+
+        if failed_emails_parsing_list:
+            message = (
+                f"Failed to parse {len(failed_emails_parsing_list)} of {len(email_ids)} emails; failed email IDs: {failed_emails_parsing_list!s}"
+            )
+            self.save_progress(message)
+            action_result.update_summary({"failed_email_ids": [str(email_id) for email_id in failed_emails_parsing_list]})
+            return action_result.set_status(phantom.APP_SUCCESS, message)
 
         if self._skipped_emails > 0:
             self.save_progress(f"Skipped emails: {self._skipped_emails}. (For more details, check the logs)")
