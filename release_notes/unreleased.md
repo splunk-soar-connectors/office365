@@ -1,3 +1,3 @@
 **Unreleased**
 
-* Chore: refresh development checks (temporary baseline note).
+* Escape email and resolve-name widget values before inserting them into JavaScript contexts.
