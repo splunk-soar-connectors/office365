@@ -3008,6 +3008,18 @@ class EWSOnPremConnector(BaseConnector):
                 filter_str = f"{filter_str} and {key} eq {value}"
         return phantom.APP_SUCCESS, filter_str
 
+    @staticmethod
+    def _is_safe_trace_url(trace_url):
+        parsed_url = urlparse(trace_url)
+        expected_url = urlparse(EWS_TRACE_URL)
+        return (
+            parsed_url.scheme == expected_url.scheme
+            and parsed_url.netloc == expected_url.netloc
+            and parsed_url.path == expected_url.path
+            and not parsed_url.params
+            and not parsed_url.fragment
+        )
+
     def _trace_email(self, param):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
@@ -3047,6 +3059,8 @@ class EWSOnPremConnector(BaseConnector):
                 r_json = json.loads(response.text)
                 results.extend(r_json["d"]["results"])
                 trace_url = r_json["d"].get("__next")
+                if trace_url and not self._is_safe_trace_url(trace_url):
+                    return action_result.set_status(phantom.APP_ERROR, "The message trace response contained an unsafe pagination URL")
 
                 # Break if we got all the data we want or if there is no more data to fetch
                 if not trace_url or len(results) > maxi:
