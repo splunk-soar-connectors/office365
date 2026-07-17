@@ -59,6 +59,7 @@ import base64
 import email
 import quopri
 import re
+import secrets
 import time
 from datetime import datetime, timedelta
 from email.header import decode_header
@@ -371,9 +372,18 @@ class EWSOnPremConnector(BaseConnector):
         client_secret = base64.b64encode(client_secret)
         state["client_secret"] = client_secret.decode("ascii")
 
+        flow_nonce = secrets.token_hex(16)
+        state["flow_nonce"] = flow_nonce
+
         self.rsh.save_state(state)
         self.save_progress(f"Redirect URI: {app_rest_url}")
-        params = {"response_type": "code", "response_mode": "query", "client_id": client_id, "state": asset_id, "redirect_uri": app_rest_url}
+        params = {
+            "response_type": "code",
+            "response_mode": "query",
+            "client_id": client_id,
+            "state": f"{asset_id}_{flow_nonce}",
+            "redirect_uri": app_rest_url,
+        }
         url = requests.Request("GET", f"{request_url}/authorize", params=params).prepare().url
         url = f"{url}&"
 
