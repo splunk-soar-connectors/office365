@@ -144,6 +144,9 @@ class EWSOnPremConnector(BaseConnector):
         self.auth_type = None
         self.rsh = None
         self._skipped_emails = 0
+        self._failed_email_ids = []
+        self._failed_email_infos = []
+        self._poll_start_time = None
 
     def _handle_preprocess_scipts(self):
         config = self.get_config()
@@ -2719,6 +2722,7 @@ class EWSOnPremConnector(BaseConnector):
         self.save_progress("Got {} email{}".format(len(email_ids), "" if len(email_ids) == 1 else "s"))
 
         failed_emails_parsing_list = []
+        self._failed_email_ids = []
         for i, email_id in enumerate(email_ids):
             self.send_progress(f"Querying email # {i + 1} with id: {self._pprint_email_id(email_id)}")
             try:
@@ -2730,6 +2734,8 @@ class EWSOnPremConnector(BaseConnector):
                 self.debug_print(f"Error occurred in _process_email_id # {i} with Message ID: {email_id}. {error_text}")
 
                 failed_emails_parsing_list.append(email_id)
+
+        self._failed_email_ids = failed_emails_parsing_list
 
         if len(failed_emails_parsing_list) == len(email_ids):
             return action_result.set_status(
@@ -2836,9 +2842,8 @@ class EWSOnPremConnector(BaseConnector):
         return last_time.strftime(DATETIME_FORMAT)
 
     def _manage_data_duplication(self, email_infos, email_index, max_emails, total_ingested, limit):
-        # Define current time to store as starting reference for the next run of scheduled | interval polling
-        utc_now = datetime.utcnow()
-        self._state["last_ingested_format"] = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        poll_start_time = self._poll_start_time or datetime.utcnow().strftime(DATETIME_FORMAT)
+        self._state["last_ingested_format"] = poll_start_time
         self._state["last_email_format"] = email_infos[email_index]["last_modified_time"]
 
         # deepcopy is used for self._state, because otherwise self._encrypt_client_token()
@@ -2901,6 +2906,8 @@ class EWSOnPremConnector(BaseConnector):
 
         total_ingested = 0
         limit = max_emails
+        self._poll_start_time = datetime.utcnow().strftime(DATETIME_FORMAT)
+        self._failed_email_infos = []
         while True:
             self._dup_data = 0
             self._skipped_emails = 0
@@ -2927,9 +2934,29 @@ class EWSOnPremConnector(BaseConnector):
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
+            failed_ids = set(self._failed_email_ids)
+            if failed_ids:
+                self._failed_email_infos.extend(email_info for email_info in email_infos if email_info["id"] in failed_ids)
+
             max_emails, total_ingested = self._manage_data_duplication(email_infos, email_index, max_emails, total_ingested, limit)
             if not max_emails:
                 break
+
+        if self._failed_email_infos:
+            try:
+                oldest_failed = min(
+                    datetime.strptime(email_info["last_modified_time"], DATETIME_FORMAT) for email_info in self._failed_email_infos
+                )
+                rewind = (oldest_failed - timedelta(seconds=1)).strftime(DATETIME_FORMAT)
+                for state_key in ("last_ingested_format", "last_email_format"):
+                    if self._state.get(state_key) and self._state[state_key] > rewind:
+                        self._state[state_key] = rewind
+                if self.auth_type == AUTH_TYPE_CLIENT_CRED:
+                    self.save_state(self._encrypt_client_token(deepcopy(self._state)))
+                else:
+                    self.save_state(self.rsh._encrypt_state(deepcopy(self._state)))
+            except Exception as e:
+                self.debug_print(f"Unable to rewind checkpoint past failed emails: {self._get_error_message_from_exception(e)}")
 
         # Save the state file data only if the ingestion gets successfully completed
         if self._state.get("first_run", True):
