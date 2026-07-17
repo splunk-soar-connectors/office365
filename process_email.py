@@ -1154,12 +1154,37 @@ class ProcessEmail:
         vault_artifacts_added = 0
 
         last_file = len(files) - 1
+        trigger_artifact_saved = False
         for i, curr_file in enumerate(files):
             run_automation = True if i == last_file else False
-            ret_val, added_to_vault = self._handle_file(curr_file, vault_ids, container_id, vault_artifacts_added, run_automation)
+            try:
+                ret_val, added_to_vault = self._handle_file(curr_file, vault_ids, container_id, vault_artifacts_added, run_automation)
+            except Exception as e:
+                error_message = self._base_connector._get_error_message_from_exception(e)
+                self._base_connector.debug_print(f"Error occurred in _handle_file # {i}. {error_message}")
+                continue
 
             if added_to_vault:
                 vault_artifacts_added += 1
+                if run_automation:
+                    trigger_artifact_saved = True
+
+        if files and not trigger_artifact_saved:
+            fallback_artifact = {}
+            fallback_artifact.update(_artifact_common)
+            fallback_artifact["container_id"] = container_id
+            fallback_artifact["name"] = "Ingestion Summary Artifact"
+            fallback_artifact["cef"] = {
+                "note": "one or more attached files could not be added to the vault",
+                "filesAttached": len(files),
+                "vaultArtifactsAdded": vault_artifacts_added,
+            }
+            fallback_artifact["run_automation"] = True
+            self._set_sdi(fallback_artifact)
+            ret_val, status_string, artifact_id = self._base_connector.save_artifact(fallback_artifact)
+            self._base_connector.debug_print(
+                f"fallback trigger save_artifact returns, value: {ret_val}, reason: {status_string}, id: {artifact_id}"
+            )
 
         return
 
@@ -1275,6 +1300,7 @@ class ProcessEmail:
         vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
 
         file_name = self._base_connector._decode_uni_string(file_name, file_name)
+        file_name = self._sanitize_filename(file_name)
 
         try:
             success, message, vault_id = ph_rules.vault_add(
@@ -1283,13 +1309,13 @@ class ProcessEmail:
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
             self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(error_message))
-            return phantom.APP_ERROR, phantom.APP_ERROR
+            return phantom.APP_ERROR, False
 
         # self._base_connector.debug_print("vault_ret_dict", vault_ret_dict)
 
         if not success:
             self._base_connector.debug_print(f"Failed to add file to Vault: {message}")
-            return phantom.APP_ERROR, phantom.APP_ERROR
+            return phantom.APP_ERROR, False
 
         # add the vault id artifact to the container
         cef_artifact = curr_file.get("meta_info", {})
@@ -1303,7 +1329,7 @@ class ProcessEmail:
             self._add_vault_hashes_to_dictionary(cef_artifact, vault_id, container_id)
 
         if not cef_artifact:
-            return phantom.APP_SUCCESS, phantom.APP_ERROR
+            return phantom.APP_SUCCESS, False
 
         artifact = {}
         artifact.update(_artifact_common)
@@ -1322,7 +1348,7 @@ class ProcessEmail:
         ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
         self._base_connector.debug_print(f"save_artifact returns, value: {ret_val}, reason: {status_string}, id: {artifact_id}")
 
-        return phantom.APP_SUCCESS, ret_val
+        return phantom.APP_SUCCESS, phantom.is_success(ret_val)
 
     def _set_sdi(self, input_dict):
         if "source_data_identifier" in input_dict:

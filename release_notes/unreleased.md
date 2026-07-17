@@ -6,3 +6,4 @@
 * Surface partial email parsing failures and tolerate malformed MIME and attachment metadata safely.
 * Keep scheduled-poll checkpoints behind emails that failed processing so they are retried.
 * Bound scheduled polling and stop zero-progress ingestion cycles.
+* Preserve ingestion automation when an attachment cannot be vaulted and re-sanitize decoded filenames.
