@@ -2857,9 +2857,13 @@ class EWSOnPremConnector(BaseConnector):
         if max_emails:
             if email_index == 0 or self._less_data:
                 return None, None
-            total_ingested += max_emails - (self._dup_data + self._skipped_emails)
+            newly_ingested = max_emails - (self._dup_data + self._skipped_emails)
+            total_ingested += newly_ingested
             self._remaining = limit - total_ingested
             if total_ingested >= limit:
+                return None, None
+            if newly_ingested <= 0:
+                self.debug_print("Stopping ingestion: no new emails ingested this cycle")
                 return None, None
             next_cycle_repeat_data = 0
             last_modified_time = email_infos[email_index]["last_modified_time"]
@@ -2908,7 +2912,13 @@ class EWSOnPremConnector(BaseConnector):
         limit = max_emails
         self._poll_start_time = datetime.utcnow().strftime(DATETIME_FORMAT)
         self._failed_email_infos = []
+        max_cycles = limit + 10
+        cycles = 0
         while True:
+            cycles += 1
+            if cycles > max_cycles:
+                self.debug_print(f"Stopping ingestion after {max_cycles} cycles without reaching the run limit")
+                break
             self._dup_data = 0
             self._skipped_emails = 0
             restriction = self._get_restriction()

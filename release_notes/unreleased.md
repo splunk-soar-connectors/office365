@@ -5,3 +5,4 @@
 * Restrict message-trace pagination to the expected Office365 reporting endpoint.
 * Surface partial email parsing failures and tolerate malformed MIME and attachment metadata safely.
 * Keep scheduled-poll checkpoints behind emails that failed processing so they are retried.
+* Bound scheduled polling and stop zero-progress ingestion cycles.
