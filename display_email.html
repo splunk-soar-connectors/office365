@@ -99,7 +99,7 @@ and limitations under the License.
               </td>
               <td>
                 <a href="javascript:;"
-                   onclick="context_menu(this, [{'contains': ['phantom container id'], 'value': '{{ result.param.container_id }}' }], 0, {{ container.id }}, null, false);">
+                   onclick="context_menu(this, [{'contains': ['phantom container id'], 'value': '{{ result.param.container_id|escapejs }}' }], 0, {{ container.id }}, null, false);">
                   {{ result.param.container_id }}
                   &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                 </a>
@@ -113,7 +113,7 @@ and limitations under the License.
               </td>
               <td>
                 <a href="javascript:;"
-                   onclick="context_menu(this, [{'contains': ['vault id'], 'value': '{{ result.param.vault_id }}' }], 0, {{ container.id }}, null, false);">
+                   onclick="context_menu(this, [{'contains': ['vault id'], 'value': '{{ result.param.vault_id|escapejs }}' }], 0, {{ container.id }}, null, false);">
                   {{ result.param.vault_id }}
                   &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                 </a>
@@ -127,7 +127,7 @@ and limitations under the License.
               </td>
               <td>
                 <a href="javascript:;"
-                   onclick="context_menu(this, [{'contains': ['exchange email id'], 'value': '{{ result.summary.email_id }}' }], 0, {{ container.id }}, null, false);">
+                   onclick="context_menu(this, [{'contains': ['exchange email id'], 'value': '{{ result.summary.email_id|escapejs }}' }], 0, {{ container.id }}, null, false);">
                   {{ result.summary.email_id }}
                   &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                 </a>
@@ -141,7 +141,7 @@ and limitations under the License.
             {% if result.summary.container_id %}
               <td>
                 <a href="javascript:;"
-                   onclick="context_menu(this, [{'contains': ['phantom container id'], 'value': '{{ result.summary.container_id }}' }], 0, {{ container.id }}, null, false);">
+                   onclick="context_menu(this, [{'contains': ['phantom container id'], 'value': '{{ result.summary.container_id|escapejs }}' }], 0, {{ container.id }}, null, false);">
                   {{ result.summary.container_id }}
                   &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                 </a>
@@ -160,7 +160,7 @@ and limitations under the License.
               {% if key == "To" or key == "Delivered-To" or key == "Sender" or key == "From" or key == "Return-Path" or key == "Reply-To" or key == "X-Mail-Filter-Gateway-From" or key == "X-Mail-Filter-Gateway-To" %}
                 <td>
                   <a href="javascript:;"
-                     onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ value }}' }], 0, {{ container.id }}, null, false);">
+                     onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ value|escapejs }}' }], 0, {{ container.id }}, null, false);">
                     {{ value }}
                     &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                   </a>
@@ -168,7 +168,7 @@ and limitations under the License.
               {% elif key == "Message-ID" %}
                 <td>
                   <a href="javascript:;"
-                     onclick="context_menu(this, [{'contains': ['internet message id'], 'value': '{{ value }}' }], 0, {{ container.id }}, null, false);">
+                     onclick="context_menu(this, [{'contains': ['internet message id'], 'value': '{{ value|escapejs }}' }], 0, {{ container.id }}, null, false);">
                     {{ value }}
                     &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                   </a>
@@ -187,7 +187,7 @@ and limitations under the License.
             </td>
             <td>
               <a href="javascript:;"
-                 onclick="context_menu(this, [{'contains': ['exchange email id'], 'value': '{{ result.param.id }}' }, {'contains': ['email'], 'value': '{{ result.param.email }}' }], 0, {{ container.id }}, null, false);">
+                 onclick="context_menu(this, [{'contains': ['exchange email id'], 'value': '{{ result.param.id|escapejs }}' }, {'contains': ['email'], 'value': '{{ result.param.email|escapejs }}' }], 0, {{ container.id }}, null, false);">
                 {{ result.param.id }}
                 &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
               </a>
@@ -208,7 +208,7 @@ and limitations under the License.
               </td>
               <td>
                 <a href="javascript:;"
-                   onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ result.data.t_From.t_Mailbox.t_EmailAddress }}' }], 0, {{ container.id }}, null, false);">
+                   onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ result.data.t_From.t_Mailbox.t_EmailAddress|escapejs }}' }], 0, {{ container.id }}, null, false);">
                   {{ result.data.t_From.t_Mailbox.t_EmailAddress }}
                   &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                 </a>
@@ -222,7 +222,7 @@ and limitations under the License.
               </td>
               <td>
                 <a href="javascript:;"
-                   onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ result.data.t_Sender.t_Mailbox.t_EmailAddress }}' }], 0, {{ container.id }}, null, false);">
+                   onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ result.data.t_Sender.t_Mailbox.t_EmailAddress|escapejs }}' }], 0, {{ container.id }}, null, false);">
                   {{ result.data.t_Sender.t_Mailbox.t_EmailAddress }}
                   &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                 </a>
@@ -237,7 +237,7 @@ and limitations under the License.
               <td>
                 {% for curr_recipient in result.data.t_ToRecipients.t_Mailbox %}
                   <a href="javascript:;"
-                     onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ curr_recipient.t_EmailAddress }}' }], 0, {{ container.id }}, null, false);">
+                     onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ curr_recipient.t_EmailAddress|escapejs }}' }], 0, {{ container.id }}, null, false);">
                     {{ curr_recipient.t_EmailAddress }}
                     &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                   </a>
@@ -252,7 +252,7 @@ and limitations under the License.
               </td>
               <td>
                 <a href="javascript:;"
-                   onclick="context_menu(this, [{'contains': ['internet message id'], 'value': '{{ result.data.t_InternetMessageId }}' }], 0, {{ container.id }}, null, false);">
+                   onclick="context_menu(this, [{'contains': ['internet message id'], 'value': '{{ result.data.t_InternetMessageId|escapejs }}' }], 0, {{ container.id }}, null, false);">
                   {{ result.data.t_InternetMessageId }}
                   &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                 </a>
@@ -282,7 +282,7 @@ and limitations under the License.
             {% if result.summary.container_id %}
               <td>
                 <a href="javascript:;"
-                   onclick="context_menu(this, [{'contains': ['phantom container id'], 'value': '{{ result.summary.container_id }}' }], 0, {{ container.id }}, null, false);">
+                   onclick="context_menu(this, [{'contains': ['phantom container id'], 'value': '{{ result.summary.container_id|escapejs }}' }], 0, {{ container.id }}, null, false);">
                   {{ result.summary.container_id }}
                   &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
                 </a>

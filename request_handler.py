@@ -13,6 +13,7 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 import base64
+import hmac
 import json
 import os
 
@@ -77,8 +78,20 @@ class Office365RequestHandler:
     def handle_request(self):
         try:
             GET = self._request.GET
-            asset_id = GET.get("state")
-            self._rsh = RequestStateHandler(asset_id)
+            raw_state = GET.get("state") or ""
+            asset_id, separator, presented_nonce = raw_state.partition("_")
+            if not separator or not asset_id or not presented_nonce:
+                return HttpResponse("OAuth state mismatch", status=400, content_type="text/plain")
+
+            try:
+                self._rsh = RequestStateHandler(asset_id)
+            except AttributeError:
+                return HttpResponse("OAuth state mismatch", status=400, content_type="text/plain")
+
+            stored_nonce = self._rsh.load_state().get("flow_nonce")
+            if not stored_nonce or not hmac.compare_digest(str(stored_nonce), str(presented_nonce)):
+                return HttpResponse("OAuth state mismatch", status=400, content_type="text/plain")
+
             error = GET.get("error")
             if error:
                 error_msg = GET.get("error_description")

@@ -59,6 +59,7 @@ import base64
 import email
 import quopri
 import re
+import secrets
 import time
 from datetime import datetime, timedelta
 from email.header import decode_header
@@ -143,6 +144,9 @@ class EWSOnPremConnector(BaseConnector):
         self.auth_type = None
         self.rsh = None
         self._skipped_emails = 0
+        self._failed_email_ids = []
+        self._failed_email_infos = []
+        self._poll_start_time = None
 
     def _handle_preprocess_scipts(self):
         config = self.get_config()
@@ -371,9 +375,18 @@ class EWSOnPremConnector(BaseConnector):
         client_secret = base64.b64encode(client_secret)
         state["client_secret"] = client_secret.decode("ascii")
 
+        flow_nonce = secrets.token_hex(16)
+        state["flow_nonce"] = flow_nonce
+
         self.rsh.save_state(state)
         self.save_progress(f"Redirect URI: {app_rest_url}")
-        params = {"response_type": "code", "response_mode": "query", "client_id": client_id, "state": asset_id, "redirect_uri": app_rest_url}
+        params = {
+            "response_type": "code",
+            "response_mode": "query",
+            "client_id": client_id,
+            "state": f"{asset_id}_{flow_nonce}",
+            "redirect_uri": app_rest_url,
+        }
         url = requests.Request("GET", f"{request_url}/authorize", params=params).prepare().url
         url = f"{url}&"
 
@@ -981,7 +994,7 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR, message
         return phantom.APP_SUCCESS, ""
 
-    def _make_rest_call(self, result, data, check_response, data_string=False):
+    def _make_rest_call(self, result, data, check_response, data_string=False, fail_on_response_errors=False):
         """Function that makes the REST call to the device, generic function that can be called from various action handlers
         Needs to return two values, 1st the phantom.APP_[SUCCESS|ERROR], 2nd the response
         """
@@ -1062,6 +1075,17 @@ class EWSOnPremConnector(BaseConnector):
             msg_string = EWSONPREM_JSON_PARSE_ERROR.format(raw_text=r.text)
             error_text = self._get_error_message_from_exception(e)
             return result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json
+
+        if isinstance(resp_message, list):
+            if fail_on_response_errors:
+                response_errors = [
+                    EWSONPREM_FROM_SERVER_ERROR.format(**self._get_error_details(message))
+                    for message in resp_message
+                    if message.get("@ResponseClass", "") == "Error"
+                ]
+                if response_errors:
+                    return result.set_status(phantom.APP_ERROR, "; ".join(response_errors)), resp_json
+            return phantom.APP_SUCCESS, resp_message
 
         if not isinstance(resp_message, dict):
             return phantom.APP_SUCCESS, resp_message
@@ -2122,17 +2146,29 @@ class EWSOnPremConnector(BaseConnector):
                 phantom.APP_ERROR, f"Parameter validation failed for the ID. Error: {self._get_error_message_from_exception(e)}"
             )
 
-        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_markasjunk_response)
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_markasjunk_response, fail_on_response_errors=True)
 
         # Process errors
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         if move_email:
+            if isinstance(resp_json, list):
+                new_email_ids = [response.get("m:MovedItemId", {}).get("@Id") for response in resp_json]
+                if not all(new_email_ids):
+                    return action_result.set_status(phantom.APP_ERROR, "Result does not contain moved Email ID information")
+
+                action_result.add_data({"new_email_ids": new_email_ids})
+                action_result.update_summary({"new_email_ids": new_email_ids})
+                return action_result.set_status(
+                    phantom.APP_SUCCESS,
+                    "{}{}".format(message, ". Messages moved to Junk Folder" if action == "block" else ". Messages moved out of Junk Folder"),
+                )
+
             try:
                 new_email_id = resp_json["m:MovedItemId"]["@Id"]
             except Exception:
-                return action_result.set_status(phantom.APP_SUCCESS, "Unable to get moved Email ID")
+                return action_result.set_status(phantom.APP_ERROR, "Result does not contain moved Email ID information")
 
             action_result.add_data({"new_email_id": new_email_id})
             action_result.update_summary({"new_email_id": new_email_id})
@@ -2388,7 +2424,11 @@ class EWSOnPremConnector(BaseConnector):
                 attachment_data = [attachment_data]
 
             for curr_attachment in attachment_data:
-                attachment_ids.append(curr_attachment["t:AttachmentId"]["@Id"])
+                curr_attachment_id = curr_attachment.get("t:AttachmentId", {}).get("@Id") if isinstance(curr_attachment, dict) else None
+                if not curr_attachment_id:
+                    self.debug_print("Skipping attachment entry without an AttachmentId")
+                    continue
+                attachment_ids.append(curr_attachment_id)
                 # Add the info that we have right now
                 curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment, curr_key, internet_message_id, email_guid)
                 if curr_attach_meta_info:
@@ -2705,6 +2745,7 @@ class EWSOnPremConnector(BaseConnector):
         self.save_progress("Got {} email{}".format(len(email_ids), "" if len(email_ids) == 1 else "s"))
 
         failed_emails_parsing_list = []
+        self._failed_email_ids = []
         for i, email_id in enumerate(email_ids):
             self.send_progress(f"Querying email # {i + 1} with id: {self._pprint_email_id(email_id)}")
             try:
@@ -2717,10 +2758,20 @@ class EWSOnPremConnector(BaseConnector):
 
                 failed_emails_parsing_list.append(email_id)
 
+        self._failed_email_ids = failed_emails_parsing_list
+
         if len(failed_emails_parsing_list) == len(email_ids):
             return action_result.set_status(
                 phantom.APP_ERROR, f"ErrorExp in _process_email_id for all the email IDs: {failed_emails_parsing_list!s}"
             )
+
+        if failed_emails_parsing_list:
+            message = (
+                f"Failed to parse {len(failed_emails_parsing_list)} of {len(email_ids)} emails; failed email IDs: {failed_emails_parsing_list!s}"
+            )
+            self.save_progress(message)
+            action_result.update_summary({"failed_email_ids": [str(email_id) for email_id in failed_emails_parsing_list]})
+            return action_result.set_status(phantom.APP_SUCCESS, message)
 
         if self._skipped_emails > 0:
             self.save_progress(f"Skipped emails: {self._skipped_emails}. (For more details, check the logs)")
@@ -2814,9 +2865,8 @@ class EWSOnPremConnector(BaseConnector):
         return last_time.strftime(DATETIME_FORMAT)
 
     def _manage_data_duplication(self, email_infos, email_index, max_emails, total_ingested, limit):
-        # Define current time to store as starting reference for the next run of scheduled | interval polling
-        utc_now = datetime.utcnow()
-        self._state["last_ingested_format"] = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        poll_start_time = self._poll_start_time or datetime.utcnow().strftime(DATETIME_FORMAT)
+        self._state["last_ingested_format"] = poll_start_time
         self._state["last_email_format"] = email_infos[email_index]["last_modified_time"]
 
         # deepcopy is used for self._state, because otherwise self._encrypt_client_token()
@@ -2830,9 +2880,13 @@ class EWSOnPremConnector(BaseConnector):
         if max_emails:
             if email_index == 0 or self._less_data:
                 return None, None
-            total_ingested += max_emails - (self._dup_data + self._skipped_emails)
+            newly_ingested = max_emails - (self._dup_data + self._skipped_emails)
+            total_ingested += newly_ingested
             self._remaining = limit - total_ingested
             if total_ingested >= limit:
+                return None, None
+            if newly_ingested <= 0:
+                self.debug_print("Stopping ingestion: no new emails ingested this cycle")
                 return None, None
             next_cycle_repeat_data = 0
             last_modified_time = email_infos[email_index]["last_modified_time"]
@@ -2879,7 +2933,15 @@ class EWSOnPremConnector(BaseConnector):
 
         total_ingested = 0
         limit = max_emails
+        self._poll_start_time = datetime.utcnow().strftime(DATETIME_FORMAT)
+        self._failed_email_infos = []
+        max_cycles = limit + 10
+        cycles = 0
         while True:
+            cycles += 1
+            if cycles > max_cycles:
+                self.debug_print(f"Stopping ingestion after {max_cycles} cycles without reaching the run limit")
+                break
             self._dup_data = 0
             self._skipped_emails = 0
             restriction = self._get_restriction()
@@ -2905,9 +2967,29 @@ class EWSOnPremConnector(BaseConnector):
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
+            failed_ids = set(self._failed_email_ids)
+            if failed_ids:
+                self._failed_email_infos.extend(email_info for email_info in email_infos if email_info["id"] in failed_ids)
+
             max_emails, total_ingested = self._manage_data_duplication(email_infos, email_index, max_emails, total_ingested, limit)
             if not max_emails:
                 break
+
+        if self._failed_email_infos:
+            try:
+                oldest_failed = min(
+                    datetime.strptime(email_info["last_modified_time"], DATETIME_FORMAT) for email_info in self._failed_email_infos
+                )
+                rewind = (oldest_failed - timedelta(seconds=1)).strftime(DATETIME_FORMAT)
+                for state_key in ("last_ingested_format", "last_email_format"):
+                    if self._state.get(state_key) and self._state[state_key] > rewind:
+                        self._state[state_key] = rewind
+                if self.auth_type == AUTH_TYPE_CLIENT_CRED:
+                    self.save_state(self._encrypt_client_token(deepcopy(self._state)))
+                else:
+                    self.save_state(self.rsh._encrypt_state(deepcopy(self._state)))
+            except Exception as e:
+                self.debug_print(f"Unable to rewind checkpoint past failed emails: {self._get_error_message_from_exception(e)}")
 
         # Save the state file data only if the ingestion gets successfully completed
         if self._state.get("first_run", True):
@@ -2998,6 +3080,18 @@ class EWSOnPremConnector(BaseConnector):
                 filter_str = f"{filter_str} and {key} eq {value}"
         return phantom.APP_SUCCESS, filter_str
 
+    @staticmethod
+    def _is_safe_trace_url(trace_url):
+        parsed_url = urlparse(trace_url)
+        expected_url = urlparse(EWS_TRACE_URL)
+        return (
+            parsed_url.scheme == expected_url.scheme
+            and parsed_url.netloc == expected_url.netloc
+            and parsed_url.path == expected_url.path
+            and not parsed_url.params
+            and not parsed_url.fragment
+        )
+
     def _trace_email(self, param):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
@@ -3037,6 +3131,8 @@ class EWSOnPremConnector(BaseConnector):
                 r_json = json.loads(response.text)
                 results.extend(r_json["d"]["results"])
                 trace_url = r_json["d"].get("__next")
+                if trace_url and not self._is_safe_trace_url(trace_url):
+                    return action_result.set_status(phantom.APP_ERROR, "The message trace response contained an unsafe pagination URL")
 
                 # Break if we got all the data we want or if there is no more data to fetch
                 if not trace_url or len(results) > maxi:

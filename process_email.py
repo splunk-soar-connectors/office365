@@ -184,8 +184,7 @@ class ProcessEmail:
 
         return url.strip(r"\'|\"")
 
-    def _sanitize_filename(self, filename):
-        MAX_FILENAME_BYTES = 253  # conservative limit. max is 255 bytes.
+    def _sanitize_filename(self, filename, max_filename_bytes=253):
         DEFAULT_FILENAME = "email_default.eml"
         # Replace backslashes and forward slashes with underscores.
         sanitized = re.sub(r"[\\/]", "_", filename)
@@ -202,11 +201,14 @@ class ProcessEmail:
         if not sanitized:
             return DEFAULT_FILENAME
 
-        if len(sanitized.encode("utf-8")) <= MAX_FILENAME_BYTES:
+        if len(sanitized.encode("utf-8")) <= max_filename_bytes:
             return sanitized
 
         base, ext = os.path.splitext(sanitized)
-        max_base_bytes = MAX_FILENAME_BYTES - len(ext.encode("utf-8"))
+        max_base_bytes = max_filename_bytes - len(ext.encode("utf-8"))
+
+        if max_base_bytes <= 0:
+            return DEFAULT_FILENAME
 
         base_b = base.encode("utf-8")
         sanitized = base_b[:max_base_bytes].decode("utf-8", "ignore") + ext
@@ -580,7 +582,7 @@ class ProcessEmail:
 
         return self._base_connector._decode_uni_string(subject, def_cont_name)
 
-    def _handle_if_body(self, content_disp, content_id, content_type, part, bodies, file_path):
+    def _handle_if_body(self, content_disp, content_id, content_type, part, bodies, file_path, fallback_file_path):
         process_as_body = False
 
         # if content disposition is None then assume that it is
@@ -599,8 +601,18 @@ class ProcessEmail:
         if not part_payload:
             return phantom.APP_SUCCESS, False
 
-        with open(file_path, "wb") as f:
-            f.write(part_payload)
+        try:
+            with open(file_path, "wb") as f:
+                f.write(part_payload)
+        except OSError as e:
+            self._debug_print(f"Unable to write email body to {file_path}: {e}")
+            try:
+                with open(fallback_file_path, "wb") as f:
+                    f.write(part_payload)
+            except OSError as fallback_error:
+                self._debug_print(f"Unable to write email body fallback to {fallback_file_path}: {fallback_error}")
+                return phantom.APP_ERROR, False
+            file_path = fallback_file_path
 
         bodies.append({"file_path": file_path, "charset": part.get_content_charset()})
 
@@ -692,13 +704,15 @@ class ProcessEmail:
         else:
             file_name = self._base_connector._decode_uni_string(file_name, file_name)
 
-        file_name = self._sanitize_filename(file_name)
-        file_path = f"{tmp_dir}/{part_index}_{file_name}"
+        filename_prefix = f"{part_index}_"
+        file_name = self._sanitize_filename(file_name, 255 - len(filename_prefix.encode("utf-8")))
+        file_path = f"{tmp_dir}/{filename_prefix}{file_name}"
+        fallback_file_path = f"{tmp_dir}/{filename_prefix}email_default.eml"
 
         # is the part representing the body of the email
-        _status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
+        status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path, fallback_file_path)
         if not process_further:
-            return phantom.APP_SUCCESS
+            return status
         # This is an attachment and it"s not an email
         self._handle_attachment(part, file_name, file_path)
 
@@ -927,7 +941,9 @@ class ProcessEmail:
                 self._parse_email_headers(self._parsed_mail, part, add_email_id=add_email_id)
 
                 # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
-                not_eml = part.get("Content-Type").find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) and part.get("Content-Disposition") != "attachment"
+                not_eml = (part.get("Content-Type") or "").find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) and part.get(
+                    "Content-Disposition"
+                ) != "attachment"
                 if part.is_multipart() and not_eml:
                     continue
                 try:
@@ -1013,7 +1029,13 @@ class ProcessEmail:
         return
 
     def _int_process_email(self, rfc822_email, email_id, start_time_epoch):
-        mail = email.message_from_string(rfc822_email)
+        try:
+            mail = email.message_from_string(rfc822_email)
+        except Exception as e:
+            error_message = self._base_connector._get_error_message_from_exception(e)
+            message = f"Failed to parse the email content. {error_message}"
+            self._debug_print(message)
+            return phantom.APP_ERROR, message, []
 
         ret_val = phantom.APP_SUCCESS
 
@@ -1152,12 +1174,37 @@ class ProcessEmail:
         vault_artifacts_added = 0
 
         last_file = len(files) - 1
+        trigger_artifact_saved = False
         for i, curr_file in enumerate(files):
             run_automation = True if i == last_file else False
-            ret_val, added_to_vault = self._handle_file(curr_file, vault_ids, container_id, vault_artifacts_added, run_automation)
+            try:
+                ret_val, added_to_vault = self._handle_file(curr_file, vault_ids, container_id, vault_artifacts_added, run_automation)
+            except Exception as e:
+                error_message = self._base_connector._get_error_message_from_exception(e)
+                self._base_connector.debug_print(f"Error occurred in _handle_file # {i}. {error_message}")
+                continue
 
             if added_to_vault:
                 vault_artifacts_added += 1
+                if run_automation:
+                    trigger_artifact_saved = True
+
+        if files and not trigger_artifact_saved:
+            fallback_artifact = {}
+            fallback_artifact.update(_artifact_common)
+            fallback_artifact["container_id"] = container_id
+            fallback_artifact["name"] = "Ingestion Summary Artifact"
+            fallback_artifact["cef"] = {
+                "note": "one or more attached files could not be added to the vault",
+                "filesAttached": len(files),
+                "vaultArtifactsAdded": vault_artifacts_added,
+            }
+            fallback_artifact["run_automation"] = True
+            self._set_sdi(fallback_artifact)
+            ret_val, status_string, artifact_id = self._base_connector.save_artifact(fallback_artifact)
+            self._base_connector.debug_print(
+                f"fallback trigger save_artifact returns, value: {ret_val}, reason: {status_string}, id: {artifact_id}"
+            )
 
         return
 
@@ -1273,6 +1320,7 @@ class ProcessEmail:
         vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
 
         file_name = self._base_connector._decode_uni_string(file_name, file_name)
+        file_name = self._sanitize_filename(file_name)
 
         try:
             success, message, vault_id = ph_rules.vault_add(
@@ -1281,13 +1329,13 @@ class ProcessEmail:
         except Exception as e:
             error_message = self._base_connector._get_error_message_from_exception(e)
             self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(error_message))
-            return phantom.APP_ERROR, phantom.APP_ERROR
+            return phantom.APP_ERROR, False
 
         # self._base_connector.debug_print("vault_ret_dict", vault_ret_dict)
 
         if not success:
             self._base_connector.debug_print(f"Failed to add file to Vault: {message}")
-            return phantom.APP_ERROR, phantom.APP_ERROR
+            return phantom.APP_ERROR, False
 
         # add the vault id artifact to the container
         cef_artifact = curr_file.get("meta_info", {})
@@ -1301,7 +1349,7 @@ class ProcessEmail:
             self._add_vault_hashes_to_dictionary(cef_artifact, vault_id, container_id)
 
         if not cef_artifact:
-            return phantom.APP_SUCCESS, phantom.APP_ERROR
+            return phantom.APP_SUCCESS, False
 
         artifact = {}
         artifact.update(_artifact_common)
@@ -1320,7 +1368,7 @@ class ProcessEmail:
         ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
         self._base_connector.debug_print(f"save_artifact returns, value: {ret_val}, reason: {status_string}, id: {artifact_id}")
 
-        return phantom.APP_SUCCESS, ret_val
+        return phantom.APP_SUCCESS, phantom.is_success(ret_val)
 
     def _set_sdi(self, input_dict):
         if "source_data_identifier" in input_dict:
