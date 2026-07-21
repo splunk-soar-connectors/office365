@@ -994,7 +994,7 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR, message
         return phantom.APP_SUCCESS, ""
 
-    def _make_rest_call(self, result, data, check_response, data_string=False):
+    def _make_rest_call(self, result, data, check_response, data_string=False, fail_on_response_errors=False):
         """Function that makes the REST call to the device, generic function that can be called from various action handlers
         Needs to return two values, 1st the phantom.APP_[SUCCESS|ERROR], 2nd the response
         """
@@ -1075,6 +1075,17 @@ class EWSOnPremConnector(BaseConnector):
             msg_string = EWSONPREM_JSON_PARSE_ERROR.format(raw_text=r.text)
             error_text = self._get_error_message_from_exception(e)
             return result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json
+
+        if isinstance(resp_message, list):
+            if fail_on_response_errors:
+                response_errors = [
+                    EWSONPREM_FROM_SERVER_ERROR.format(**self._get_error_details(message))
+                    for message in resp_message
+                    if message.get("@ResponseClass", "") == "Error"
+                ]
+                if response_errors:
+                    return result.set_status(phantom.APP_ERROR, "; ".join(response_errors)), resp_json
+            return phantom.APP_SUCCESS, resp_message
 
         if not isinstance(resp_message, dict):
             return phantom.APP_SUCCESS, resp_message
@@ -2135,17 +2146,29 @@ class EWSOnPremConnector(BaseConnector):
                 phantom.APP_ERROR, f"Parameter validation failed for the ID. Error: {self._get_error_message_from_exception(e)}"
             )
 
-        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_markasjunk_response)
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_markasjunk_response, fail_on_response_errors=True)
 
         # Process errors
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         if move_email:
+            if isinstance(resp_json, list):
+                new_email_ids = [response.get("m:MovedItemId", {}).get("@Id") for response in resp_json]
+                if not all(new_email_ids):
+                    return action_result.set_status(phantom.APP_ERROR, "Result does not contain moved Email ID information")
+
+                action_result.add_data({"new_email_ids": new_email_ids})
+                action_result.update_summary({"new_email_ids": new_email_ids})
+                return action_result.set_status(
+                    phantom.APP_SUCCESS,
+                    "{}{}".format(message, ". Messages moved to Junk Folder" if action == "block" else ". Messages moved out of Junk Folder"),
+                )
+
             try:
                 new_email_id = resp_json["m:MovedItemId"]["@Id"]
             except Exception:
-                return action_result.set_status(phantom.APP_SUCCESS, "Unable to get moved Email ID")
+                return action_result.set_status(phantom.APP_ERROR, "Result does not contain moved Email ID information")
 
             action_result.add_data({"new_email_id": new_email_id})
             action_result.update_summary({"new_email_id": new_email_id})

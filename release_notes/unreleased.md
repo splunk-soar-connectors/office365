@@ -9,3 +9,4 @@
 * Preserve ingestion automation when an attachment cannot be vaulted and re-sanitize decoded filenames.
 * Convert malformed nested-message recursion failures into per-email parsing errors.
 * Preserve email-body IOC extraction when a MIME part filename exhausts the filesystem component limit.
+* Report Exchange block and unblock sender actions as failures when any requested message is rejected.
