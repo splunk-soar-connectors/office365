@@ -184,8 +184,7 @@ class ProcessEmail:
 
         return url.strip(r"\'|\"")
 
-    def _sanitize_filename(self, filename):
-        MAX_FILENAME_BYTES = 253  # conservative limit. max is 255 bytes.
+    def _sanitize_filename(self, filename, max_filename_bytes=253):
         DEFAULT_FILENAME = "email_default.eml"
         # Replace backslashes and forward slashes with underscores.
         sanitized = re.sub(r"[\\/]", "_", filename)
@@ -202,11 +201,14 @@ class ProcessEmail:
         if not sanitized:
             return DEFAULT_FILENAME
 
-        if len(sanitized.encode("utf-8")) <= MAX_FILENAME_BYTES:
+        if len(sanitized.encode("utf-8")) <= max_filename_bytes:
             return sanitized
 
         base, ext = os.path.splitext(sanitized)
-        max_base_bytes = MAX_FILENAME_BYTES - len(ext.encode("utf-8"))
+        max_base_bytes = max_filename_bytes - len(ext.encode("utf-8"))
+
+        if max_base_bytes <= 0:
+            return DEFAULT_FILENAME
 
         base_b = base.encode("utf-8")
         sanitized = base_b[:max_base_bytes].decode("utf-8", "ignore") + ext
@@ -580,7 +582,7 @@ class ProcessEmail:
 
         return self._base_connector._decode_uni_string(subject, def_cont_name)
 
-    def _handle_if_body(self, content_disp, content_id, content_type, part, bodies, file_path):
+    def _handle_if_body(self, content_disp, content_id, content_type, part, bodies, file_path, fallback_file_path):
         process_as_body = False
 
         # if content disposition is None then assume that it is
@@ -599,8 +601,18 @@ class ProcessEmail:
         if not part_payload:
             return phantom.APP_SUCCESS, False
 
-        with open(file_path, "wb") as f:
-            f.write(part_payload)
+        try:
+            with open(file_path, "wb") as f:
+                f.write(part_payload)
+        except OSError as e:
+            self._debug_print(f"Unable to write email body to {file_path}: {e}")
+            try:
+                with open(fallback_file_path, "wb") as f:
+                    f.write(part_payload)
+            except OSError as fallback_error:
+                self._debug_print(f"Unable to write email body fallback to {fallback_file_path}: {fallback_error}")
+                return phantom.APP_ERROR, False
+            file_path = fallback_file_path
 
         bodies.append({"file_path": file_path, "charset": part.get_content_charset()})
 
@@ -692,13 +704,15 @@ class ProcessEmail:
         else:
             file_name = self._base_connector._decode_uni_string(file_name, file_name)
 
-        file_name = self._sanitize_filename(file_name)
-        file_path = f"{tmp_dir}/{part_index}_{file_name}"
+        filename_prefix = f"{part_index}_"
+        file_name = self._sanitize_filename(file_name, 255 - len(filename_prefix.encode("utf-8")))
+        file_path = f"{tmp_dir}/{filename_prefix}{file_name}"
+        fallback_file_path = f"{tmp_dir}/{filename_prefix}email_default.eml"
 
         # is the part representing the body of the email
-        _status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
+        status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path, fallback_file_path)
         if not process_further:
-            return phantom.APP_SUCCESS
+            return status
         # This is an attachment and it"s not an email
         self._handle_attachment(part, file_name, file_path)
 
