@@ -1,3 +1,17 @@
+## ⚠️ Deprecation Notice
+
+**This app relies on Exchange Web Services (EWS), which Microsoft is retiring for Exchange Online.** Microsoft has announced a phased retirement of EWS in favor of Microsoft Graph:
+
+- **March 1, 2026** — EWS access begins to be blocked for users on F1, F3, and Kiosk licenses.
+- **October 1, 2026** — EWS requests to Exchange Online start being blocked for all tenants. After this date, EWS works only if the tenant explicitly configures an AppID AllowList and sets `EWSEnabled=True` (which must be done before the end of August 2026).
+- **April 1, 2027** — EWS in Exchange Online is fully retired and can no longer be re-enabled.
+
+Because this app is built on EWS, its Exchange Online functionality will progressively stop working over this timeline and cease entirely after full retirement. **This does not affect on-premises Exchange Server.**
+
+**Recommended action:** migrate to the **Microsoft 365 (MS Graph)** app, which is built on the Microsoft Graph API and provides all of the actions offered by this app. Plan your migration and update any playbooks that reference this app's actions before the October 1, 2026 deadline.
+
+For details, see Microsoft's guidance: [Deprecation of Exchange Web Services in Exchange Online](https://learn.microsoft.com/en-us/exchange/clients-and-mobile-in-exchange-online/deprecation-of-ews-exchange-online).
+
 ## SOAR asset setup
 
 It is not uncommon for enterprises to have a single mailbox configured where users can forward
