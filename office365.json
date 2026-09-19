@@ -15,7 +15,7 @@
     "product_vendor": "Microsoft",
     "product_name": "Office 365",
     "product_version_regex": ".*",
-    "min_phantom_version": "6.2.2",
+    "min_phantom_version": "8.9.0",
     "python_version": "3.9, 3.13",
     "fips_compliant": true,
     "latest_tested_versions": [
@@ -174,7 +174,7 @@
             "default": false
         },
         "preprocess_script": {
-            "data_type": "file",
+            "data_type": "python_script",
             "description": "Script with Functions to Preprocess Containers and Artifacts",
             "order": 23
         }
