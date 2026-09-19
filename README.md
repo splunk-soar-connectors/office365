@@ -4,7 +4,7 @@ Publisher: Splunk <br>
 Connector Version: 2.15.8 <br>
 Product Vendor: Microsoft <br>
 Product Name: Office 365 <br>
-Minimum Product Version: 6.2.2
+Minimum Product Version: 8.9.0
 
 This app ingests emails from a mailbox in addition to supporting various investigative and containment actions on an Office 365 service
 
@@ -477,7 +477,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **extract_hashes** | optional | boolean | Extract Hashes |
 **extract_eml** | optional | boolean | Extract root (primary) email as Vault |
 **add_body_to_header_artifacts** | optional | boolean | Add Email Body to the Email Artifact |
-**preprocess_script** | optional | file | Script with Functions to Preprocess Containers and Artifacts |
+**preprocess_script** | optional | python_script | Script with Functions to Preprocess Containers and Artifacts |
 
 ### Supported Actions
 
