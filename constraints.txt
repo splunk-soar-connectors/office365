@@ -1,0 +1,3 @@
+# Preserve the bundled dependency versions for each supported Python runtime.
+convert-outlook-msg-file==0.1.0; python_version == "3.9"
+convert-outlook-msg-file==0.1.0; python_version == "3.13"

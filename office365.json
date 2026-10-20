@@ -3757,5 +3757,30 @@
                 "input_file": "wheels/py313/lxml-6.0.0-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
             }
         ]
+    },
+    "contributors": [
+        {
+            "name": "Gary Ian Rokas"
+        }
+    ],
+    "pip313_dependencies_aarch64": {
+        "wheel": [
+            {
+                "module": "compoundfiles",
+                "input_file": "wheels/py3/compoundfiles-0.3-py3-none-any.whl"
+            },
+            {
+                "module": "compressed_rtf",
+                "input_file": "wheels/py3/compressed_rtf-1.0.7-py3-none-any.whl"
+            },
+            {
+                "module": "convert_outlook_msg_file",
+                "input_file": "wheels/py3/convert_outlook_msg_file-0.1.0-py3-none-any.whl"
+            },
+            {
+                "module": "lxml",
+                "input_file": "wheels/py313/lxml-6.0.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl"
+            }
+        ]
     }
 }
