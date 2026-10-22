@@ -16,6 +16,7 @@ import base64
 import hmac
 import json
 import os
+import re
 
 import encryption_helper
 import requests
@@ -112,7 +113,7 @@ class Office365RequestHandler:
 class RequestStateHandler:
     def __init__(self, asset_id):
         asset_id = str(asset_id)
-        if asset_id and asset_id.isalnum():
+        if asset_id and (asset_id.isalnum() or re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", asset_id)):
             self._asset_id = asset_id
         else:
             raise AttributeError("RequestStateHandler got invalid asset_id")
