@@ -1,2 +1,1 @@
 **Unreleased**
-* Accept UUID asset IDs during initialization. [PAPP-38585]
