@@ -93,9 +93,9 @@ SOFTWARE.
 
 @@@@============================================================================
 
-Library: lxml - 6.0.0
+Library: lxml - 6.1.0
 Homepage: https://lxml.de/
-License: BSD License
+License: BSD-3-Clause
 License Text:
 
 BSD 3-Clause License
